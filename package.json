@@ -1,0 +1,21 @@
+{
+  "name": "prescott",
+  "version": "1.0.0",
+  "main": "build/server.js",
+  "repository": "git@github.com:vv-dc/prescott.git",
+  "author": "vvkin <vkincur@gmail.com>, ShkarupaDC <dimon.shkarupa@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "pre-build": "rimraf build",
+    "build": "tsc -p ./tsconfig.json",
+    "start": "node build/server.js"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.1",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "fastify": "^3.22.0"
+  }
+}
