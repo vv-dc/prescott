@@ -4,6 +4,9 @@
 # vscode local configuration
 .vscode
 
+# idea config
+.idea
+
 # dependencies
 node_modules
 .pnp

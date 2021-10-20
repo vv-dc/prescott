@@ -1,14 +1,20 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyPluginAsync } from 'fastify';
+import { SERVER_CONFIG, config } from './config/config';
+import { app } from './app';
 
-const server = Fastify({ logger: true });
+const { port, host, logger } = config[SERVER_CONFIG];
 
-server.get('/', (request, reply) => {
-  reply.send({ hello: 'world' });
-});
-
-server.listen(3000, (err) => {
-  if (err) {
-    server.log.error(err);
+const bootstrap = async (app: FastifyPluginAsync) => {
+  try {
+    const server = Fastify({ logger });
+    server.register(app);
+    server.listen(port, host, () => {
+      console.log(`Server started on http://${host}:${port}`);
+    });
+  } catch (err) {
+    console.error(err);
     process.exit(1);
   }
-});
+};
+
+bootstrap(app);

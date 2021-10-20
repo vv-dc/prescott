@@ -1,0 +1,11 @@
+{
+  "verbose": true,
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "roots": [
+    "<rootDir>/test"
+  ],
+  "transform": {
+    "^.+\\.[tj]s$": "ts-jest"
+  }
+}
