@@ -1,19 +1,26 @@
 {
-    "compilerOptions": {
-      "module": "commonjs",
-      "target": "es2020",
-      "strict": true,
-      "noImplicitAny": true,
-      "declaration": true,
-      "noEmitOnError": true,
-      "skipLibCheck": true,
-      "removeComments": true,
-      "resolveJsonModule": true,
-      "allowJs": true,
-      "sourceMap": true,
-      "outDir": "./build",
-      "baseUrl": "./src",
-    },
-    "include": ["src/**/*.ts", "test/**/*.ts",],
-    "exclude": ["node_modules", "build"]
-  }
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2020",
+    "strict": true,
+    "noImplicitAny": true,
+    "declaration": true,
+    "noEmitOnError": true,
+    "skipLibCheck": true,
+    "removeComments": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "sourceMap": true,
+    "outDir": "./build",
+    "baseUrl": "./src",
+    "paths": {
+      "@src/*": ["./*"],
+      "@lib/*": ["./lib/*"],
+      "@config/*": ["./config/*"],
+      "@plugins/*": ["./domain/*"],
+      "@model/*": ["./model/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "test/**/*.ts"],
+  "exclude": ["node_modules", "build"]
+}

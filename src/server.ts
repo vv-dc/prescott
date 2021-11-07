@@ -1,5 +1,5 @@
 import Fastify, { FastifyPluginAsync } from 'fastify';
-import { SERVER_CONFIG, config } from './config/config';
+import { SERVER_CONFIG, config } from '@config/config';
 import { app } from './app';
 
 const { port, host, logger } = config[SERVER_CONFIG];
