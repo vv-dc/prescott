@@ -1,9 +1,7 @@
 name: Check Node.js application
 
 on:
-  push:
   pull_request:
-    types: [ opened ]
 
 jobs:
   build:
