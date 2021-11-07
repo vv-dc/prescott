@@ -12,13 +12,13 @@
     "allowJs": true,
     "sourceMap": true,
     "outDir": "./build",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@src/*": ["./*"],
-      "@lib/*": ["./lib/*"],
-      "@config/*": ["./config/*"],
-      "@plugins/*": ["./domain/*"],
-      "@model/*": ["./model/*"]
+      "@src/*": ["./src/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@config/*": ["./src/config/*"],
+      "@plugins/*": ["./src/plugins/*"],
+      "@model/*": ["./src/model/*"]
     }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],
