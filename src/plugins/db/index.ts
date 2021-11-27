@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { Knex, knex } from 'knex';
+import { knex } from 'knex';
 
 import { knexConfig } from 'knexfile';
 
@@ -10,9 +10,3 @@ const pg: FastifyPluginAsync = async (fastify) => {
 };
 
 export default fp(pg, { name: 'pg' });
-
-declare module 'fastify' {
-  interface FastifyInstance {
-    pg: Knex;
-  }
-}
