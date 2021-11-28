@@ -1,0 +1,28 @@
+{
+  "$id": "https://example.com/domain/limitations",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "ram": {
+      "$ref": "#/$defs/MemoryLimit"
+    },
+    "rom": {
+      "$ref": "#/$defs/MemoryLimit"
+    },
+    "cpus": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "ttl": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "MemoryLimit": {
+      "type": "string",
+      "pattern": "^[0-9]+(b|k|m|g)$"
+    }
+  }
+}

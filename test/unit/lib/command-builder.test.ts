@@ -23,7 +23,7 @@ describe('command-builder unit', () => {
       .arg('c')
       .param('trace-warnings')
       .param('max-old-space-size', 100)
-      .file('index.js')
+      .with('index.js')
       .build();
 
     const expected =
@@ -36,7 +36,7 @@ describe('command-builder unit', () => {
     const actual = builder
       .init('ls -la')
       .pipe('grep ".*\\.js$"')
-      .overwrite('out.txt')
+      .overwriteFile('out.txt')
       .build();
 
     const expected = 'ls -la | grep ".*\\.js$" > out.txt';
@@ -48,13 +48,13 @@ describe('command-builder unit', () => {
 
     const actual = builder
       .init('mkdir')
-      .file('test')
+      .with('test')
       .chain('cd "$_"')
       .chain('echo "process.exit(1)"')
-      .append('index.ts')
+      .appendToFile('index.ts')
       .chain('ls')
       .pipe('cat')
-      .overwrite('output.txt')
+      .overwriteFile('output.txt')
       .build();
 
     const expected =

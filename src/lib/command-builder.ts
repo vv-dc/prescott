@@ -1,11 +1,6 @@
-import { ExecException, ExecOptions, ChildProcess, exec } from 'child_process';
+import { ExecOptions, ChildProcess, exec } from 'child_process';
 import { promisify } from 'util';
-
-export type ExecCallback = (
-  err: ExecException | null,
-  stdout: string | Buffer,
-  stderr: string | Buffer
-) => void;
+import { ExecCallback } from '@model/shared/exec-callback.model';
 
 const execAsync = promisify(exec);
 
@@ -18,7 +13,6 @@ export class CommandBuilder {
   }
 
   chain(command: string): CommandBuilder {
-    if (!this.command) throw new Error('Init command should be provided!');
     this.command += ' && ' + command;
     return this;
   }
@@ -28,7 +22,7 @@ export class CommandBuilder {
     return this;
   }
 
-  param(name: string, value?: string | number): CommandBuilder {
+  param(name: string, value?: string | number | boolean): CommandBuilder {
     this.command += ` --${name}` + (value ? `=${value}` : '');
     return this;
   }
@@ -38,19 +32,29 @@ export class CommandBuilder {
     return this;
   }
 
-  file(filename: string): CommandBuilder {
-    this.command += ` ${filename}`;
+  with(param: string): CommandBuilder {
+    this.command += ` ${param}`;
     return this;
   }
 
-  overwrite(filename: string): CommandBuilder {
+  overwriteFile(filename: string): CommandBuilder {
     this.command += ` > ${filename}`;
     return this;
   }
 
-  append(filename: string): CommandBuilder {
+  appendToFile(filename: string): CommandBuilder {
     this.command += ` >> ${filename}`;
     return this;
+  }
+
+  prepend(command: string): CommandBuilder {
+    this.command = `${command} ${this.command}`;
+    return this;
+  }
+
+  merge(builder: CommandBuilder): CommandBuilder {
+    const merged = new CommandBuilder();
+    return merged.init(this.command).with(builder.build());
   }
 
   build(): string {
