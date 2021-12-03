@@ -32,7 +32,7 @@ export class CommandBuilder {
     return this;
   }
 
-  with(param: string): CommandBuilder {
+  with(param: unknown): CommandBuilder {
     this.command += ` ${param}`;
     return this;
   }

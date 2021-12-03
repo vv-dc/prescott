@@ -17,7 +17,7 @@ const LIMITATIONS_MAP: Record<keyof Limitations, LimitationMapper> = {
     builder.param('cpus', value);
   },
   ttl: (builder, value) => {
-    builder.param('ulimit').param('cpu', value);
+    builder.prepend(`timeout ${value}`);
   },
 };
 
@@ -50,4 +50,4 @@ export const buildLimitations = (
   }
 };
 
-export const escapeCmd = (cmd: string): string => cmd.replaceAll(`"`, `\\"`);
+export const escapeCmd = (cmd: string): string => cmd.replace(/"/g, `\\"`);
