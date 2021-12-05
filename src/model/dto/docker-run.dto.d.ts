@@ -6,7 +6,7 @@ export interface DockerRunDto {
     ram?: string;
     rom?: string;
     cpus?: number;
-    ttl?: number;
   };
+  timeout?: number;
   withDelete?: boolean;
 }

@@ -16,9 +16,6 @@ const LIMITATIONS_MAP: Record<keyof Limitations, LimitationMapper> = {
   cpus: (builder: CommandBuilder, value) => {
     builder.param('cpus', value);
   },
-  ttl: (builder, value) => {
-    builder.prepend(`timeout ${value}`);
-  },
 };
 
 export const buildImage = (name: string, version?: string | number): string =>

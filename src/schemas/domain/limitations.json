@@ -12,10 +12,6 @@
     "cpus": {
       "type": "number",
       "exclusiveMinimum": 0
-    },
-    "ttl": {
-      "type": "number",
-      "exclusiveMinimum": 0
     }
   },
   "additionalProperties": false,

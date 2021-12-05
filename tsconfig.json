@@ -19,7 +19,8 @@
       "@lib/*": ["./src/lib/*"],
       "@config/*": ["./src/config/*"],
       "@plugins/*": ["./src/plugins/*"],
-      "@model/*": ["./src/model/*"]
+      "@model/*": ["./src/model/*"],
+      "@test/*": ["./test/*"]
     }
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],

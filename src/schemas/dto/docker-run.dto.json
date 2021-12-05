@@ -6,6 +6,7 @@
     "container": { "type": "string" },
     "context": { "type": "string" },
     "limitations": { "$ref": "domain/limitations.json" },
+    "timeout": { "type": "number", "exclusiveMinimum": 0 },
     "withDelete": { "type": "boolean", "default": true }
   },
   "required": ["image", "container"],

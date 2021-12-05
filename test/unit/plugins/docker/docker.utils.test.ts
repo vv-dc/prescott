@@ -49,14 +49,13 @@ describe('docker.utils unit', () => {
         cpus: 1.5,
         ram: '1g',
         rom: '10g',
-        ttl: 10,
       };
 
       buildLimitations(builder, limitations);
       const actual = builder.build();
 
       const expected =
-        'timeout 10 docker run --cpus=1.5 --memory=1g --storage-opt size=10g';
+        'docker run --cpus=1.5 --memory=1g --storage-opt size=10g';
       expect(actual).toEqual(expected);
     });
   });

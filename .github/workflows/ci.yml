@@ -24,4 +24,4 @@ jobs:
       - name: Lint application
         run: yarn lint
       - name: Test application
-        run: yarn test
+        run: yarn test:unit
