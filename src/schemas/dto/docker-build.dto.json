@@ -21,7 +21,7 @@
       "default": true
     }
   },
-  "required": ["tag", "osInfo", "cmd"],
+  "required": ["tag", "osInfo", "cmd", "once", "copy"],
   "additionalProperties": false,
   "$defs": {
     "OsInfoDto": {

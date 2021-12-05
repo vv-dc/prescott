@@ -4,11 +4,12 @@
   "properties": {
     "image": { "type": "string" },
     "container": { "type": "string" },
+    "detached": { "type": "boolean", "default": true },
+    "withDelete": { "type": "boolean", "default": true },
     "context": { "type": "string" },
-    "limitations": { "$ref": "domain/limitations.json" },
     "timeout": { "type": "number", "exclusiveMinimum": 0 },
-    "withDelete": { "type": "boolean", "default": true }
+    "limitations": { "$ref": "domain/limitations.json" }
   },
-  "required": ["image", "container"],
+  "required": ["image", "container", "detached", "withDelete"],
   "additionalProperties": false
 }

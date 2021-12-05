@@ -3,10 +3,8 @@ import { DockerBuildDto } from '@model/dto/docker-build.dto';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import { buildImage } from '@plugins/docker/docker.utils';
 import { asyncGeneratorToArray } from '@lib/async.utils';
-import {
-  getTimeoutRejectPromise,
-  generateRandomString,
-} from '@test/lib/test.utils';
+import { delay } from '@lib/time.utils';
+import { generateRandomString } from '@test/lib/test.utils';
 import { OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 
 describe('docker.service integration', () => {
@@ -43,6 +41,7 @@ describe('docker.service integration', () => {
       osInfo: IMAGES.alpine,
       cmd: 'echo "hello, world!"',
       once: true,
+      copy: false,
     };
     await dockerService.build(dto);
     await dockerService.deleteImage(imageTag);
@@ -60,12 +59,15 @@ describe('docker.service integration', () => {
       osInfo: IMAGES.alpine,
       cmd: randomCommand,
       once: true,
+      copy: false,
     };
     await dockerService.build(buildDto);
 
     const runDto: DockerRunDto = {
       image: imageTag,
       container,
+      detached: true,
+      withDelete: false,
     };
 
     await dockerService.run(runDto);
@@ -85,6 +87,7 @@ describe('docker.service integration', () => {
       osInfo: IMAGES.alpine,
       cmd: 'cat /dev/zero | head -c 50m | tail',
       once: true,
+      copy: false,
     };
     await dockerService.build(buildDto);
 
@@ -93,29 +96,35 @@ describe('docker.service integration', () => {
       container,
       limitations: { ram: '10m' },
       withDelete: true,
+      detached: false,
     };
 
-    await expect(dockerService.run(runDto, false)).rejects.toMatchObject({
+    await expect(dockerService.run(runDto)).rejects.toMatchObject({
       code: OUT_OF_MEMORY_CODE,
       stderr: 'Killed\n',
     });
+    await dockerService.deleteImage(imageTag);
   });
 
   it('should kill container if timeout is provided', async () => {
     const { name, version } = IMAGES.nginx;
+    const container = generateRandomString('timeout-test');
+
     const runDto: DockerRunDto = {
       image: buildImage(name, version),
-      container: generateRandomString('timeout-test'),
+      container,
       timeout: 1,
       withDelete: true,
+      detached: true,
     };
 
-    await Promise.race([
-      dockerService.run(runDto),
-      getTimeoutRejectPromise(2000),
-    ]);
+    await dockerService.run(runDto);
+    await delay(1500);
 
-    expect.assertions(0); // should not throw
+    await expect(dockerService.pid(container)).rejects.toMatchObject({
+      code: 1,
+      stderr: `Error: No such object: ${container}\n`,
+    });
   });
 
   it('should find container pid', async () => {
@@ -126,6 +135,7 @@ describe('docker.service integration', () => {
       image: buildImage(name, version),
       container,
       withDelete: true,
+      detached: true,
     };
     await dockerService.run(runDto);
 
@@ -148,6 +158,7 @@ describe('docker.service integration', () => {
       container,
       timeout: 1,
       withDelete: true,
+      detached: true,
     };
 
     await dockerService.run(runDto);
@@ -172,6 +183,7 @@ describe('docker.service integration', () => {
       osInfo: IMAGES.alpine,
       cmd: 'while true; do echo hello world; done',
       once: true,
+      copy: false,
     };
     await dockerService.build(buildDto);
 
@@ -179,6 +191,8 @@ describe('docker.service integration', () => {
       image: imageTag,
       container,
       timeout: 1,
+      detached: true,
+      withDelete: false,
     };
     await dockerService.run(runDto);
 
@@ -186,6 +200,8 @@ describe('docker.service integration', () => {
 
     expect(stdout.startsWith('hello world\n'.repeat(10))).toBeTruthy();
     expect(stderr).toBeFalsy();
+
     await dockerService.deleteContainer(container, true);
+    await dockerService.deleteImage(imageTag);
   });
 });

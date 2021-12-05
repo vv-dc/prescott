@@ -2,26 +2,25 @@ import * as pidusage from 'pidusage';
 import { Status } from 'pidusage';
 import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
-import { processExists } from '@lib/shell.utils';
 import { DockerBuildDto } from '@model/dto/docker-build.dto';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import {
   buildDockerfile,
   buildImage,
-  buildLimitations,
+  buildInspectParam,
+  buildRunOptions,
 } from '@plugins/docker/docker.utils';
+import { InspectParam } from '@plugins/docker/docker.model';
+import { processExists } from '@lib/shell.utils';
 
 export class DockerService {
-  async run(dto: DockerRunDto, detached = true) {
-    const { image, container, context, limitations, withDelete, timeout } = dto;
+  async run(dto: DockerRunDto) {
+    const { image, container, timeout, ...options } = dto;
+
     const command = new CommandBuilder()
       .init('docker run')
       .param('name', container);
-
-    if (detached) command.arg('d');
-    if (context) command.prepend(`cd ${context}`);
-    if (limitations) buildLimitations(command, limitations);
-    if (withDelete) command.param('rm');
+    buildRunOptions(command, options);
 
     await command.with(image).execAsync();
     if (timeout) await this.stop(container, timeout);
@@ -69,18 +68,23 @@ export class DockerService {
     await command.with('-').execAsync();
   }
 
-  async pid(container: string): Promise<number> {
+  async inspect(container: string, params: InspectParam[]): Promise<string[]> {
+    const formatBody = `"${params.map(buildInspectParam).join(',')}"`;
     const command = new CommandBuilder()
       .init('docker inspect')
-      .param('format', '"{{ .State.Pid }}"')
+      .param('format', formatBody)
       .with(container);
-    const { stdout: pid } = await command.execAsync();
+    const { stdout: inspectString } = await command.execAsync();
+    return inspectString.slice(0, -1).split(','); // exclude last '\n'
+  }
+
+  async pid(container: string): Promise<number> {
+    const [pid] = await this.inspect(container, ['pid']);
     return parseInt(pid, 10);
   }
 
   async *stats(container: string, interval = 50): AsyncGenerator<Status> {
     const pid = await this.pid(container);
-
     while (processExists(pid)) {
       yield pidusage(pid);
       await delay(interval);
