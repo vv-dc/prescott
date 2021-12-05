@@ -19,6 +19,7 @@
     "migrate:latest": "knex migrate:latest",
     "migrate:up": "knex migrate:up",
     "migrate:down": "knex migrate:down",
+    "migrate:down-all": "knex migrate:rollback --all",
     "compile-schemas": "json2ts --cwd src/schemas --bannerComment \"\" -i src/schemas -o src/model && yarn lint:write"
   },
   "devDependencies": {
