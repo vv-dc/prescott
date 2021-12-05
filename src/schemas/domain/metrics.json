@@ -1,0 +1,28 @@
+{
+  "$id": "https://example.com/domain/stats",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "timeTaken": { "type": "number", "exclusiveMinimum": 0 },
+    "retries": { "type": "number", "exclusiveMinimum": 0 },
+    "ram": {
+      "$ref": "#/$defs/Metric"
+    },
+    "cpu": {
+      "$ref": "#/$defs/Metric"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "Metric": {
+      "type": "object",
+      "properties": {
+        "max": { "type": "number", "exclusiveMinimum": 0 },
+        "avg": { "type": "number", "exclusiveMinimum": 0 },
+        "std": { "type": "number" }
+      },
+      "required": ["max", "avg", "std"],
+      "additionalProperties": false
+    }
+  }
+}

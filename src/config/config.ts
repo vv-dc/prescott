@@ -1,9 +1,12 @@
 import 'dotenv/config';
 import { PgConfig } from './model/pg.config';
 import { ServerConfig } from './model/server.config';
+import { SchemasConfig } from '@config/model/schemas.config';
+import { join } from 'path';
 
 export const SERVER_CONFIG = 'SERVER';
 export const PG_CONFIG = 'PG';
+export const SCHEMAS_CONFIG = 'SCHEMAS';
 
 export const config = {
   [SERVER_CONFIG]: {
@@ -18,4 +21,7 @@ export const config = {
     password: process.env.PGPASSWORD,
     database: process.env.PGDB,
   } as PgConfig,
+  [SCHEMAS_CONFIG]: {
+    path: join(__dirname, '../', 'schemas/'),
+  } as SchemasConfig,
 };

@@ -10,17 +10,22 @@
     "build": "tsc -p ./tsconfig.json",
     "start": "node -r ts-node/register -r tsconfig-paths/register ./build/src/server.js",
     "test": "jest",
-    "lint": "eslint . --ext .ts,.js",
+    "test:unit": "jest --testPathPattern=test/unit",
+    "test:integration": "jest --testPathPattern=test/integration",
+    "test:e2e": "jest --testPathPattern=test/e2e",
+    "lint": "eslint . --ext .ts,.js,.json",
     "lint:write": "yarn lint --fix",
     "migrate:make": "knex migrate:make -x ts",
     "migrate:latest": "knex migrate:latest",
     "migrate:up": "knex migrate:up",
-    "migrate:down": "knex migrate:down"
+    "migrate:down": "knex migrate:down",
+    "compile-schemas": "json2ts --cwd src/schemas --bannerComment \"\" -i src/schemas -o src/model && yarn lint:write"
   },
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.1",
+    "@types/pidusage": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
     "@typescript-eslint/parser": "^5.1.0",
     "eslint": "^8.0.1",
@@ -28,6 +33,7 @@
     "eslint-plugin-prettier": "4.0.0",
     "husky": "^7.0.2",
     "jest": "^27.3.1",
+    "json-schema-to-typescript": "^10.1.5",
     "lint-staged": "^11.2.3",
     "prettier": "2.4.1",
     "rimraf": "^3.0.2",
@@ -42,6 +48,7 @@
     "fastify-autoload": "^3.9.0",
     "fastify-plugin": "^3.0.0",
     "knex": "^0.95.13",
-    "pg": "^8.7.1"
+    "pg": "^8.7.1",
+    "pidusage": "^3.0.0"
   }
 }
