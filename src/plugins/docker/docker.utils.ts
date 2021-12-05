@@ -3,7 +3,8 @@ import { Limitations } from '@model/domain/limitations';
 import {
   BuilderMapper,
   InspectParam,
-  OptionalRunOptions,
+  MappedLimitation,
+  RunOptions,
 } from '@plugins/docker/docker.model';
 
 export const buildImage = (name: string, version?: string | number): string =>
@@ -25,7 +26,7 @@ export const buildDockerfile = (
   return statements.join('\n');
 };
 
-const LIMITATIONS_MAP: Record<keyof Limitations, BuilderMapper> = {
+const LIMITATIONS_MAP: Record<MappedLimitation, BuilderMapper> = {
   ram: (builder, value) => {
     builder.param('memory', value);
   },
@@ -42,8 +43,8 @@ export const buildLimitations = (
   limitations: Limitations
 ): void => {
   for (const [limitation, value] of Object.entries(limitations)) {
-    if (value !== undefined) {
-      const mapper = LIMITATIONS_MAP[limitation as keyof Limitations];
+    if (value !== undefined && limitation !== 'ttl') {
+      const mapper = LIMITATIONS_MAP[limitation as MappedLimitation];
       mapper(builder, value);
     }
   }
@@ -51,13 +52,12 @@ export const buildLimitations = (
 
 export const buildRunOptions = (
   builder: CommandBuilder,
-  options: OptionalRunOptions
+  options: RunOptions
 ): void => {
-  const { detached, context, limitations, withDelete } = options;
+  const { detached, context, withDelete } = options;
   if (detached) builder.arg('d');
   if (withDelete) builder.param('rm');
   if (context !== undefined) builder.prepend(`cd ${context}`);
-  if (limitations !== undefined) buildLimitations(builder, limitations);
 };
 
 const INSPECT_MAP: Record<InspectParam, string> = {

@@ -113,7 +113,7 @@ describe('docker.service integration', () => {
     const runDto: DockerRunDto = {
       image: buildImage(name, version),
       container,
-      timeout: 1,
+      limitations: { ttl: 1 },
       withDelete: true,
       detached: true,
     };
@@ -156,7 +156,7 @@ describe('docker.service integration', () => {
     const runDto: DockerRunDto = {
       image: buildImage(name, version),
       container,
-      timeout: 1,
+      limitations: { ttl: 1 },
       withDelete: true,
       detached: true,
     };
@@ -190,7 +190,7 @@ describe('docker.service integration', () => {
     const runDto: DockerRunDto = {
       image: imageTag,
       container,
-      timeout: 1,
+      limitations: { ttl: 1 },
       detached: true,
       withDelete: false,
     };

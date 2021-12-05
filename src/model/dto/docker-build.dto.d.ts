@@ -1,11 +1,10 @@
 export interface DockerBuildDto {
   tag: string;
-  osInfo: OsInfoDto;
+  osInfo: {
+    name: string;
+    version?: number | string;
+  };
   cmd: string;
   copy: boolean;
   once: boolean;
-}
-export interface OsInfoDto {
-  name: string;
-  version?: number | string;
 }

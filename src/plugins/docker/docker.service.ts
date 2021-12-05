@@ -2,28 +2,31 @@ import * as pidusage from 'pidusage';
 import { Status } from 'pidusage';
 import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
+import { processExists } from '@lib/shell.utils';
 import { DockerBuildDto } from '@model/dto/docker-build.dto';
+import { InspectParam } from '@plugins/docker/docker.model';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import {
   buildDockerfile,
   buildImage,
   buildInspectParam,
+  buildLimitations,
   buildRunOptions,
 } from '@plugins/docker/docker.utils';
-import { InspectParam } from '@plugins/docker/docker.model';
-import { processExists } from '@lib/shell.utils';
 
 export class DockerService {
   async run(dto: DockerRunDto) {
-    const { image, container, timeout, ...options } = dto;
+    const { image, container, limitations, ...options } = dto;
 
     const command = new CommandBuilder()
       .init('docker run')
       .param('name', container);
+    if (limitations) buildLimitations(command, limitations);
     buildRunOptions(command, options);
 
     await command.with(image).execAsync();
-    if (timeout) await this.stop(container, timeout);
+    if (limitations?.ttl !== undefined)
+      await this.stop(container, limitations.ttl);
   }
 
   async pull(name: string, version?: string | number): Promise<void> {

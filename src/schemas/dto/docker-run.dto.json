@@ -7,7 +7,6 @@
     "detached": { "type": "boolean", "default": true },
     "withDelete": { "type": "boolean", "default": true },
     "context": { "type": "string" },
-    "timeout": { "type": "number", "exclusiveMinimum": 0 },
     "limitations": { "$ref": "domain/limitations.json" }
   },
   "required": ["image", "container", "detached", "withDelete"],

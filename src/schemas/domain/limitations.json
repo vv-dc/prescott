@@ -9,6 +9,10 @@
     "rom": {
       "$ref": "#/$defs/MemoryLimit"
     },
+    "ttl": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
     "cpus": {
       "type": "number",
       "exclusiveMinimum": 0

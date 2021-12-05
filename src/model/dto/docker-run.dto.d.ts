@@ -4,10 +4,10 @@ export interface DockerRunDto {
   detached: boolean;
   withDelete: boolean;
   context?: string;
-  timeout?: number;
   limitations?: {
     ram?: string;
     rom?: string;
+    ttl?: number;
     cpus?: number;
   };
 }
