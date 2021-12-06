@@ -1,10 +1,9 @@
 import * as pidusage from 'pidusage';
-import { Status } from 'pidusage';
 import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
 import { processExists } from '@lib/shell.utils';
 import { DockerBuildDto } from '@model/dto/docker-build.dto';
-import { InspectParam } from '@plugins/docker/docker.model';
+import { InspectParam, RawStat } from '@plugins/docker/docker.model';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import {
   buildDockerfile,
@@ -86,7 +85,7 @@ export class DockerService {
     return parseInt(pid, 10);
   }
 
-  async *stats(container: string, interval = 50): AsyncGenerator<Status> {
+  async *stats(container: string, interval = 50): AsyncGenerator<RawStat> {
     const pid = await this.pid(container);
     while (processExists(pid)) {
       yield pidusage(pid);

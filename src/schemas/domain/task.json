@@ -1,0 +1,14 @@
+{
+  "$id": "https://example.com/domain/os-info",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "string" },
+    "userId": { "type": "integer" },
+    "groupId": { "type": "integer" },
+    "config": { "type": "string" }
+  },
+  "required": ["name", "userId", "groupId", "config"],
+  "additionalProperties": false
+}

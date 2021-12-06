@@ -1,6 +1,9 @@
 import { CommandBuilder } from '@lib/command-builder';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import { Limitations } from '@model/domain/limitations';
+import { Status } from 'pidusage';
+
+export type RawStat = Status;
 
 export type BuilderMapper = (
   builder: CommandBuilder,
