@@ -1,6 +1,5 @@
 {
-  "$id": "https://example.com/dto/docker-run",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "dto/docker-run.json",
   "properties": {
     "image": { "type": "string" },
     "container": { "type": "string" },
