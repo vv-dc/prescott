@@ -10,7 +10,7 @@ export const camelCaseToSnakeCase = (str: string): string =>
 export const objectToCamelCase = (obj: any): any => {
   if (Array.isArray(obj)) return obj.map(objectToCamelCase);
 
-  return obj !== null && obj.constructor === Object
+  return obj !== undefined && obj !== null && obj.constructor === Object
     ? Object.keys(obj).reduce(
         (result, key) => ({
           ...result,

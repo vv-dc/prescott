@@ -1,0 +1,12 @@
+{
+  "$id": "https://example.com/dto/auth-register",
+  "type": "object",
+  "properties": {
+    "login": { "type": "string", "maxLength": 120 },
+    "fullName": { "type": "string", "maxLength": 120 },
+    "email": { "type": "string", "format": "email" },
+    "password": { "type": "string", "maxLength": 120 }
+  },
+  "required": ["login", "fullName", "email", "password"],
+  "additionalProperties": false
+}

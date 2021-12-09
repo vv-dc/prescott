@@ -8,7 +8,7 @@
   "scripts": {
     "pre-build": "rimraf build/",
     "build": "yarn pre-build && yarn tsc -p ./tsconfig.json",
-    "start": "node -r ts-node/register -r tsconfig-paths/register ./build/src/server.js",
+    "start": "node -r ts-node/register -r tsconfig-paths/register ./build/src/server.js | pino-pretty",
     "test": "jest",
     "test:unit": "jest --testPathPattern=test/unit",
     "test:integration": "jest --testPathPattern=test/integration",
@@ -25,6 +25,7 @@
   "devDependencies": {
     "@types/dotenv": "^8.2.0",
     "@types/jest": "^27.0.2",
+    "@types/jsonwebtoken": "^8.5.6",
     "@types/node": "^16.11.1",
     "@types/pidusage": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.1.0",
@@ -36,6 +37,7 @@
     "jest": "^27.3.1",
     "json-schema-to-typescript": "^10.1.5",
     "lint-staged": "^11.2.3",
+    "pino-pretty": "^7.2.0",
     "prettier": "2.4.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^27.0.7",
@@ -44,10 +46,12 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
+    "argon2": "^0.28.3",
     "dotenv": "^10.0.0",
     "fastify": "^3.22.0",
     "fastify-autoload": "^3.9.0",
     "fastify-plugin": "^3.0.0",
+    "jsonwebtoken": "^8.5.1",
     "knex": "^0.95.13",
     "pg": "^8.7.1",
     "pidusage": "^3.0.0"
