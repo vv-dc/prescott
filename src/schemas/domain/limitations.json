@@ -1,5 +1,5 @@
 {
-  "$id": "https://example.com/domain/limitations",
+  "$id": "domain/limitations",
   "type": "object",
   "properties": {
     "ram": {

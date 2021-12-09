@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "pre-build": "rimraf build/",
-    "build": "tsc -p ./tsconfig.json",
+    "build": "yarn pre-build && yarn tsc -p ./tsconfig.json",
     "start": "node -r ts-node/register -r tsconfig-paths/register ./build/src/server.js",
     "test": "jest",
     "test:unit": "jest --testPathPattern=test/unit",

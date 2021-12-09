@@ -1,5 +1,5 @@
 {
-  "$id": "https://example.com/domain/stats",
+  "$id": "domain/stats",
   "type": "object",
   "properties": {
     "timeTaken": { "type": "number", "exclusiveMinimum": 0 },
