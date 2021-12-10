@@ -7,12 +7,12 @@ import { ServerConfig } from '@config/model/server.config';
 import { SchemasConfig } from '@config/model/schemas.config';
 import { PasswordConfig } from '@config/model/password.config';
 import { JwtConfig } from '@config/model/jwt.config';
+import { AuthConfig } from '@config/model/auth.config';
 
 export const SERVER_CONFIG = 'SERVER';
 export const PG_CONFIG = 'PG';
 export const SCHEMAS_CONFIG = 'SCHEMAS';
-export const PASSWORD_CONFIG = 'PASSWORD';
-export const JWT_CONFIG = 'JWT';
+export const AUTH_CONFIG = 'AUTH';
 
 export const config = {
   [SERVER_CONFIG]: {
@@ -30,13 +30,17 @@ export const config = {
   [SCHEMAS_CONFIG]: {
     path: join(__dirname, '../', 'schemas/'),
   } as SchemasConfig,
-  [PASSWORD_CONFIG]: {
-    type: argon2id,
-    timeCost: 2,
-    memoryCost: 15360,
-  } as PasswordConfig,
-  [JWT_CONFIG]: {
-    secret: process.env.JWT_SECRET,
-    expiresIn: 9e5,
-  } as JwtConfig,
+  [AUTH_CONFIG]: {
+    passwordConfig: {
+      type: argon2id,
+      timeCost: 2,
+      memoryCost: 15360,
+    } as PasswordConfig,
+    jwtConfig: {
+      secret: process.env.JWT_SECRET,
+      accessExpiresIn: 9e5,
+      refreshExpiresIn: 5.184e9,
+    } as JwtConfig,
+    maxSessions: 5,
+  } as AuthConfig,
 };

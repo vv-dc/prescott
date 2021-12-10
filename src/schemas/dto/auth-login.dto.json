@@ -1,0 +1,15 @@
+{
+  "$id": "dto/auth-login.json",
+  "type": "object",
+  "properties": {
+    "login": {
+      "anyOf": [
+        { "type": "string", "maxLength": 120 },
+        { "type": "string", "format": "email" }
+      ]
+    },
+    "password": { "type": "string", "maxLength": 120 }
+  },
+  "required": ["login", "password"],
+  "additionalProperties": false
+}

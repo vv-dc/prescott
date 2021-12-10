@@ -1,9 +1,14 @@
-import { EntityConflict } from '@modules/errors/abstract-errors';
-import { HttpError, HttpConflict } from '@modules/errors/http-errors';
+import { EntityConflict, AccessDenied } from '@modules/errors/abstract-errors';
+import {
+  HttpError,
+  HttpConflict,
+  HttpForbidden,
+} from '@modules/errors/http-errors';
 import { ErrorMap } from '@modules/errors/model/error-map';
 
 const errorMap: ErrorMap = {
   [EntityConflict.name]: HttpConflict,
+  [AccessDenied.name]: HttpForbidden,
 };
 
 export const mapError = (error: Error): HttpError => {

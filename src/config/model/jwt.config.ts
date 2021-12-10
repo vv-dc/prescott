@@ -1,4 +1,5 @@
 export interface JwtConfig {
   secret: string;
-  expiresIn: number;
+  accessExpiresIn: number;
+  refreshExpiresIn: number;
 }

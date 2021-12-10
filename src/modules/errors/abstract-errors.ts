@@ -10,3 +10,9 @@ export class EntityConflict extends AbstractError {
     super(message);
   }
 }
+
+export class AccessDenied extends AbstractError {
+  constructor(message: string) {
+    super(message);
+  }
+}

@@ -6,7 +6,7 @@ export class JwtService {
   constructor(private options: JwtConfig) {}
 
   sign(payload: JwtPayload): Promise<string | undefined> {
-    const { secret, expiresIn } = this.options;
+    const { secret, accessExpiresIn: expiresIn } = this.options;
 
     return new Promise((resolve, reject) => {
       sign(payload, secret, { expiresIn }, (error, token) => {
