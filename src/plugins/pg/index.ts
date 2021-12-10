@@ -1,17 +1,20 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
-import { knex } from 'knex';
+import { Knex, knex } from 'knex';
 
-import { knexConfig } from 'knexfile';
+import { knexConfig } from '../../../knexfile';
 import { camelCaseToSnakeCase, objectToCamelCase } from '@lib/case.utils';
 import { PgConnection } from '@model/shared/pg-connection';
 
-const pg: FastifyPluginAsync = async (fastify) => {
-  const pg: PgConnection = knex({
-    ...knexConfig,
+export const buildPgConnection = (config: Knex.Config): Knex =>
+  knex({
+    ...config,
     wrapIdentifier: (value) => camelCaseToSnakeCase(value),
     postProcessResponse: (result) => objectToCamelCase(result),
   });
+
+const pg: FastifyPluginAsync = async (fastify) => {
+  const pg: PgConnection = buildPgConnection(knexConfig);
   fastify.decorate('pg', pg);
 };
 

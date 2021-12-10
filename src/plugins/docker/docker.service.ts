@@ -87,6 +87,7 @@ export class DockerService {
 
   async *stats(container: string, interval = 50): AsyncGenerator<RawStat> {
     const pid = await this.pid(container);
+    if (pid === 0) return; // container is down already
     while (processExists(pid)) {
       yield pidusage(pid);
       await delay(interval);

@@ -1,6 +1,5 @@
 {
-  "$id": "https://example.com/domain/os-info",
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "domain/os-info.json",
   "type": "object",
   "properties": {
     "name": {

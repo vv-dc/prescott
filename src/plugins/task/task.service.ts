@@ -3,11 +3,12 @@ import { TaskDao } from '@plugins/task/task.dao';
 import { buildDockerCmd, buildTaskIdentifier } from '@plugins/task/task.utils';
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { generateRandomString } from '@lib/random.utils';
-import { Step, TaskConfig } from '@model/domain/task-config';
+import { Step, TaskConfigDto } from '@model/dto/task-config-dto';
 import { Limitations } from '@model/domain/limitations';
 import { TaskRegisterResult } from '@plugins/task/task.model';
 import { OsInfo } from '@model/domain/os-info';
-import { schedule } from 'node-cron';
+import { addTask } from '@plugins/task/task.repository';
+import { TaskCronConfig } from '@plugins/task/model/task-cron-config.model';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -37,7 +38,7 @@ export class TaskService {
 
   async registerWatch(
     identifier: string,
-    config: TaskConfig
+    config: TaskConfigDto
   ): Promise<TaskRegisterResult> {
     // TODO: try to clone, build and then run
     return {} as TaskRegisterResult;
@@ -46,20 +47,23 @@ export class TaskService {
   async register(
     identifier: string,
     taskId: number,
-    config: TaskConfig
+    taskConfig: TaskConfigDto
   ): Promise<void> {
-    const { repository, cronString, limitations } = config;
-    const external = repository !== undefined;
+    const { config, once } = taskConfig;
+    const external = 'repository' in config;
 
-    if (external) {
-      schedule('*/5 * * * *', async () => {
-        await this.registerWatch(identifier, config);
-      });
-    } else {
-      schedule(cronString as string, async () => {
-        await this.registerTask(identifier, limitations);
-      });
-    }
+    const taskCronConfig: TaskCronConfig = {
+      name: identifier,
+      once,
+      callback: async () => {
+        external
+          ? await this.registerWatch(identifier, taskConfig)
+          : await this.registerTask(identifier, config.config?.limitations);
+      },
+      cronString: external ? '*/5 * * * *' : config.local.cronString,
+    };
+
+    addTask(taskCronConfig);
   }
 
   private async buildClearTask(
@@ -79,22 +83,24 @@ export class TaskService {
   async create(
     groupId: number,
     userId: number,
-    config: TaskConfig
+    taskConfig: TaskConfigDto
   ): Promise<void> {
-    const { name, osInfo, repository, steps, limitations } = config;
-    const clearTask = repository === undefined;
+    const { name, osInfo, config } = taskConfig;
+    const clearTask = !('repository' in config);
     const identifier = buildTaskIdentifier(groupId, name);
 
-    await this.dao.create({
+    const taskId = await this.dao.create({
       userId,
       groupId,
       name: identifier,
-      config: JSON.stringify(config),
+      config: JSON.stringify(taskConfig),
     });
 
     if (clearTask) {
-      await this.buildClearTask(identifier, osInfo, steps as Step[]);
-      await this.registerTask(identifier, limitations);
-    } else await this.registerWatch(identifier, config);
+      const { steps } = config.config;
+      await this.buildClearTask(identifier, osInfo, steps);
+    }
+
+    await this.register(identifier, taskId, taskConfig);
   }
 }

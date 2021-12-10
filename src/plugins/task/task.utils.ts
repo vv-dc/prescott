@@ -1,5 +1,5 @@
 import { CommandBuilder } from '@lib/command-builder';
-import { Step } from '@model/domain/task-config';
+import { Step } from '@model/dto/task-config-dto';
 
 export const buildDockerCmd = (separator: string, steps: Step[]): string => {
   const command = new CommandBuilder().init('echo').with(separator);

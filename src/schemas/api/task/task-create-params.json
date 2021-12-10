@@ -1,0 +1,13 @@
+{
+  "$id": "api/task/tasks-params.json",
+  "type": "object",
+  "properties": {
+    "groupId": { "type": "integer" },
+    "userId": { "type": "integer" },
+    "limitations": {
+      "$ref": "domain/limitations.json"
+    }
+  },
+  "additionalProperties": false,
+  "required": ["groupId", "userId"]
+}

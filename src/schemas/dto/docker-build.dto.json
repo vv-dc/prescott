@@ -1,5 +1,5 @@
 {
-  "$id": "dto/docker-build",
+  "$id": "dto/docker-build.json",
   "type": "object",
   "properties": {
     "tag": {
