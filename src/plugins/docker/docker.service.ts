@@ -60,9 +60,8 @@ export class DockerService {
     const dockerfile = buildDockerfile(baseImage, cmd, copy);
 
     const command = new CommandBuilder()
-      .init('echo')
-      .arg('e')
-      .with(`"${dockerfile}"`)
+      .init('printf')
+      .with(`'${dockerfile}'`)
       .pipe('docker build')
       .param('tag', tag);
 

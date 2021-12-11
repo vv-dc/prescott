@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { TaskCreateParams } from '@model/api/task/task-create-params';
 import { TaskConfigDto } from '@model/dto/task-config-dto';
+import { TaskAllParams } from '@model/api/task/task-all-params';
 
 export const taskRoutes: FastifyPluginAsync = async (fastify) => {
   const { taskService } = fastify;
@@ -14,8 +15,25 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     },
     handler: async (request, reply) => {
       const { groupId, userId } = request.params;
-      await taskService.create(groupId, userId, request.body);
-      reply.code(204).send();
+      const taskId = await taskService.createTask(
+        groupId,
+        userId,
+        request.body
+      );
+      reply.code(201).send({ taskId });
+    },
+  });
+
+  fastify.route<{ Params: TaskAllParams }>({
+    method: 'GET',
+    url: '/groups/:groupId/users/:userId/tasks/:taskId',
+    schema: {
+      params: fastify.getSchema('api/task/task-all-params.json'),
+    },
+    handler: async (request, reply) => {
+      const { taskId } = request.params;
+      const task = await taskService.getTask(taskId);
+      reply.code(200).send(task);
     },
   });
 };

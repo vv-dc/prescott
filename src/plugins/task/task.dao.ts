@@ -18,14 +18,14 @@ export class TaskDao {
 
   async create(task: Task): Promise<number> {
     const { name, userId, groupId, config } = task;
-    const { id } = await this.db('tasks')
+    const [id] = await this.db('tasks')
       .insert({
         name,
         userId,
         groupId,
         config,
       })
-      .returning('id');
+      .returning<[number]>('id');
     return id;
   }
 
@@ -35,5 +35,9 @@ export class TaskDao {
 
   async delete(id: number): Promise<void> {
     await this.db('tasks').delete().where({ id });
+  }
+
+  async deleteByName(name: string): Promise<void> {
+    await this.db('tasks').delete().where({ name });
   }
 }

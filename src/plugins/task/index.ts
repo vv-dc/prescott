@@ -9,6 +9,7 @@ const task: FastifyPluginAsync = async (fastify) => {
   const { pg, dockerService } = fastify;
   const taskDao = new TaskDao(pg);
   const taskService = new TaskService(taskDao, dockerService);
+  await taskService.registerFromDatabase();
 
   fastify.decorate('taskService', taskService);
   fastify.register(taskRoutes);

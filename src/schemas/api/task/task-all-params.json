@@ -1,0 +1,11 @@
+{
+  "$id": "api/task/task-all-params.json",
+  "type": "object",
+  "properties": {
+    "groupId": { "type": "integer" },
+    "userId": { "type": "integer" },
+    "taskId": { "type": "integer" }
+  },
+  "required": ["groupId", "userId", "taskId"],
+  "additionalProperties": false
+}

@@ -1,13 +1,10 @@
 {
-  "$id": "api/task/tasks-params.json",
+  "$id": "api/task/task-create-params.json",
   "type": "object",
   "properties": {
     "groupId": { "type": "integer" },
-    "userId": { "type": "integer" },
-    "limitations": {
-      "$ref": "domain/limitations.json"
-    }
+    "userId": { "type": "integer" }
   },
-  "additionalProperties": false,
-  "required": ["groupId", "userId"]
+  "required": ["groupId", "userId"],
+  "additionalProperties": false
 }
