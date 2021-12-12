@@ -1,3 +1,4 @@
+import * as taskRepository from '@plugins/task/task.repository';
 import { DockerService } from '@plugins/docker/docker.service';
 import { TaskDao } from '@plugins/task/task.dao';
 import { buildDockerCmd, buildTaskIdentifier } from '@plugins/task/task.utils';
@@ -6,8 +7,9 @@ import { generateRandomString } from '@lib/random.utils';
 import { Step, TaskConfigDto } from '@model/dto/task-config-dto';
 import { TaskRegisterResult } from '@plugins/task/task.model';
 import { OsInfo } from '@model/domain/os-info';
-import { addTask, deleteTask, stopTask } from '@plugins/task/task.repository';
 import { TaskCronConfig } from '@plugins/task/model/task-cron-config';
+import { cronEveryNMinutes } from '@lib/cron.utils';
+import { Task } from '@model/domain/task';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -26,7 +28,7 @@ export class TaskService {
       container,
       detached: true,
       withDelete: false,
-      limitations: config.config?.limitations,
+      limitations: config.appConfig?.limitations,
     });
 
     const rawStatsGenerator = this.dockerService.stats(container);
@@ -34,7 +36,10 @@ export class TaskService {
     const logs = await this.dockerService.logs(container);
 
     await this.dockerService.deleteContainer(container);
-    if (once) await this.deleteTask(identifier);
+    if (once) {
+      await this.deleteTask(taskId);
+      await this.dockerService.deleteImage(identifier);
+    }
     // await this.metricsService.save(rawStats, logs)
   }
 
@@ -61,18 +66,18 @@ export class TaskService {
         const runner = external ? 'runWatch' : 'runTask';
         await this[runner](identifier, taskId, taskConfig);
       },
-      cronString: external ? '*/5 * * * *' : config.local.cronString,
+      cronString: external ? cronEveryNMinutes(5) : config.local.cronString,
     };
 
-    addTask(taskCronConfig);
+    taskRepository.addTask(taskCronConfig);
   }
 
   async registerFromDatabase(): Promise<void> {
     const tasks = await this.dao.findAll();
     for (const task of tasks) {
-      const { id, name, config } = task;
+      const { id, name, config } = task as Required<Task>;
       const taskConfig: TaskConfigDto = JSON.parse(config);
-      await this.register(name, id as number, taskConfig);
+      await this.register(name, id, taskConfig);
     }
   }
 
@@ -107,7 +112,7 @@ export class TaskService {
     });
 
     if (clearTask) {
-      const { steps } = config.config;
+      const { steps } = config.appConfig;
       await this.buildClearTask(identifier, osInfo, steps);
     }
 
@@ -115,19 +120,27 @@ export class TaskService {
     return taskId;
   }
 
-  async deleteTask(identifier: string): Promise<void> {
-    await this.dao.deleteByName(identifier);
-    deleteTask(identifier);
+  async deleteTask(id: number): Promise<void> {
+    const { name: identifier } = await this.dao.findById(id);
+    taskRepository.deleteTask(identifier);
+
+    const containers = await this.dockerService.getImageAncestors(identifier);
+    for (const container of containers) {
+      await this.dockerService.deleteContainer(container, true);
+    }
+
+    await this.dockerService.deleteImage(identifier, true);
+    await this.dao.delete(id);
   }
 
   async stopTask(id: number): Promise<void> {
     const { name: identifier } = await this.dao.findById(id);
-    stopTask(identifier);
+    taskRepository.stopTask(identifier);
   }
 
   async updateTask(groupId: number, taskId: number, taskConfig: TaskConfigDto) {
     const oldTask = await this.dao.findById(taskId);
-    deleteTask(oldTask.name);
+    taskRepository.deleteTask(oldTask.name);
 
     await this.dao.update(taskId, JSON.stringify(taskConfig));
     const identifier = buildTaskIdentifier(groupId, taskConfig.name);

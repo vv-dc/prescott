@@ -11,7 +11,7 @@ export interface LocalTaskConfig {
   local: {
     cronString: string;
   };
-  config: BaseTaskConfig;
+  appConfig: BaseTaskConfig;
 }
 export interface BaseTaskConfig {
   steps: Step[];
@@ -32,5 +32,5 @@ export interface RepositoryTaskConfig {
     url: string;
     branch: string;
   };
-  config?: BaseTaskConfig;
+  appConfig?: BaseTaskConfig;
 }

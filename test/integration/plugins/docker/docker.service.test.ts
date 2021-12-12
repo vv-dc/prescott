@@ -1,44 +1,20 @@
 import { DockerService } from '@plugins/docker/docker.service';
-import { DockerBuildDto } from '@model/dto/docker-build.dto';
-import { DockerRunDto } from '@model/dto/docker-run.dto';
 import { buildImage } from '@plugins/docker/docker.utils';
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { delay } from '@lib/time.utils';
+import { DockerBuildDto } from '@model/dto/docker-build.dto';
+import { DockerRunDto } from '@model/dto/docker-run.dto';
 import { generateRandomString } from '@test/lib/test.utils';
-import { OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
+import { DOCKER_IMAGES, OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 
 describe('docker.service integration', () => {
   const dockerService = new DockerService();
-
-  const IMAGES = {
-    nginx: {
-      name: 'nginx',
-      version: '1.21-alpine',
-    },
-    alpine: {
-      name: 'alpine',
-      version: 3.15,
-    },
-  };
-
-  beforeAll(async () => {
-    for (const { name, version } of Object.values(IMAGES)) {
-      await dockerService.pull(name, version);
-    }
-  });
-
-  afterAll(async () => {
-    for (const { name, version } of Object.values(IMAGES)) {
-      const imageTag = buildImage(name, version);
-      await dockerService.deleteImage(imageTag, true);
-    }
-  });
 
   it('should build image', async () => {
     const imageTag = generateRandomString('build-test');
     const dto: DockerBuildDto = {
       tag: imageTag,
-      osInfo: IMAGES.alpine,
+      osInfo: DOCKER_IMAGES.alpine,
       cmd: 'echo "hello, world!"',
       once: true,
       copy: false,
@@ -56,7 +32,7 @@ describe('docker.service integration', () => {
 
     const buildDto: DockerBuildDto = {
       tag: imageTag,
-      osInfo: IMAGES.alpine,
+      osInfo: DOCKER_IMAGES.alpine,
       cmd: randomCommand,
       once: true,
       copy: false,
@@ -84,7 +60,7 @@ describe('docker.service integration', () => {
 
     const buildDto: DockerBuildDto = {
       tag: imageTag,
-      osInfo: IMAGES.alpine,
+      osInfo: DOCKER_IMAGES.alpine,
       cmd: 'cat /dev/zero | head -c 50m | tail',
       once: true,
       copy: false,
@@ -107,7 +83,7 @@ describe('docker.service integration', () => {
   });
 
   it('should kill container if timeout is provided', async () => {
-    const { name, version } = IMAGES.nginx;
+    const { name, version } = DOCKER_IMAGES.nginx;
     const container = generateRandomString('timeout-test');
 
     const runDto: DockerRunDto = {
@@ -128,7 +104,7 @@ describe('docker.service integration', () => {
   });
 
   it('should find container pid', async () => {
-    const { name, version } = IMAGES.nginx;
+    const { name, version } = DOCKER_IMAGES.nginx;
     const container = generateRandomString('pid-test');
 
     const runDto: DockerRunDto = {
@@ -150,7 +126,7 @@ describe('docker.service integration', () => {
   });
 
   it('should collect container metrics', async () => {
-    const { name, version } = IMAGES.nginx;
+    const { name, version } = DOCKER_IMAGES.nginx;
     const container = generateRandomString('metrics-test');
 
     const runDto: DockerRunDto = {
@@ -180,7 +156,7 @@ describe('docker.service integration', () => {
 
     const buildDto = {
       tag: imageTag,
-      osInfo: IMAGES.alpine,
+      osInfo: DOCKER_IMAGES.alpine,
       cmd: 'while true; do echo hello world; done',
       once: true,
       copy: false,

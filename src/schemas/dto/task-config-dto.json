@@ -54,11 +54,11 @@
           "required": ["cronString"],
           "additionalProperties": false
         },
-        "config": {
+        "appConfig": {
           "$ref": "#/$defs/BaseTaskConfig"
         }
       },
-      "required": ["local", "config"],
+      "required": ["local", "appConfig"],
       "additionalProperties": false
     },
     "RepositoryTaskConfig": {
@@ -73,7 +73,7 @@
           "required": ["url", "branch"],
           "additionalProperties": false
         },
-        "config": {
+        "appConfig": {
           "$ref": "#/$defs/BaseTaskConfig"
         }
       },

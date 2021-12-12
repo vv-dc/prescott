@@ -97,4 +97,15 @@ export class DockerService {
     const command = new CommandBuilder().init('docker logs').with(container);
     return command.execAsync();
   }
+
+  async getImageAncestors(image: string): Promise<string[]> {
+    const command = new CommandBuilder()
+      .init('docker ps')
+      .arg('a')
+      .arg('q')
+      .param('filter')
+      .with(`ancestor=${image}`);
+    const { stdout } = await command.execAsync();
+    return stdout.split('\n').slice(0, -1);
+  }
 }

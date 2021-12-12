@@ -9,8 +9,10 @@ const tasks: ScheduledTasksRepository = {};
 
 export const deleteTask = (name: string): void => {
   const task = tasks[name];
-  task.stop();
-  delete tasks[name];
+  if (task !== undefined) {
+    task.stop();
+    delete tasks[name];
+  } else throw new Error('Task does not exist');
 };
 
 export const addTask = (config: TaskCronConfig): ScheduledTask => {
@@ -23,7 +25,11 @@ export const addTask = (config: TaskCronConfig): ScheduledTask => {
 
 export const stopTask = (name: string): void => {
   const task = tasks[name];
-  task.stop();
+  if (task !== undefined) {
+    task.stop();
+  } else throw new Error('Task does not exist');
 };
 
-export const getTasks = (): ScheduledTasksRepository => Object.freeze(tasks);
+// note: it's only for testing purposes
+export const getScheduledTasks = (): ScheduledTasksRepository =>
+  Object.assign({}, tasks);
