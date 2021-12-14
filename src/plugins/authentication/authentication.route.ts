@@ -1,17 +1,17 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { AuthRegisterDto } from '@model/dto/auth-register.dto';
-import { AuthLoginDto } from '@model/dto/auth-login.dto';
-import { RefreshTokenDto } from '@model/dto/refresh-token.dto';
+import { AuthenticationRegisterDto } from '@model/dto/authentication-register.dto';
+import { AuthenticationLoginDto } from '@model/dto/authentication-login.dto';
+import { AuthenticationRefreshTokensDto } from '@model/dto/authentication-refresh-tokens.dto';
 
 export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
   const { authenticationService } = fastify;
 
-  fastify.route<{ Body: AuthRegisterDto }>({
+  fastify.route<{ Body: AuthenticationRegisterDto }>({
     method: 'POST',
     url: '/register',
     schema: {
-      body: fastify.getSchema('dto/auth-register.json'),
+      body: fastify.getSchema('dto/authentication-register.json'),
     },
     handler: async (request, reply) => {
       const { body: registerData } = request;
@@ -20,13 +20,13 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Body: AuthLoginDto }>({
+  fastify.route<{ Body: AuthenticationLoginDto }>({
     url: '/login',
     method: 'POST',
     schema: {
-      body: fastify.getSchema('dto/auth-login.json'),
+      body: fastify.getSchema('dto/authentication-login.json'),
       response: {
-        200: fastify.getSchema('dto/token-pair.json'),
+        200: fastify.getSchema('api/authentication/token-pair.json'),
       },
     },
     handler: async (request, reply) => {
@@ -36,13 +36,13 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Body: RefreshTokenDto }>({
+  fastify.route<{ Body: AuthenticationRefreshTokensDto }>({
     url: '/refresh-tokens',
     method: 'POST',
     schema: {
-      body: fastify.getSchema('dto/refresh-token.json'),
+      body: fastify.getSchema('dto/authentication-refresh-tokens.json'),
       response: {
-        200: fastify.getSchema('dto/token-pair.json'),
+        200: fastify.getSchema('api/authentication/token-pair.json'),
       },
     },
     handler: async (request, reply) => {
@@ -56,11 +56,11 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Body: RefreshTokenDto }>({
+  fastify.route<{ Body: AuthenticationRefreshTokensDto }>({
     url: '/logout',
     method: 'POST',
     schema: {
-      body: fastify.getSchema('dto/refresh-token.json'),
+      body: fastify.getSchema('dto/authentication-refresh-tokens.json'),
     },
     handler: async (request, reply) => {
       const { refreshToken } = request.body;

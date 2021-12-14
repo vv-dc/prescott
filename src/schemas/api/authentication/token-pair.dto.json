@@ -1,5 +1,5 @@
 {
-  "$id": "dto/token-pair.json",
+  "$id": "api/authentication/token-pair.json",
   "type": "object",
   "properties": {
     "accessToken": { "type": "string" },

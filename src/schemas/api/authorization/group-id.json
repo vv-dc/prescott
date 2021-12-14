@@ -1,0 +1,9 @@
+{
+  "$id": "api/authorization/group-id.json",
+  "type": "object",
+  "properties": {
+    "groupId": { "type": "integer", "minimum": 1 }
+  },
+  "required": ["groupId"],
+  "additionalProperties": false
+}

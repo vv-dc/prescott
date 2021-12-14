@@ -1,4 +1,4 @@
-export interface AuthRegisterDto {
+export interface AuthenticationRegisterDto {
   login: string;
   fullName: string;
   email: string;

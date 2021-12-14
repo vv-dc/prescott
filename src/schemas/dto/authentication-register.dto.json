@@ -1,5 +1,5 @@
 {
-  "$id": "dto/auth-register.json",
+  "$id": "dto/authentication-register.json",
   "type": "object",
   "properties": {
     "login": { "type": "string", "maxLength": 120 },

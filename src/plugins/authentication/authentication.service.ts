@@ -1,21 +1,21 @@
 import { randomUUID } from 'crypto';
 
 import { config, AUTH_CONFIG } from '@config/config';
-import { AuthRegisterDto } from '@model/dto/auth-register.dto';
 import { UserService } from '@plugins/user/user.service';
 import { PasswordService } from '@plugins/authentication/password/password.service';
+import { JwtService } from '@plugins/authentication/jwt/jwt.service';
+import { RefreshSessionService } from '@plugins/authentication/refresh-session/refresh-session.service';
+import { RefreshSession } from '@plugins/authentication/refresh-session/model/refresh-session';
 import {
   AccessDenied,
   EntityConflict,
   EntityNotFound,
   UnauthorizedUser,
 } from '@modules/errors/abstract-errors';
-import { JwtService } from '@plugins/jwt/jwt.service';
-import { AuthLoginDto } from '@model/dto/auth-login.dto';
-import { RefreshSessionService } from '@plugins/authentication/refresh-session/refresh-session.service';
-import { TokenPairDto } from '@model/dto/token-pair.dto';
+import { AuthenticationRegisterDto } from '@model/dto/authentication-register.dto';
+import { AuthenticationLoginDto } from '@model/dto/authentication-login.dto';
+import { TokenPairDto } from '@model/api/authentication/token-pair.dto';
 import { UserPayload } from '@model/domain/user-payload';
-import { RefreshSession } from '@plugins/authentication/refresh-session/model/refresh-session';
 
 const { maxSessions, jwtConfig } = config[AUTH_CONFIG];
 
@@ -27,7 +27,7 @@ export class AuthenticationService {
     private userService: UserService
   ) {}
 
-  async register(registerData: AuthRegisterDto): Promise<void> {
+  async register(registerData: AuthenticationRegisterDto): Promise<void> {
     const { email, login, password } = registerData;
     if (await this.userService.findByEmail(email)) {
       throw new EntityConflict('Email is already taken');
@@ -42,7 +42,10 @@ export class AuthenticationService {
     });
   }
 
-  async login(loginData: AuthLoginDto, ip: string): Promise<TokenPairDto> {
+  async login(
+    loginData: AuthenticationLoginDto,
+    ip: string
+  ): Promise<TokenPairDto> {
     const { login, password } = loginData;
     const user = await this.userService.findByEmailOrLogin(login);
     if (!user) {
@@ -90,8 +93,7 @@ export class AuthenticationService {
     userId: number,
     ip: string
   ): Promise<TokenPairDto> {
-    const userRoles = await this.userService.findGroupRoles(userId);
-    const userPayload = { userId, userRoles } as UserPayload;
+    const userPayload = { userId } as UserPayload;
 
     const accessToken = (await this.jwtService.sign(userPayload)) as string;
     const refreshToken = randomUUID();

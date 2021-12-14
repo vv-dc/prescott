@@ -4,9 +4,10 @@ import * as fastify from 'fastify';
 import { DockerService } from '@plugins/docker/docker.service';
 import { UserService } from '@plugins/user/user.service';
 import { AuthenticationService } from '@plugins/authentication/authentication.service';
-import { JwtService } from '@plugins/authentication/jwt/jwt.service';
-import { JwtValidationHook } from '@plugins/jwt/model/jwt-validation-hook';
+import { AuthorizationService } from '@plugins/authorization/authorization.service';
+import { JwtValidationHook } from '@src/plugins/authentication/jwt/model/jwt-validation-hook';
 import { PgConnection } from '@model/shared/pg-connection';
+import { UserPayload } from '@model/domain/user-payload';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -14,7 +15,11 @@ declare module 'fastify' {
     dockerService: DockerService;
     userService: UserService;
     authenticationService: AuthenticationService;
-    jwtService: JwtService;
+    authorizationService: AuthorizationService;
     jwtValidationHook: JwtValidationHook;
+  }
+
+  export interface FastifyRequest {
+    payload: UserPayload;
   }
 }
