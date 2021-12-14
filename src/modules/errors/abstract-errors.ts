@@ -16,3 +16,15 @@ export class AccessDenied extends AbstractError {
     super(message);
   }
 }
+
+export class EntityNotFound extends AbstractError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+export class UnauthorizedUser extends AbstractError {
+  constructor(message: string) {
+    super(message);
+  }
+}

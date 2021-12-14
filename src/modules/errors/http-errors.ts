@@ -22,3 +22,14 @@ export class HttpForbidden extends HttpError {
     super(message, 403);
   }
 }
+
+export class HttpNotFound extends HttpError {
+  constructor(message: string) {
+    super(message, 403);
+  }
+}
+export class HttpUnauthorized extends HttpError {
+  constructor(message: string) {
+    super(message, 403);
+  }
+}

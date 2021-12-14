@@ -1,5 +1,5 @@
 import { PgConnection } from '@model/shared/pg-connection';
-import { RefreshSession } from '@model/domain/refresh-session';
+import { RefreshSession } from '@plugins/authentication/refresh-session/model/refresh-session';
 
 export class RefreshSessionDao {
   constructor(private pg: PgConnection) {}
@@ -27,6 +27,16 @@ export class RefreshSessionDao {
     await this.pg<RefreshSession>('refresh_sessions')
       .where({ userId })
       .delete();
+  }
+
+  async deleteByTokenAndGet(
+    refreshToken: string
+  ): Promise<RefreshSession | undefined> {
+    const sessions = await this.pg<RefreshSession>('refresh_sessions')
+      .where({ refreshToken })
+      .delete()
+      .returning('*');
+    return sessions[0];
   }
 
   async add(session: RefreshSession): Promise<void> {

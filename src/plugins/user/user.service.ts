@@ -23,14 +23,17 @@ export class UserService {
 
   async findGroupRoles(userId: number): Promise<UserRoles> {
     const groupRoles = await this.dao.findGroupRoles(userId);
-    const userRoles = groupRoles.reduce(
-      (userRoles, { groupId, roleId }) => ({ ...userRoles, [groupId]: roleId }),
-      {}
-    );
+    const userRoles = {} as UserRoles;
+    for (const { groupId, roleId } of groupRoles) {
+      if (!(groupId in userRoles)) {
+        userRoles[groupId] = [];
+      }
+      userRoles[groupId].push(roleId);
+    }
     return userRoles;
   }
 
-  async add(user: AuthRegisterDto): Promise<void> {
+  async create(user: AuthRegisterDto): Promise<void> {
     await this.dao.add(user);
   }
 }

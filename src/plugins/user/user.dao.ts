@@ -1,7 +1,7 @@
 import { PgConnection } from '@model/shared/pg-connection';
 import { User } from '@model/domain/user';
-import { AuthRegisterDto } from '@src/model/dto/auth-register.dto';
-import { GroupRoles } from '@src/model/domain/group-roles';
+import { AuthRegisterDto } from '@model/dto/auth-register.dto';
+import { GroupRoles } from '@plugins/user/model/group-roles';
 
 export class UserDao {
   constructor(private pg: PgConnection) {}
@@ -26,8 +26,8 @@ export class UserDao {
   }
 
   async findGroupRoles(userId: number): Promise<GroupRoles[]> {
-    const groupRoles = await this.pg<GroupRoles>('user_roles')
-      .select(
+    const groupRoles = await this.pg('user_roles')
+      .select<GroupRoles[]>(
         'user_groups.group_id as group_id',
         'user_roles.role_id as role_id'
       )

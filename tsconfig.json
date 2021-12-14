@@ -21,7 +21,6 @@
       "@plugins/*": ["./src/plugins/*"],
       "@model/*": ["./src/model/*"],
       "@modules/*": ["./src/modules/*"],
-      "@schema/*": ["./src/schemas/*"],
       "@test/*": ["./test/*"]
     }
   },

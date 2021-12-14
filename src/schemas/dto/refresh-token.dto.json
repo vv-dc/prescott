@@ -1,10 +1,9 @@
 {
-  "$id": "dto/token-pair.json",
+  "$id": "dto/refresh-token.json",
   "type": "object",
   "properties": {
-    "accessToken": { "type": "string" },
     "refreshToken": { "type": "string", "format": "uuid" }
   },
-  "required": ["accessToken", "refreshToken"],
+  "required": ["refreshToken"],
   "additionalProperties": false
 }

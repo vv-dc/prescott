@@ -1,20 +1,25 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 import { config, AUTH_CONFIG } from '@config/config';
 import { AuthRegisterDto } from '@model/dto/auth-register.dto';
 import { UserService } from '@plugins/user/user.service';
-import { PasswordService } from '@plugins/auth/services/password.service';
-import { AccessDenied, EntityConflict } from '@modules/errors/abstract-errors';
-import { JwtService } from './jwt.service';
-import { AuthLoginDto } from '@src/model/dto/auth-login.dto';
-import { RefreshSessionService } from './refresh-session.service';
-import { TokenPairDto } from '@src/model/dto/token-pair.dto';
-import { UserPayload } from '@src/model/domain/user-payload';
-import { RefreshSession } from '@src/model/domain/refresh-session';
+import { PasswordService } from '@plugins/authentication/password/password.service';
+import {
+  AccessDenied,
+  EntityConflict,
+  EntityNotFound,
+  UnauthorizedUser,
+} from '@modules/errors/abstract-errors';
+import { JwtService } from '@plugins/jwt/jwt.service';
+import { AuthLoginDto } from '@model/dto/auth-login.dto';
+import { RefreshSessionService } from '@plugins/authentication/refresh-session/refresh-session.service';
+import { TokenPairDto } from '@model/dto/token-pair.dto';
+import { UserPayload } from '@model/domain/user-payload';
+import { RefreshSession } from '@plugins/authentication/refresh-session/model/refresh-session';
 
 const { maxSessions, jwtConfig } = config[AUTH_CONFIG];
 
-export class AuthService {
+export class AuthenticationService {
   constructor(
     private jwtService: JwtService,
     private passwordService: PasswordService,
@@ -31,7 +36,10 @@ export class AuthService {
       throw new EntityConflict('Login is already taken');
     }
     const hashedPassword = await this.passwordService.hash(password);
-    await this.userService.add({ ...registerData, password: hashedPassword });
+    await this.userService.create({
+      ...registerData,
+      password: hashedPassword,
+    });
   }
 
   async login(loginData: AuthLoginDto, ip: string): Promise<TokenPairDto> {
@@ -52,12 +60,41 @@ export class AuthService {
     return await this.addRefreshSession(userId, ip);
   }
 
-  async addRefreshSession(userId: number, ip: string): Promise<TokenPairDto> {
+  async refreshTokens(refreshToken: string, ip: string): Promise<TokenPairDto> {
+    const session = await this.refreshSessionService.deleteByTokenAndGet(
+      refreshToken
+    );
+    if (!session || session.ip !== ip) {
+      throw new EntityNotFound('Invalid refresh session');
+    }
+    const { userId, expiresIn, createdAt } = session;
+    const now = Date.now();
+    const expirationTime = createdAt.getTime() + expiresIn;
+
+    if (expirationTime < now) {
+      throw new UnauthorizedUser('Token expired');
+    }
+    return await this.addRefreshSession(userId, ip);
+  }
+
+  async logout(refreshToken: string, ip: string): Promise<void> {
+    const session = await this.refreshSessionService.deleteByTokenAndGet(
+      refreshToken
+    );
+    if (!session || session.ip !== ip) {
+      throw new EntityNotFound('Invalid refresh session');
+    }
+  }
+
+  private async addRefreshSession(
+    userId: number,
+    ip: string
+  ): Promise<TokenPairDto> {
     const userRoles = await this.userService.findGroupRoles(userId);
     const userPayload = { userId, userRoles } as UserPayload;
 
     const accessToken = (await this.jwtService.sign(userPayload)) as string;
-    const refreshToken = uuidv4();
+    const refreshToken = randomUUID();
 
     const sessions = await this.refreshSessionService.findByUser(userId);
     if (sessions.length >= maxSessions) {
@@ -70,7 +107,7 @@ export class AuthService {
       expiresIn: jwtConfig.refreshExpiresIn,
       createdAt: new Date(),
     } as RefreshSession;
-    await this.refreshSessionService.add(refreshSession);
+    await this.refreshSessionService.create(refreshSession);
     return { accessToken, refreshToken };
   }
 }

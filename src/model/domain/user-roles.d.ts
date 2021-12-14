@@ -1,3 +1,3 @@
 export type UserRoles = {
-  [key: number]: number;
+  [key: number]: number[];
 };
