@@ -1,5 +1,5 @@
 export interface TaskCronConfig {
-  name: string;
+  taskId: number;
   cronString: string;
   callback: () => Promise<void>;
 }

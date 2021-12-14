@@ -8,10 +8,6 @@ export class TaskDao {
     return this.db('tasks').first<Task>().where({ id });
   }
 
-  async findByName(name: string): Promise<Task> {
-    return this.db('tasks').first<Task>().where({ name });
-  }
-
   async findAll(): Promise<Task[]> {
     return this.db<Task>('tasks').select('*');
   }
@@ -25,7 +21,7 @@ export class TaskDao {
         groupId,
         config,
       })
-      .returning<[number]>('id');
+      .returning('id');
     return id;
   }
 
@@ -37,7 +33,7 @@ export class TaskDao {
     await this.db('tasks').delete().where({ id });
   }
 
-  async deleteByName(name: string): Promise<void> {
-    await this.db('tasks').delete().where({ name });
+  async setActive(id: number, value: boolean): Promise<void> {
+    await this.db('tasks').update({ active: value }).where({ id });
   }
 }

@@ -2,16 +2,17 @@ import { DockerService } from '@plugins/docker/docker.service';
 import { TaskDao } from '@plugins/task/task.dao';
 import { TaskService } from '@plugins/task/task.service';
 import { getScheduledTasks } from '@plugins/task/task.repository';
-import { buildTaskIdentifier } from '@plugins/task/task.utils';
-import { cronEveryNSeconds } from '@lib/cron.utils';
+import { buildTaskUniqueName } from '@plugins/task/task.utils';
+import { cronEveryNMinutes, cronEveryNSeconds } from '@lib/cron.utils';
 import { delay } from '@lib/time.utils';
 import { PgConnection } from '@model/shared/pg-connection';
-import { TaskConfigDto } from '@model/dto/task-config-dto';
+import { LocalTaskConfig, TaskConfigDto } from '@model/dto/task-config.dto';
 import { DOCKER_IMAGES } from '@test/lib/test.const';
 import { getConnection } from '@test/lib/test.utils';
 
 describe('task.service integration', () => {
   let taskService: TaskService;
+  let taskDao: TaskDao;
   let pg: PgConnection;
 
   const createGroup = async (): Promise<{ groupId: number }> => {
@@ -43,7 +44,8 @@ describe('task.service integration', () => {
 
   beforeAll(async () => {
     pg = getConnection();
-    taskService = new TaskService(new TaskDao(pg), new DockerService());
+    taskDao = new TaskDao(pg);
+    taskService = new TaskService(taskDao, new DockerService());
   });
 
   afterAll(async () => {
@@ -55,15 +57,13 @@ describe('task.service integration', () => {
     const { userId } = await createUser();
 
     const taskName = 'mock_task_name';
-    const identifier = buildTaskIdentifier(groupId, taskName);
+    const identifier = buildTaskUniqueName(groupId, taskName);
 
     const taskConfigDto: TaskConfigDto = {
       name: taskName,
       osInfo: DOCKER_IMAGES.alpine,
       config: {
-        local: {
-          cronString: cronEveryNSeconds(1),
-        },
+        local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
           steps: [
             // sleep 100 makes test hang until delete
@@ -77,15 +77,14 @@ describe('task.service integration', () => {
 
     const cronTasksNames = Object.keys(getScheduledTasks());
     expect(cronTasksNames).toHaveLength(1);
-    expect(cronTasksNames[0]).toEqual(identifier);
+    expect(cronTasksNames[0]).toEqual(taskId.toString());
 
-    const tasks = await pg('tasks').select();
-    expect(tasks).toHaveLength(1);
-    expect(tasks[0]).toMatchObject({ name: identifier });
+    const beforeTask = await taskDao.findById(taskId);
+    expect(beforeTask).toMatchObject({ name: identifier });
 
     await taskService.deleteTask(taskId);
 
-    expect(await pg('tasks').select()).toHaveLength(0);
+    expect(await taskDao.findById(taskId)).toEqual(undefined);
     expect(getScheduledTasks()).toStrictEqual({}); // is empty
   });
 
@@ -98,23 +97,85 @@ describe('task.service integration', () => {
       osInfo: DOCKER_IMAGES.alpine,
       once: true, // should delete both task and db entry
       config: {
-        local: {
-          cronString: cronEveryNSeconds(1),
-        },
+        local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
           steps: [{ name: 'first', script: 'echo "hello world!"' }],
         },
       },
     };
 
-    await taskService.createTask(groupId, userId, taskConfigDto);
+    const taskId = await taskService.createTask(groupId, userId, taskConfigDto);
     await delay(5e3); // wait 5 seconds to be sure it's deleted
 
-    const tasks = await pg('tasks').select();
+    const task = await taskDao.findById(taskId);
     const cronTasks = getScheduledTasks();
 
-    expect(tasks).toHaveLength(0);
+    expect(task).toEqual(undefined);
     expect(cronTasks).toStrictEqual({});
+  });
+
+  it('should stop and then start task', async () => {
+    const { groupId } = await createGroup();
+    const { userId } = await createUser();
+
+    const taskConfigDto: TaskConfigDto = {
+      name: 'mock_task_name',
+      osInfo: DOCKER_IMAGES.alpine,
+      config: {
+        local: { cronString: cronEveryNMinutes(5) },
+        appConfig: {
+          steps: [{ name: 'first', script: 'echo "hello world!"' }],
+        },
+      },
+    };
+
+    const taskId = await taskService.createTask(groupId, userId, taskConfigDto);
+
+    await taskService.stopTask(taskId);
+    const stoppedTask = await taskService.getTask(taskId);
+    expect(stoppedTask).toMatchObject({ active: false });
+    expect(getScheduledTasks()).toHaveProperty(taskId.toString());
+
+    await taskService.startTask(taskId);
+    const startedTask = await taskService.getTask(taskId);
+    expect(startedTask).toMatchObject({ active: true });
+
+    await taskService.deleteTask(taskId);
+  });
+
+  it('should update partial config', async () => {
+    const { groupId } = await createGroup();
+    const { userId } = await createUser();
+
+    const oldPartialConfig: LocalTaskConfig = {
+      local: { cronString: cronEveryNMinutes(5) },
+      appConfig: {
+        steps: [{ name: 'old', script: 'echo "old hello"' }],
+      },
+    };
+
+    const taskConfig: TaskConfigDto = {
+      name: 'mock_task_name',
+      osInfo: DOCKER_IMAGES.alpine,
+      config: oldPartialConfig,
+    };
+
+    const taskId = await taskService.createTask(groupId, userId, taskConfig);
+    const { config: oldTaskConfig } = await taskService.getTask(taskId);
+    expect(oldTaskConfig).toMatchObject(oldPartialConfig);
+
+    const newPartialConfig: LocalTaskConfig = {
+      local: { cronString: cronEveryNMinutes(10) },
+      appConfig: {
+        steps: [{ name: 'new', script: 'echo "new hello"' }],
+      },
+    };
+
+    await taskService.updateTask(groupId, taskId, newPartialConfig);
+    const { config: newTaskConfig } = await taskService.getTask(taskId);
+    expect(newTaskConfig).toMatchObject(newPartialConfig);
+
+    await taskService.deleteTask(taskId);
   });
 
   // TODO: add more tests to check stages when metrics will be ready

@@ -3,9 +3,8 @@
   "type": "object",
   "properties": {
     "groupId": { "type": "integer" },
-    "userId": { "type": "integer" },
     "taskId": { "type": "integer" }
   },
-  "required": ["groupId", "userId", "taskId"],
+  "required": ["groupId", "taskId"],
   "additionalProperties": false
 }

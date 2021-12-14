@@ -2,9 +2,9 @@ import { DockerService } from '@plugins/docker/docker.service';
 import { buildImage } from '@plugins/docker/docker.utils';
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { delay } from '@lib/time.utils';
+import { generateRandomString } from '@lib/random.utils';
 import { DockerBuildDto } from '@model/dto/docker-build.dto';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
-import { generateRandomString } from '@test/lib/test.utils';
 import { DOCKER_IMAGES, OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 
 describe('docker.service integration', () => {

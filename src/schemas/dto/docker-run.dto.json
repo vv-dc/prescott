@@ -1,5 +1,5 @@
 {
-  "$id": "dto/docker-run.json",
+  "$id": "dto/docker-run.dto.json",
   "properties": {
     "image": { "type": "string" },
     "container": { "type": "string" },

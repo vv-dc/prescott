@@ -4,4 +4,5 @@ export interface Task {
   userId: number;
   groupId: number;
   config: string;
+  active?: boolean;
 }

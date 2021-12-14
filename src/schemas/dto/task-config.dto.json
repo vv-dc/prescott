@@ -1,5 +1,5 @@
 {
-  "$id": "dto/task-config-dto.json",
+  "$id": "dto/task-config.dto.json",
   "type": "object",
   "properties": {
     "name": { "type": "string" },

@@ -6,7 +6,8 @@
     "name": { "type": "string" },
     "userId": { "type": "integer" },
     "groupId": { "type": "integer" },
-    "config": { "type": "string" }
+    "config": { "type": "string" },
+    "active": { "type": "boolean", "default": true }
   },
   "required": ["name", "userId", "groupId", "config"],
   "additionalProperties": false

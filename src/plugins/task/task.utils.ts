@@ -1,5 +1,5 @@
 import { CommandBuilder } from '@lib/command-builder';
-import { Step } from '@model/dto/task-config-dto';
+import { Step } from '@model/dto/task-config.dto';
 
 export const buildDockerCmd = (separator: string, steps: Step[]): string => {
   const command = new CommandBuilder().init('echo').with(separator);
@@ -13,5 +13,8 @@ export const buildDockerCmd = (separator: string, steps: Step[]): string => {
   return command.build();
 };
 
-export const buildTaskIdentifier = (groupId: number, name: string): string =>
+export const buildTaskUniqueName = (groupId: number, name: string): string =>
   `${groupId}_${name}`;
+
+export const buildTaskIdentifier = (taskId: number): string =>
+  `prescott_${taskId}`;
