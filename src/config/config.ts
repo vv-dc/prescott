@@ -38,7 +38,7 @@ export const config = {
     } as PasswordConfig,
     jwtConfig: {
       secret: process.env.JWT_SECRET,
-      accessExpiresIn: 9e5,
+      accessExpiresIn: 900, // in seconds
       refreshExpiresIn: 5.184e9,
     } as JwtConfig,
     maxSessions: 5,

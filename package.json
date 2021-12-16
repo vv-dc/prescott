@@ -8,7 +8,7 @@
   "scripts": {
     "pre-build": "rimraf build/",
     "build": "yarn pre-build && yarn tsc -p ./tsconfig.json",
-    "start": "node -r ts-node/register -r tsconfig-paths/register ./build/src/server.js | pino-pretty",
+    "start": "node -r ts-node/register -r tsconfig-paths/register ./build/src/server.js | pino-pretty -c -t",
     "test": "jest",
     "test:unit": "jest --testPathPattern=test/unit",
     "test:integration": "jest --testPathPattern=test/integration",

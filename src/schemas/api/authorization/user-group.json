@@ -1,0 +1,10 @@
+{
+  "$id": "api/authorization/user-group.json",
+  "type": "object",
+  "properties": {
+    "groupId": { "type": "integer", "minimum": 1 },
+    "userId": { "type": "integer", "minimum": 1 }
+  },
+  "required": ["groupId", "userId"],
+  "additionalProperties": false
+}

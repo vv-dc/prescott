@@ -1,0 +1,9 @@
+{
+  "$id": "domain/access-token.json",
+  "type": "object",
+  "properties": {
+    "authorization": { "type": "string" }
+  },
+  "required": [],
+  "additionalProperties": false
+}

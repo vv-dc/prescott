@@ -24,6 +24,11 @@ export class UserDao {
     return user;
   }
 
+  async findById(id: number): Promise<User | undefined> {
+    const user = await this.pg<User>('users').select().where({ id }).first();
+    return user;
+  }
+
   async add(user: AuthenticationRegisterDto): Promise<void> {
     await this.pg<AuthenticationRegisterDto>('users').insert(user);
   }

@@ -20,6 +20,11 @@ export class UserService {
     return user;
   }
 
+  async findById(userId: number): Promise<User | undefined> {
+    const user = await this.dao.findById(userId);
+    return user;
+  }
+
   async create(user: AuthenticationRegisterDto): Promise<void> {
     await this.dao.add(user);
   }

@@ -1,9 +1,5 @@
-import { FastifyInstance, FastifyReply } from 'fastify';
+import { Hook } from '@model/shared/hook';
 
-import { AuthRequest } from '@model/shared/auth-request';
-
-export type JwtValidationHook = (
-  this: FastifyInstance,
-  request: AuthRequest,
-  reply: FastifyReply
-) => Promise<FastifyReply | void>;
+export type JwtValidationHook = Hook<{
+  Headers: { authorization?: string };
+}>;
