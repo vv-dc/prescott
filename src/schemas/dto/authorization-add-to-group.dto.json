@@ -1,0 +1,9 @@
+{
+  "$id": "dto/authorization-add-to-group.json",
+  "type": "object",
+  "properties": {
+    "userId": { "type": "integer" }
+  },
+  "required": ["userId"],
+  "additionalProperties": false
+}

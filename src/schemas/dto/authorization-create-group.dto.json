@@ -1,0 +1,9 @@
+{
+  "$id": "dto/authorization-create-group.json",
+  "type": "object",
+  "properties": {
+    "groupName": { "type": "string", "maxLength": 120 }
+  },
+  "required": ["groupName"],
+  "additionalProperties": false
+}
