@@ -16,8 +16,10 @@ const authorization: FastifyPluginAsync = async (fastify) => {
 
   const groupDao = new GroupDao(pg);
   const groupService = new GroupService(groupDao);
+
   const roleDao = new RoleDao(pg);
-  const roleService = new RoleService(roleDao);
+  const roleService = new RoleService(roleDao, groupService);
+
   const permissionDao = new PermissionDao(pg);
   const permissionService = new PermissionService(permissionDao);
 

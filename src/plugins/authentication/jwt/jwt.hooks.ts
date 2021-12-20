@@ -5,6 +5,7 @@ import { JwtService } from '@plugins/authentication/jwt/jwt.service';
 import { JwtValidationHook } from '@plugins/authentication/jwt/model/jwt-validation-hook';
 import { UserPayload } from '@model/domain/user-payload';
 import { replyWithError } from '@modules/fastify/reply-with-error';
+import { AccessToken } from '@model/api/authentication/access-token';
 
 const BEARER = 'Bearer';
 
@@ -12,7 +13,7 @@ export const createValidationHook = (
   jwtService: JwtService
 ): JwtValidationHook => {
   const validationHook = async (
-    request: FastifyRequest<{ Headers: { authorization?: string } }>,
+    request: FastifyRequest<{ Headers: AccessToken }>,
     reply: FastifyReply
   ): Promise<FastifyReply | void> => {
     const error = new HttpUnauthorized('Invalid access token');

@@ -7,8 +7,9 @@ import {
   EntityNotFound,
 } from '@modules/errors/abstract-errors';
 import { Group } from '@plugins/authorization/group/model/group';
+import { Role } from '@plugins/authorization/role/model/role';
 
-const SPECIAL_ROLES = ['group_manager', 'role_manager'];
+const ROLES = ['group_manager', 'role_manager'];
 
 export class AuthorizationService {
   constructor(
@@ -18,12 +19,8 @@ export class AuthorizationService {
   ) {}
 
   async createGroup(groupName: string, userId: number): Promise<number> {
-    const user = await this.userService.findById(userId);
-    if (user === undefined) {
-      throw new EntityNotFound('User does not exist');
-    }
     const group = await this.groupService.findByName(groupName);
-    if (group) {
+    if (group !== undefined) {
       throw new EntityConflict('Group already exists');
     }
     const groupId = await this.groupService.create(groupName, userId);
@@ -63,10 +60,60 @@ export class AuthorizationService {
 
     if (managerId !== ownerId) {
       const roles = await this.roleService.findByGroupAndUser(groupId, userId);
-      if (SPECIAL_ROLES.some(roles.includes)) {
+
+      if (ROLES.some(roles.includes) || userId === ownerId) {
         throw new AccessDenied('User do not have required privileges');
       }
     }
     await this.groupService.deleteUser(groupId, userId);
+  }
+
+  async addUserRole(
+    groupId: number,
+    managerId: number,
+    userId: number,
+    roleName: string
+  ): Promise<void> {
+    if (managerId === userId) {
+      throw new EntityConflict('User can not add role to himself');
+    }
+    const userRoles = await this.roleService.findByGroupAndUser(
+      groupId,
+      userId
+    );
+    const group = await this.groupService.findById(groupId);
+    const { ownerId } = group as Group;
+
+    if (managerId !== ownerId && ROLES.some(userRoles.includes)) {
+      throw new AccessDenied('User must be an owner to add this role');
+    }
+    if (userRoles.includes(roleName)) {
+      throw new AccessDenied('User already has this role');
+    }
+    const role = await this.roleService.findByName(roleName);
+    const { id: roleId } = role as Role;
+
+    await this.roleService.add(groupId, userId, roleId);
+  }
+
+  async deleteUserRole(
+    groupId: number,
+    managerId: number,
+    userId: number,
+    roleName: string
+  ): Promise<void> {
+    if (managerId === userId) {
+      throw new EntityConflict('User can not remove own role');
+    }
+    const group = await this.groupService.findById(groupId);
+    const { ownerId } = group as Group;
+
+    if (managerId !== ownerId && ROLES.includes(roleName)) {
+      throw new AccessDenied('User must be an owner to remove this role');
+    }
+    const role = await this.roleService.findByName(roleName);
+    const { id: roleId } = role as Role;
+
+    await this.roleService.remove(groupId, userId, roleId);
   }
 }

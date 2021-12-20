@@ -2,7 +2,7 @@
   "$id": "api/authorization/group-id.json",
   "type": "object",
   "properties": {
-    "groupId": { "type": "integer", "minimum": 1 }
+    "groupId": { "type": "integer" }
   },
   "required": ["groupId"],
   "additionalProperties": false

@@ -29,10 +29,10 @@ export class AuthenticationService {
 
   async register(registerData: AuthenticationRegisterDto): Promise<void> {
     const { email, login, password } = registerData;
-    if (await this.userService.findByEmail(email)) {
+    if ((await this.userService.findByEmail(email)) !== undefined) {
       throw new EntityConflict('Email is already taken');
     }
-    if (await this.userService.findByLogin(login)) {
+    if ((await this.userService.findByLogin(login)) !== undefined) {
       throw new EntityConflict('Login is already taken');
     }
     const hashedPassword = await this.passwordService.hash(password);
@@ -48,12 +48,12 @@ export class AuthenticationService {
   ): Promise<TokenPairDto> {
     const { login, password } = loginData;
     const user = await this.userService.findByEmailOrLogin(login);
-    if (!user) {
+    if (user === undefined) {
       throw new AccessDenied('Incorrect login');
     }
     const { id: userId, password: hashedPassword } = user;
     const session = await this.refreshSessionService.findByIp(userId, ip);
-    if (session) {
+    if (session !== undefined) {
       throw new AccessDenied('Already logged in');
     }
     const valid = await this.passwordService.verify(hashedPassword, password);
@@ -67,7 +67,7 @@ export class AuthenticationService {
     const session = await this.refreshSessionService.deleteByTokenAndGet(
       refreshToken
     );
-    if (!session || session.ip !== ip) {
+    if (session === undefined || session.ip !== ip) {
       throw new EntityNotFound('Invalid refresh session');
     }
     const { userId, expiresIn, createdAt } = session;
@@ -84,7 +84,7 @@ export class AuthenticationService {
     const session = await this.refreshSessionService.deleteByTokenAndGet(
       refreshToken
     );
-    if (!session || session.ip !== ip) {
+    if (session === undefined || session.ip !== ip) {
       throw new EntityNotFound('Invalid refresh session');
     }
   }

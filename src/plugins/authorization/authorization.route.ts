@@ -1,10 +1,12 @@
 import { FastifyPluginAsync } from 'fastify';
 
 import { AuthorizationCreateGroupDto } from '@model/dto/authorization-create-group.dto';
-import { AuthorizationAddUserToGroupDto } from '@model/dto/authorization-add-user-to-group.dto';
+import { AuthorizationAddToGroupDto } from '@model/dto/authorization-add-to-group.dto';
 import { GroupId } from '@model/api/authorization/group-id';
-import { UserGroup } from '@model/api/authorization/user-group';
-import { AccessToken } from '@model/domain/access-token';
+import { UserGroupParams } from '@model/api/authorization/user-group-params';
+import { AccessToken } from '@model/api/authentication/access-token';
+import { AuthorizationAddRoleDto } from '@model/dto/authorization-add-role.dto';
+import { UserRoleParams } from '@model/api/authorization/user-role-params';
 
 export const authoriationRoutes: FastifyPluginAsync = async (fastify) => {
   const {
@@ -19,8 +21,8 @@ export const authoriationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/',
     method: 'POST',
     schema: {
+      headers: fastify.getSchema('api/authentication/access-token.json'),
       body: fastify.getSchema('dto/authorization-create-group.json'),
-      headers: fastify.getSchema('domain/access-token.json'),
       response: {
         200: fastify.getSchema('api/authorization/group-id.json'),
       },
@@ -37,7 +39,7 @@ export const authoriationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/:groupId',
     method: 'DELETE',
     schema: {
-      headers: fastify.getSchema('domain/access-token.json'),
+      headers: fastify.getSchema('api/authentication/access-token.json'),
       params: fastify.getSchema('api/authorization/group-id.json'),
     },
     preHandler: [authHooks.groupOwnerHook],
@@ -51,14 +53,14 @@ export const authoriationRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.route<{
     Params: GroupId;
     Headers: AccessToken;
-    Body: AuthorizationAddUserToGroupDto;
+    Body: AuthorizationAddToGroupDto;
   }>({
     url: '/:groupId/users',
     method: 'POST',
     schema: {
-      headers: fastify.getSchema('domain/access-token.json'),
+      headers: fastify.getSchema('api/authentication/access-token.json'),
       params: fastify.getSchema('api/authorization/group-id.json'),
-      body: fastify.getSchema('dto/authorization-add-user-to-group.json'),
+      body: fastify.getSchema('dto/authorization-add-to-group.json'),
     },
     preHandler: [authHooks.roleHook('group_manager')],
     handler: async (request, reply) => {
@@ -69,18 +71,56 @@ export const authoriationRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Params: UserGroup; Headers: AccessToken }>({
+  fastify.route<{ Params: UserGroupParams; Headers: AccessToken }>({
     url: '/:groupId/users/:userId',
     method: 'DELETE',
     schema: {
-      headers: fastify.getSchema('domain/access-token.json'),
-      params: fastify.getSchema('api/authorization/user-group.json'),
+      headers: fastify.getSchema('api/authentication/access-token.json'),
+      params: fastify.getSchema('api/authorization/user-group-params.json'),
     },
     preHandler: [authHooks.roleHook('group_manager')],
     handler: async (request, reply) => {
       const { userId: managerId } = request.payload;
       const { groupId, userId } = request.params;
       await authService.deleteUserFromGroup(groupId, managerId, userId);
+      reply.code(204).send();
+    },
+  });
+
+  fastify.route<{
+    Params: UserGroupParams;
+    Headers: AccessToken;
+    Body: AuthorizationAddRoleDto;
+  }>({
+    url: '/:groupId/users/:userId/roles',
+    method: 'POST',
+    schema: {
+      headers: fastify.getSchema('api/authentication/access-token.json'),
+      params: fastify.getSchema('api/authorization/user-group-params.json'),
+      body: fastify.getSchema('dto/authorization-add-role.json'),
+    },
+    preHandler: [authHooks.roleHook('role_manager')],
+    handler: async (request, reply) => {
+      const { role } = request.body;
+      const { userId: managerId } = request.payload;
+      const { groupId, userId } = request.params;
+      await authService.addUserRole(groupId, managerId, userId, role);
+      reply.code(204).send();
+    },
+  });
+
+  fastify.route<{ Params: UserRoleParams; Headers: AccessToken }>({
+    url: '/:groupId/users/:userId/roles/:role',
+    method: 'DELETE',
+    schema: {
+      headers: fastify.getSchema('api/authentication/access-token.json'),
+      params: fastify.getSchema('api/authorization/user-role-params.json'),
+    },
+    preHandler: [authHooks.roleHook('role_manager')],
+    handler: async (request, reply) => {
+      const { userId: managerId } = request.payload;
+      const { role, groupId, userId } = request.params;
+      await authService.deleteUserRole(groupId, managerId, userId, role);
       reply.code(204).send();
     },
   });

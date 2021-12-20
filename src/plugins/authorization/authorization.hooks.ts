@@ -19,7 +19,7 @@ export const makeAuthHooks = (
     userId: number
   ): Promise<boolean> => {
     const group = await groupService.findById(groupId);
-    if (!group) {
+    if (group === undefined) {
       throw new HttpNotFound('Group does not exist');
     }
     return group.ownerId === userId;

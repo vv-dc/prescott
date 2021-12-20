@@ -1,0 +1,17 @@
+{
+  "$id": "dto/authorization-add-role.json",
+  "type": "object",
+  "properties": {
+    "role": {
+      "enum": [
+        "role_manager",
+        "group_manager",
+        "task_manager",
+        "task_viewer",
+        "metric_viewer"
+      ]
+    }
+  },
+  "required": ["role"],
+  "additionalProperties": false
+}

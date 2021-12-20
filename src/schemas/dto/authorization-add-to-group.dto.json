@@ -1,8 +1,8 @@
 {
-  "$id": "dto/authorization-add-user-to-group.json",
+  "$id": "dto/authorization-add-to-group.json",
   "type": "object",
   "properties": {
-    "userId": { "type": "number", "minimum": 1 }
+    "userId": { "type": "integer" }
   },
   "required": ["userId"],
   "additionalProperties": false

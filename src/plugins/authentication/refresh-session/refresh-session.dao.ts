@@ -9,9 +9,7 @@ export class RefreshSessionDao {
     ip: string
   ): Promise<RefreshSession | undefined> {
     const session = await this.pg<RefreshSession>('refresh_sessions')
-      .select()
-      .where({ userId })
-      .andWhere({ ip })
+      .where({ userId, ip })
       .first();
     return session;
   }

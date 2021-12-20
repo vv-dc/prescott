@@ -1,0 +1,19 @@
+{
+  "$id": "api/authorization/user-role-params.json",
+  "type": "object",
+  "properties": {
+    "role": {
+      "enum": [
+        "role_manager",
+        "group_manager",
+        "task_manager",
+        "task_viewer",
+        "metric_viewer"
+      ]
+    },
+    "groupId": { "type": "integer" },
+    "userId": { "type": "integer" }
+  },
+  "required": ["role", "groupId", "userId"],
+  "additionalProperties": false
+}
