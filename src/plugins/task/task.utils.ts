@@ -6,8 +6,9 @@ export const buildDockerCmd = (separator: string, steps: Step[]): string => {
 
   for (const step of steps) {
     const { script, ignoreFailure } = step;
-    const method = ignoreFailure ? 'then' : 'thenExec';
-    command[method](script).then('echo').with(separator);
+    const scriptParsed = Buffer.from(script, 'base64').toString('utf-8');
+    const method = ignoreFailure === true ? 'then' : 'chain';
+    command.then(scriptParsed)[method]('echo').with(separator);
   }
 
   return command.build();

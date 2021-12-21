@@ -94,7 +94,10 @@ export class TaskService {
     }
   }
 
+  // we do not want to make user wait until build
+  // so we just create task, but start it only after build
   private async buildClearTask(
+    taskId: number,
     identifier: string,
     osInfo: OsInfo,
     steps: Step[]
@@ -106,6 +109,7 @@ export class TaskService {
       once: true,
       copy: false,
     });
+    taskRepository.startTask(taskId);
   }
 
   async createTask(
@@ -113,23 +117,27 @@ export class TaskService {
     userId: number,
     taskConfig: TaskConfigDto
   ): Promise<number> {
-    const { name, osInfo, config } = taskConfig;
+    const { name, osInfo, config, once } = taskConfig;
     const clearTask = !('repository' in config);
 
     const taskId = await this.dao.create({
       userId,
       groupId,
       name: buildTaskUniqueName(groupId, name),
+      active: !once, // one time task should be disabled immediately
       config: JSON.stringify(taskConfig),
     });
 
     const identifier = buildTaskIdentifier(taskId);
+    await this.register(identifier, taskId, taskConfig); // cron job created, but not started
+
     if (clearTask) {
       const { steps } = config.appConfig;
-      await this.buildClearTask(identifier, osInfo, steps);
+      setImmediate(() => {
+        this.buildClearTask(taskId, identifier, osInfo, steps);
+      });
     }
 
-    await this.register(identifier, taskId, taskConfig);
     return taskId;
   }
 
@@ -165,7 +173,9 @@ export class TaskService {
       const { config } = await this.dao.findById(taskId);
       const identifier = buildTaskIdentifier(taskId);
       await this.register(identifier, taskId, JSON.parse(config));
-    } else taskRepository.startTask(taskId);
+    }
+
+    taskRepository.startTask(taskId);
   }
 
   async updateTask(

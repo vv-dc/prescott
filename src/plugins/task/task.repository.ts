@@ -18,7 +18,6 @@ export const deleteTask = (taskId: number): void => {
 export const addTask = (config: TaskCronConfig): ScheduledTask => {
   const { taskId, cronString, callback } = config;
   const task = schedule(cronString, callback);
-  task.start();
   tasks[taskId] = task;
   return task;
 };
@@ -34,7 +33,7 @@ export const startTask = (taskId: number): void => {
   const task = tasks[taskId];
   if (task !== undefined) {
     task.start();
-  } else throw new Error('Tasks does not exists');
+  }
 };
 
 export const existsTask = (taskId: number): boolean =>

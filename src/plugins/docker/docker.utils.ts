@@ -10,7 +10,8 @@ import {
 export const buildImage = (name: string, version?: string | number): string =>
   `${name}:${version ?? 'latest'}`;
 
-export const escapeCmd = (cmd: string): string => cmd.replace(/"/g, `\\"`);
+export const escapeBash = (cmd: string): string =>
+  cmd.replace(/"/g, `\\` + `"`).replace(/'/, `\\'`);
 
 export const buildDockerfile = (
   image: string,
@@ -21,9 +22,9 @@ export const buildDockerfile = (
     `FROM ${image} AS base`,
     `WORKDIR /usr/src/app`,
     ...(copy ? ['COPY . .'] : []),
-    `CMD ${escapeCmd(cmd)}`,
+    `CMD ${cmd}`,
   ];
-  return statements.join('\n');
+  return escapeBash(statements.join('\n'));
 };
 
 const LIMITATIONS_MAP: Record<MappedLimitation, BuilderMapper> = {

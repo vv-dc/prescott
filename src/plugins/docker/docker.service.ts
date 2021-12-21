@@ -61,7 +61,7 @@ export class DockerService {
 
     const command = new CommandBuilder()
       .init('printf')
-      .with(`'${dockerfile}'`)
+      .with(`"${dockerfile}"`)
       .pipe('docker build')
       .param('tag', tag);
 

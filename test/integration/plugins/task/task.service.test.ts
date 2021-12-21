@@ -9,16 +9,18 @@ import { PgConnection } from '@model/shared/pg-connection';
 import { LocalTaskConfig, TaskConfigDto } from '@model/dto/task-config.dto';
 import { DOCKER_IMAGES } from '@test/lib/test.const';
 import { getConnection } from '@test/lib/test.utils';
+import { encodeBase64 } from '@lib/string.utils';
 
 describe('task.service integration', () => {
   let taskService: TaskService;
   let taskDao: TaskDao;
   let pg: PgConnection;
 
-  const createGroup = async (): Promise<{ groupId: number }> => {
+  const createGroup = async (ownerId: number): Promise<{ groupId: number }> => {
     const [id] = await pg('groups')
       .insert({
         name: 'mock_group',
+        ownerId,
       })
       .returning('id');
     return { groupId: id };
@@ -53,8 +55,8 @@ describe('task.service integration', () => {
   });
 
   it('should create local task and then delete it', async () => {
-    const { groupId } = await createGroup();
     const { userId } = await createUser();
+    const { groupId } = await createGroup(userId);
 
     const taskName = 'mock_task_name';
     const identifier = buildTaskUniqueName(groupId, taskName);
@@ -67,7 +69,10 @@ describe('task.service integration', () => {
         appConfig: {
           steps: [
             // sleep 100 makes test hang until delete
-            { name: 'first', script: 'sleep 100 && echo "hello world!"' },
+            {
+              name: 'first',
+              script: encodeBase64('sleep 100 && echo "hello world!"'),
+            },
           ],
         },
       },
@@ -89,8 +94,8 @@ describe('task.service integration', () => {
   });
 
   it('should delete task if once is specified', async () => {
-    const { groupId } = await createGroup();
     const { userId } = await createUser();
+    const { groupId } = await createGroup(userId);
 
     const taskConfigDto: TaskConfigDto = {
       name: 'mock_task_name',
@@ -99,7 +104,9 @@ describe('task.service integration', () => {
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
-          steps: [{ name: 'first', script: 'echo "hello world!"' }],
+          steps: [
+            { name: 'first', script: encodeBase64('echo "hello world!"') },
+          ],
         },
       },
     };
@@ -115,8 +122,8 @@ describe('task.service integration', () => {
   });
 
   it('should stop and then start task', async () => {
-    const { groupId } = await createGroup();
     const { userId } = await createUser();
+    const { groupId } = await createGroup(userId);
 
     const taskConfigDto: TaskConfigDto = {
       name: 'mock_task_name',
@@ -124,7 +131,9 @@ describe('task.service integration', () => {
       config: {
         local: { cronString: cronEveryNMinutes(5) },
         appConfig: {
-          steps: [{ name: 'first', script: 'echo "hello world!"' }],
+          steps: [
+            { name: 'first', script: encodeBase64('echo "hello world!"') },
+          ],
         },
       },
     };
@@ -144,13 +153,13 @@ describe('task.service integration', () => {
   });
 
   it('should update partial config', async () => {
-    const { groupId } = await createGroup();
     const { userId } = await createUser();
+    const { groupId } = await createGroup(userId);
 
     const oldPartialConfig: LocalTaskConfig = {
       local: { cronString: cronEveryNMinutes(5) },
       appConfig: {
-        steps: [{ name: 'old', script: 'echo "old hello"' }],
+        steps: [{ name: 'old', script: encodeBase64('echo "old hello"') }],
       },
     };
 
@@ -167,7 +176,7 @@ describe('task.service integration', () => {
     const newPartialConfig: LocalTaskConfig = {
       local: { cronString: cronEveryNMinutes(10) },
       appConfig: {
-        steps: [{ name: 'new', script: 'echo "new hello"' }],
+        steps: [{ name: 'new', script: encodeBase64('echo "new hello"') }],
       },
     };
 

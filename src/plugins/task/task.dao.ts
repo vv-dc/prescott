@@ -13,13 +13,14 @@ export class TaskDao {
   }
 
   async create(task: Task): Promise<number> {
-    const { name, userId, groupId, config } = task;
+    const { name, userId, groupId, config, active } = task;
     const [id] = await this.db('tasks')
       .insert({
         name,
         userId,
         groupId,
         config,
+        active,
       })
       .returning('id');
     return id;
