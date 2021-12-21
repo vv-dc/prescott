@@ -1,0 +1,9 @@
+{
+  "$id": "api/task/task-id-response.json",
+  "type": "object",
+  "properties": {
+    "taskId": { "type": "number" }
+  },
+  "required": ["taskId"],
+  "additionalProperties": false
+}

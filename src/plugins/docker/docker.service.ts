@@ -1,29 +1,31 @@
 import * as pidusage from 'pidusage';
-import { Status } from 'pidusage';
 import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
+import { processExists } from '@lib/shell.utils';
 import { DockerBuildDto } from '@model/dto/docker-build.dto';
+import { InspectParam, RawStat } from '@plugins/docker/docker.model';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import {
   buildDockerfile,
   buildImage,
   buildInspectParam,
+  buildLimitations,
   buildRunOptions,
 } from '@plugins/docker/docker.utils';
-import { InspectParam } from '@plugins/docker/docker.model';
-import { processExists } from '@lib/shell.utils';
 
 export class DockerService {
   async run(dto: DockerRunDto) {
-    const { image, container, timeout, ...options } = dto;
+    const { image, container, limitations, ...options } = dto;
 
     const command = new CommandBuilder()
       .init('docker run')
       .param('name', container);
+    if (limitations) buildLimitations(command, limitations);
     buildRunOptions(command, options);
 
     await command.with(image).execAsync();
-    if (timeout) await this.stop(container, timeout);
+    if (limitations?.ttl !== undefined)
+      await this.stop(container, limitations.ttl);
   }
 
   async pull(name: string, version?: string | number): Promise<void> {
@@ -58,8 +60,7 @@ export class DockerService {
     const dockerfile = buildDockerfile(baseImage, cmd, copy);
 
     const command = new CommandBuilder()
-      .init('echo')
-      .arg('e')
+      .init('printf')
       .with(`"${dockerfile}"`)
       .pipe('docker build')
       .param('tag', tag);
@@ -83,8 +84,9 @@ export class DockerService {
     return parseInt(pid, 10);
   }
 
-  async *stats(container: string, interval = 50): AsyncGenerator<Status> {
+  async *stats(container: string, interval = 50): AsyncGenerator<RawStat> {
     const pid = await this.pid(container);
+    if (pid === 0) return; // container is down already
     while (processExists(pid)) {
       yield pidusage(pid);
       await delay(interval);
@@ -94,5 +96,16 @@ export class DockerService {
   async logs(container: string) {
     const command = new CommandBuilder().init('docker logs').with(container);
     return command.execAsync();
+  }
+
+  async getImageAncestors(image: string): Promise<string[]> {
+    const command = new CommandBuilder()
+      .init('docker ps')
+      .arg('a')
+      .arg('q')
+      .param('filter')
+      .with(`ancestor=${image}`);
+    const { stdout } = await command.execAsync();
+    return stdout.split('\n').slice(0, -1);
   }
 }

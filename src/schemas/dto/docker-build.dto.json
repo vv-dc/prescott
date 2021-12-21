@@ -1,12 +1,12 @@
 {
-  "$id": "dto/docker-build",
+  "$id": "dto/docker-build.dto.json",
   "type": "object",
   "properties": {
     "tag": {
       "type": "string"
     },
     "osInfo": {
-      "$ref": "#/$defs/OsInfoDto"
+      "$ref": "domain/os-info.json"
     },
     "cmd": {
       "type": "string"
@@ -21,20 +21,5 @@
     }
   },
   "required": ["tag", "osInfo", "cmd", "once", "copy"],
-  "additionalProperties": false,
-  "$defs": {
-    "OsInfoDto": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "version": {
-          "type": ["number", "string"]
-        }
-      },
-      "required": ["name"],
-      "additionalProperties": false
-    }
-  }
+  "additionalProperties": false
 }

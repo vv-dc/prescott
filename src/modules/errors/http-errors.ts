@@ -25,7 +25,7 @@ export class HttpForbidden extends HttpError {
 
 export class HttpNotFound extends HttpError {
   constructor(message: string) {
-    super(message, 403);
+    super(message, 404);
   }
 }
 export class HttpUnauthorized extends HttpError {

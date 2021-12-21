@@ -1,5 +1,5 @@
 {
-  "$id": "domain/stats",
+  "$id": "domain/metrics.json",
   "type": "object",
   "properties": {
     "timeTaken": { "type": "number", "exclusiveMinimum": 0 },

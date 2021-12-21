@@ -1,5 +1,5 @@
 {
-  "$id": "domain/limitations",
+  "$id": "domain/limitations.json",
   "type": "object",
   "properties": {
     "ram": {
@@ -7,6 +7,10 @@
     },
     "rom": {
       "$ref": "#/$defs/MemoryLimit"
+    },
+    "ttl": {
+      "type": "number",
+      "exclusiveMinimum": 0
     },
     "cpus": {
       "type": "number",

@@ -8,7 +8,7 @@ import { AccessToken } from '@model/api/authentication/access-token';
 import { AuthorizationAddRoleDto } from '@model/dto/authorization-add-role.dto';
 import { UserRoleParams } from '@model/api/authorization/user-role-params';
 
-export const authoriationRoutes: FastifyPluginAsync = async (fastify) => {
+export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
   const {
     authHooks,
     authorizationService: authService,

@@ -2,7 +2,7 @@ import {
   buildDockerfile,
   buildImage,
   buildLimitations,
-  escapeCmd,
+  escapeBash,
 } from '@plugins/docker/docker.utils';
 import { CommandBuilder } from '@lib/command-builder';
 import { Limitations } from '@model/domain/limitations';
@@ -25,7 +25,7 @@ describe('docker.utils unit', () => {
       const [image, cmd] = ['node:16.13.0', 'echo "hello, world!"'];
       const actual = buildDockerfile(image, cmd, false);
 
-      const expected = `FROM ${image} AS base\nWORKDIR /usr/src/app\nCMD ${escapeCmd(
+      const expected = `FROM ${image} AS base\nWORKDIR /usr/src/app\nCMD ${escapeBash(
         cmd
       )}`;
       expect(actual).toEqual(expected);
@@ -35,7 +35,7 @@ describe('docker.utils unit', () => {
       const [image, cmd] = ['node:16.130', 'echo "hello, world!"'];
       const actual = buildDockerfile(image, cmd, true);
 
-      const expected = `FROM ${image} AS base\nWORKDIR /usr/src/app\nCOPY . .\nCMD ${escapeCmd(
+      const expected = `FROM ${image} AS base\nWORKDIR /usr/src/app\nCOPY . .\nCMD ${escapeBash(
         cmd
       )}`;
       expect(actual).toEqual(expected);

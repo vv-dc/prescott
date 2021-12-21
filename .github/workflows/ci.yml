@@ -3,25 +3,45 @@ name: Check Node.js application
 on:
   pull_request:
 
+env:
+  PGUSER: ${{ secrets.PGUSER }}
+  PGPASSWORD: ${{ secrets.PGPASSWORD }}
+  PGDB: ${{ secrets.PGDB }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+    services:
+      postgres:
+        image: postgres:alpine
+        env:
+          POSTGRES_USER: ${{ env.PGUSER }}
+          POSTGRES_PASSWORD: ${{ env.PGPASSWORD }}
+          POSTGRES_DB: ${{ env.PGDB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v2
-      - name: Cache node_modules
-        uses: actions/cache@v2
-        id: cache-node-modules
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
         with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            node_modules-
+          node-version: ${{ matrix.node-version }}
+          cache: yarn
       - name: Install dependencies
-        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: yarn --frozen-lockfile
       - name: Build application
         run: yarn build
       - name: Lint application
         run: yarn lint
+      - name: Set up database
+        run: yarn migrate:latest
       - name: Test application
-        run: yarn test:unit
+        run: yarn test

@@ -57,6 +57,16 @@ export class CommandBuilder {
     return merged.init(this.command).with(builder.build());
   }
 
+  then(command: string): CommandBuilder {
+    this.command += ` ;${command}`;
+    return this;
+  }
+
+  thenExec(command: string): CommandBuilder {
+    this.command += ` ;exec ${command}`;
+    return this;
+  }
+
   build(): string {
     return this.command;
   }
