@@ -1,7 +1,7 @@
 import { DockerService } from '@plugins/docker/docker.service';
 import { TaskDao } from '@plugins/task/task.dao';
 import { TaskService } from '@plugins/task/task.service';
-import { getScheduledTasks } from '@plugins/task/task.repository';
+import { existsTask, getScheduledTasks } from '@plugins/task/task.repository';
 import { buildTaskUniqueName } from '@plugins/task/task.utils';
 import { cronEveryNMinutes, cronEveryNSeconds } from '@lib/cron.utils';
 import { delay } from '@lib/time.utils';
@@ -10,6 +10,7 @@ import { LocalTaskConfig, TaskConfigDto } from '@model/dto/task-config.dto';
 import { DOCKER_IMAGES } from '@test/lib/test.const';
 import { getConnection } from '@test/lib/test.utils';
 import { encodeBase64 } from '@lib/string.utils';
+import { EntityNotFound } from '@modules/errors/abstract-errors';
 
 describe('task.service integration', () => {
   let taskService: TaskService;
@@ -100,25 +101,27 @@ describe('task.service integration', () => {
     const taskConfigDto: TaskConfigDto = {
       name: 'mock_task_name',
       osInfo: DOCKER_IMAGES.alpine,
-      once: true, // should delete both task and db entry
+      once: true,
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
           steps: [
-            { name: 'first', script: encodeBase64('echo "hello world!"') },
+            {
+              name: 'first',
+              script: encodeBase64('echo "hello world!"'),
+            },
           ],
         },
       },
     };
 
     const taskId = await taskService.createTask(groupId, userId, taskConfigDto);
-    await delay(5e3); // wait 5 seconds to be sure it's deleted
+    await delay(7000);
 
-    const task = await taskDao.findById(taskId);
-    const cronTasks = getScheduledTasks();
-
-    expect(task).toEqual(undefined);
-    expect(cronTasks).toStrictEqual({});
+    expect(existsTask(taskId)).toBeFalsy();
+    await expect(taskService.getTask(taskId)).rejects.toEqual(
+      new EntityNotFound('Task does not exist')
+    );
   });
 
   it('should stop and then start task', async () => {

@@ -19,6 +19,10 @@ import {
 } from '@model/dto/task-config.dto';
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
+import {
+  EntityConflict,
+  EntityNotFound,
+} from '@modules/errors/abstract-errors';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -118,7 +122,9 @@ export class TaskService {
     taskConfig: TaskConfigDto
   ): Promise<number> {
     const { name, osInfo, config, once } = taskConfig;
-    const clearTask = !('repository' in config);
+    if ((await this.dao.findByName(name)) !== undefined) {
+      throw new EntityConflict('Task with passed name already exists');
+    }
 
     const taskId = await this.dao.create({
       userId,
@@ -130,6 +136,7 @@ export class TaskService {
 
     const identifier = buildTaskIdentifier(taskId);
     await this.register(identifier, taskId, taskConfig); // cron job created, but not started
+    const clearTask = !('repository' in config);
 
     if (clearTask) {
       const { steps } = config.appConfig;
@@ -142,9 +149,10 @@ export class TaskService {
   }
 
   async deleteTask(taskId: number): Promise<void> {
-    const identifier = buildTaskIdentifier(taskId);
     taskRepository.deleteTask(taskId);
+    await this.assertTaskExists(taskId);
 
+    const identifier = buildTaskIdentifier(taskId);
     const containers = await this.dockerService.getImageAncestors(identifier);
     for (const container of containers) {
       await this.dockerService.deleteContainer(container, true);
@@ -155,6 +163,8 @@ export class TaskService {
   }
 
   async stopTask(taskId: number): Promise<void> {
+    await this.assertTaskExists(taskId);
+
     const identifier = buildTaskIdentifier(taskId);
     taskRepository.stopTask(taskId);
 
@@ -166,7 +176,15 @@ export class TaskService {
     await this.dao.setActive(taskId, false);
   }
 
+  private async assertTaskExists(taskId: number): Promise<void> {
+    const task = await this.dao.findById(taskId);
+    if (task === undefined) {
+      throw new EntityNotFound('Task does not exist');
+    }
+  }
+
   async startTask(taskId: number): Promise<void> {
+    await this.assertTaskExists(taskId);
     await this.dao.setActive(taskId, true);
 
     if (!taskRepository.existsTask(taskId)) {
@@ -174,7 +192,6 @@ export class TaskService {
       const identifier = buildTaskIdentifier(taskId);
       await this.register(identifier, taskId, JSON.parse(config));
     }
-
     taskRepository.startTask(taskId);
   }
 
@@ -186,8 +203,12 @@ export class TaskService {
     const identifier = buildTaskIdentifier(taskId);
     taskRepository.deleteTask(taskId);
 
-    const { config } = await this.dao.findById(taskId);
-    const oldTaskConfig = JSON.parse(config);
+    const task = await this.dao.findById(taskId);
+    if (task === undefined) {
+      throw new EntityNotFound('Task does not exist');
+    }
+
+    const oldTaskConfig = JSON.parse(task.config);
     const newTaskConfig = { ...oldTaskConfig, config: taskConfig };
 
     await this.dao.update(taskId, JSON.stringify(newTaskConfig));
@@ -199,6 +220,9 @@ export class TaskService {
     taskId: number
   ): Promise<Task & (TaskConfigDto | RepositoryTaskConfig)> {
     const task = await this.dao.findById(taskId);
+    if (task == undefined) {
+      throw new EntityNotFound('Task does not exist');
+    }
     return { ...task, ...JSON.parse(task.config) };
   }
 }

@@ -7,11 +7,18 @@ import {
 } from '@model/dto/task-config.dto';
 import { TaskAllParams } from '@model/api/task/task-all-params';
 import { getTaskSchema } from '@plugins/task/task.schema';
+import { AccessToken } from '@model/api/authentication/access-token';
 
 export const taskRoutes: FastifyPluginAsync = async (fastify) => {
-  const { taskService } = fastify;
+  const { taskService, authHooks, jwtValidationHook } = fastify;
 
-  fastify.route<{ Params: TaskCreateParams; Body: TaskConfigDto }>({
+  fastify.addHook('preValidation', jwtValidationHook);
+
+  fastify.route<{
+    Params: TaskCreateParams;
+    Body: TaskConfigDto;
+    Headers: AccessToken;
+  }>({
     method: 'POST',
     url: '/groups/:groupId/tasks',
     schema: {
@@ -21,15 +28,20 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
         200: fastify.getSchema('api/task/task-id-response.json'),
       },
     },
+    preHandler: [authHooks.permissionHook('create_task')],
     handler: async (request, reply) => {
       const { groupId } = request.params;
-      // TODO: remove userId here
-      const taskId = await taskService.createTask(groupId, 1, request.body);
+      const { userId } = request.payload;
+      const taskId = await taskService.createTask(
+        groupId,
+        userId,
+        request.body
+      );
       reply.code(201).send({ taskId });
     },
   });
 
-  fastify.route<{ Params: TaskAllParams }>({
+  fastify.route<{ Params: TaskAllParams; Headers: AccessToken }>({
     method: 'GET',
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
@@ -38,6 +50,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
         200: getTaskSchema,
       },
     },
+    preHandler: [authHooks.permissionHook('view_task')],
     handler: async (request, reply) => {
       const { taskId } = request.params;
       const task = await taskService.getTask(taskId);
@@ -45,12 +58,13 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Params: TaskAllParams }>({
+  fastify.route<{ Params: TaskAllParams; Headers: AccessToken }>({
     method: 'DELETE',
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
       params: fastify.getSchema('api/task/task-all-params.json'),
     },
+    preHandler: [authHooks.permissionHook('delete_task')],
     handler: async (request, reply) => {
       const { taskId } = request.params;
       await taskService.deleteTask(taskId);
@@ -61,6 +75,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.route<{
     Params: TaskAllParams;
     Body: LocalTaskConfig | RepositoryTaskConfig;
+    Headers: AccessToken;
   }>({
     method: 'PUT',
     url: '/groups/:groupId/tasks/:taskId',
@@ -68,6 +83,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       params: fastify.getSchema('api/task/task-all-params.json'),
       body: fastify.getSchema('dto/task-config.dto.json#/properties/config'),
     },
+    preHandler: [authHooks.permissionHook('update_task')],
     handler: async (request, reply) => {
       const { taskId, groupId } = request.params;
       await taskService.updateTask(groupId, taskId, request.body);
@@ -77,12 +93,14 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.route<{
     Params: TaskAllParams;
+    Headers: AccessToken;
   }>({
     method: 'POST',
     url: '/groups/:groupId/tasks/:taskId/stop',
     schema: {
       params: fastify.getSchema('api/task/task-all-params.json'),
     },
+    preHandler: [authHooks.permissionHook('stop_task')],
     handler: async (request, reply) => {
       const { taskId } = request.params;
       await taskService.stopTask(taskId);
@@ -90,12 +108,13 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Params: TaskAllParams }>({
+  fastify.route<{ Params: TaskAllParams; Headers: AccessToken }>({
     method: 'POST',
     url: '/groups/:groupId/tasks/:taskId/start',
     schema: {
       params: fastify.getSchema('api/task/task-all-params.json'),
     },
+    preHandler: [authHooks.permissionHook('start_task')],
     handler: async (request, reply) => {
       const { taskId } = request.params;
       await taskService.startTask(taskId);

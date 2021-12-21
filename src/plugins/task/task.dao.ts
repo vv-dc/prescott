@@ -8,6 +8,10 @@ export class TaskDao {
     return this.db('tasks').first<Task>().where({ id });
   }
 
+  async findByName(name: string): Promise<Task> {
+    return this.db('tasks').first<Task>().where({ name });
+  }
+
   async findAll(): Promise<Task[]> {
     return this.db<Task>('tasks').select('*');
   }

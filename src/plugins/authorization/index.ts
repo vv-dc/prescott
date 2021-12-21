@@ -1,7 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
-import { authoriationRoutes } from '@plugins/authorization/authorization.route';
+import { authorizationRoutes } from '@plugins/authorization/authorization.route';
 import { AuthorizationService } from '@plugins/authorization/authorization.service';
 import { GroupDao } from '@plugins/authorization/group/group.dao';
 import { GroupService } from '@plugins/authorization/group/group.service';
@@ -32,7 +32,7 @@ const authorization: FastifyPluginAsync = async (fastify) => {
     roleService
   );
   fastify.decorate('authorizationService', authorizationService);
-  fastify.register(authoriationRoutes, { prefix: '/groups' });
+  fastify.register(authorizationRoutes, { prefix: '/groups' });
 };
 
 export default fp(authorization, {

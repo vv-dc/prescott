@@ -53,6 +53,7 @@
     "fastify": "^3.22.0",
     "fastify-autoload": "^3.9.0",
     "fastify-plugin": "^3.0.0",
+    "fastify-swagger": "^4.13.0",
     "jsonwebtoken": "^8.5.1",
     "knex": "^0.95.13",
     "node-cron": "^3.0.0",
