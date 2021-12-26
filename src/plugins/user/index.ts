@@ -10,4 +10,10 @@ const user: FastifyPluginAsync = async (fastify) => {
   fastify.decorate('userService', userService);
 };
 
-export default fp(user, { name: 'user', dependencies: ['pg'] });
+export default fp(user, {
+  name: 'user',
+  decorators: {
+    fastify: ['pg'],
+  },
+  dependencies: ['pg'],
+});

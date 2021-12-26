@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
+
 import { DockerService } from '@plugins/docker/docker.service';
 
 export const docker: FastifyPluginAsync = async (fastify) => {

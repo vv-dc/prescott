@@ -1,4 +1,5 @@
 import * as taskRepository from '@plugins/task/task.repository';
+
 import { DockerService } from '@plugins/docker/docker.service';
 import { TaskDao } from '@plugins/task/task.dao';
 import {
@@ -8,6 +9,10 @@ import {
 } from '@plugins/task/task.utils';
 import { TaskCronConfig } from '@plugins/task/model/task-cron-config';
 import { TaskRegisterResult } from '@plugins/task/model/task-register-result';
+import {
+  EntityConflict,
+  EntityNotFound,
+} from '@modules/errors/abstract-errors';
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { generateRandomString } from '@lib/random.utils';
 import { cronEveryNMinutes } from '@lib/cron.utils';
@@ -19,10 +24,6 @@ import {
 } from '@model/dto/task-config.dto';
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
-import {
-  EntityConflict,
-  EntityNotFound,
-} from '@modules/errors/abstract-errors';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -185,10 +186,10 @@ export class TaskService {
 
   async startTask(taskId: number): Promise<void> {
     await this.assertTaskExists(taskId);
-    await this.dao.setActive(taskId, true);
 
+    await this.dao.setActive(taskId, true);
     if (!taskRepository.existsTask(taskId)) {
-      const { config } = await this.dao.findById(taskId);
+      const { config } = (await this.dao.findById(taskId)) as Task;
       const identifier = buildTaskIdentifier(taskId);
       await this.register(identifier, taskId, JSON.parse(config));
     }

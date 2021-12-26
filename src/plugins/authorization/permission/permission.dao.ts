@@ -4,7 +4,7 @@ export class PermissionDao {
   constructor(private pg: PgConnection) {}
 
   async findByUserAndGroup(groupId: number, userId: number): Promise<string[]> {
-    const permissions = await this.pg('role_permissions as rp')
+    return this.pg('role_permissions as rp')
       .join('permissions', 'role_permissions.permission_id', 'permissions.id')
       .join('user_roles', 'role_permissions.role_id', 'user_roles.role_id')
       .join('user_groups', 'user_roles.user_group_id', 'user_groups.id')
@@ -13,6 +13,5 @@ export class PermissionDao {
         'user_groups.user_id': userId,
       })
       .pluck<string[]>('permissions.name');
-    return permissions;
   }
 }

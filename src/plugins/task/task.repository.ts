@@ -1,4 +1,5 @@
 import { schedule, ScheduledTask } from 'node-cron';
+
 import { TaskCronConfig } from '@plugins/task/model/task-cron-config';
 
 type ScheduledTasksRepository = {

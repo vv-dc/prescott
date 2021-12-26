@@ -6,26 +6,22 @@ export class GroupService {
   constructor(private dao: GroupDao) {}
 
   async findByName(groupName: string): Promise<Group | undefined> {
-    const group = await this.dao.findByName(groupName);
-    return group;
+    return this.dao.findByName(groupName);
   }
 
   async findById(groupId: number): Promise<Group | undefined> {
-    const group = await this.dao.findById(groupId);
-    return group;
+    return this.dao.findById(groupId);
   }
 
   async findUserGroup(
     groupId: number,
     userId: number
   ): Promise<UserGroup | undefined> {
-    const userGroup = await this.dao.findUserGroup(groupId, userId);
-    return userGroup;
+    return this.dao.findUserGroup(groupId, userId);
   }
 
   async checkUserInGroup(groupId: number, userId: number): Promise<boolean> {
-    const exists = await this.dao.checkUserInGroup(groupId, userId);
-    return exists;
+    return this.dao.checkUserInGroup(groupId, userId);
   }
 
   async addUser(groupId: number, userId: number): Promise<void> {
@@ -37,8 +33,7 @@ export class GroupService {
   }
 
   async create(groupName: string, ownerId: number): Promise<number> {
-    const groupId = await this.dao.create(groupName, ownerId);
-    return groupId;
+    return this.dao.create(groupName, ownerId);
   }
 
   async deleteById(groupId: number): Promise<void> {

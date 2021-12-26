@@ -1,4 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
+
+import { getTaskSchema } from '@plugins/task/task.schema';
 import { TaskCreateParams } from '@model/api/task/task-create-params';
 import {
   LocalTaskConfig,
@@ -6,7 +8,6 @@ import {
   TaskConfigDto,
 } from '@model/dto/task-config.dto';
 import { TaskAllParams } from '@model/api/task/task-all-params';
-import { getTaskSchema } from '@plugins/task/task.schema';
 import { AccessToken } from '@model/api/authentication/access-token';
 
 export const taskRoutes: FastifyPluginAsync = async (fastify) => {

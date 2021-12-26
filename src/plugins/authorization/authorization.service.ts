@@ -1,13 +1,13 @@
 import { GroupService } from '@plugins/authorization/group/group.service';
 import { RoleService } from '@plugins/authorization/role/role.service';
 import { UserService } from '@plugins/user/user.service';
+import { Group } from '@plugins/authorization/group/model/group';
+import { Role } from '@plugins/authorization/role/model/role';
 import {
   AccessDenied,
   EntityConflict,
   EntityNotFound,
 } from '@modules/errors/abstract-errors';
-import { Group } from '@plugins/authorization/group/model/group';
-import { Role } from '@plugins/authorization/role/model/role';
 
 const ROLES = ['group_manager', 'role_manager'];
 

@@ -6,26 +6,22 @@ export class UserDao {
   constructor(private pg: PgConnection) {}
 
   async findByEmail(email: string): Promise<User | undefined> {
-    const user = await this.pg<User>('users').where({ email }).first();
-    return user;
+    return this.pg<User>('users').where({ email }).first();
   }
 
   async findByLogin(login: string): Promise<User | undefined> {
-    const user = await this.pg<User>('users').where({ login }).first();
-    return user;
+    return this.pg<User>('users').where({ login }).first();
   }
 
   async findByEmailOrLogin(criterion: string): Promise<User | undefined> {
-    const user = await this.pg<User>('users')
+    return this.pg<User>('users')
       .where({ login: criterion })
       .orWhere({ email: criterion })
       .first();
-    return user;
   }
 
   async findById(id: number): Promise<User | undefined> {
-    const user = await this.pg<User>('users').where({ id }).first();
-    return user;
+    return this.pg<User>('users').where({ id }).first();
   }
 
   async add(user: AuthenticationRegisterDto): Promise<void> {

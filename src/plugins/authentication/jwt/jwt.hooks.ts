@@ -1,8 +1,8 @@
 import { FastifyReply, FastifyRequest } from 'fastify';
 
-import { HttpUnauthorized } from '@modules/errors/http-errors';
 import { JwtService } from '@plugins/authentication/jwt/jwt.service';
 import { JwtValidationHook } from '@plugins/authentication/jwt/model/jwt-validation-hook';
+import { HttpUnauthorized } from '@modules/errors/http-errors';
 import { UserPayload } from '@model/domain/user-payload';
 import { replyWithError } from '@modules/fastify/reply-with-error';
 import { AccessToken } from '@model/api/authentication/access-token';

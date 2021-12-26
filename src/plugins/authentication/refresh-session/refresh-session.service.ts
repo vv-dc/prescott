@@ -8,13 +8,11 @@ export class RefreshSessionService {
     userId: number,
     ip: string
   ): Promise<RefreshSession | undefined> {
-    const session = await this.dao.findByIp(userId, ip);
-    return session;
+    return this.dao.findByIp(userId, ip);
   }
 
   async findByUser(userId: number): Promise<RefreshSession[]> {
-    const sessions = await this.dao.findByUser(userId);
-    return sessions;
+    return this.dao.findByUser(userId);
   }
 
   async deleteByUser(userId: number): Promise<void> {
@@ -24,8 +22,7 @@ export class RefreshSessionService {
   async deleteByTokenAndGet(
     refreshToken: string
   ): Promise<RefreshSession | undefined> {
-    const session = await this.dao.deleteByTokenAndGet(refreshToken);
-    return session;
+    return this.dao.deleteByTokenAndGet(refreshToken);
   }
 
   async create(session: RefreshSession): Promise<void> {

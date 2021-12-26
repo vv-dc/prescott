@@ -17,5 +17,8 @@ const task: FastifyPluginAsync = async (fastify) => {
 
 export default fp(task, {
   name: 'task',
+  decorators: {
+    fastify: ['pg', 'dockerService'],
+  },
   dependencies: ['pg', 'docker', 'schema'],
 });

@@ -1,4 +1,5 @@
 import * as argon2 from 'argon2';
+
 import { PasswordConfig } from '@config/model/password.config';
 
 export class PasswordService {

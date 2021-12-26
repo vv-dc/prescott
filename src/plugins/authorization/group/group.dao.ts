@@ -1,28 +1,23 @@
-import { PgConnection } from '@model/shared/pg-connection';
 import { Group } from '@plugins/authorization/group/model/group';
 import { UserGroup } from '@plugins/authorization/group/model/user-group';
+import { PgConnection } from '@model/shared/pg-connection';
 
 export class GroupDao {
   constructor(private pg: PgConnection) {}
 
   async findByName(name: string): Promise<Group | undefined> {
-    const group = await this.pg<Group>('groups').where({ name }).first();
-    return group;
+    return this.pg<Group>('groups').where({ name }).first();
   }
 
   async findById(id: number): Promise<Group | undefined> {
-    const group = await this.pg<Group>('groups').where({ id }).first();
-    return group;
+    return this.pg<Group>('groups').where({ id }).first();
   }
 
   async findUserGroup(
     groupId: number,
     userId: number
   ): Promise<UserGroup | undefined> {
-    const userGroup = await this.pg<UserGroup>('user_groups')
-      .where({ groupId, userId })
-      .first();
-    return userGroup;
+    return this.pg<UserGroup>('user_groups').where({ groupId, userId }).first();
   }
 
   async checkUserInGroup(groupId: number, userId: number): Promise<boolean> {

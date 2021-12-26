@@ -1,15 +1,16 @@
 import { Knex } from 'knex';
+
 import { Task } from '@model/domain/task';
 
 export class TaskDao {
   constructor(private db: Knex) {}
 
-  async findById(id: number): Promise<Task> {
-    return this.db('tasks').first<Task>().where({ id });
+  async findById(id: number): Promise<Task | undefined> {
+    return this.db<Task>('tasks').where({ id }).first();
   }
 
-  async findByName(name: string): Promise<Task> {
-    return this.db('tasks').first<Task>().where({ name });
+  async findByName(name: string): Promise<Task | undefined> {
+    return this.db<Task>('tasks').where({ name }).first();
   }
 
   async findAll(): Promise<Task[]> {

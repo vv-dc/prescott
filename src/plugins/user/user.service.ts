@@ -6,23 +6,19 @@ export class UserService {
   constructor(private dao: UserDao) {}
 
   async findByEmail(email: string): Promise<User | undefined> {
-    const user = await this.dao.findByEmail(email);
-    return user;
+    return this.dao.findByEmail(email);
   }
 
   async findByLogin(login: string): Promise<User | undefined> {
-    const user = await this.dao.findByLogin(login);
-    return user;
+    return this.dao.findByLogin(login);
   }
 
   async findByEmailOrLogin(criterion: string): Promise<User | undefined> {
-    const user = await this.dao.findByEmailOrLogin(criterion);
-    return user;
+    return this.dao.findByEmailOrLogin(criterion);
   }
 
   async findById(userId: number): Promise<User | undefined> {
-    const user = await this.dao.findById(userId);
-    return user;
+    return this.dao.findById(userId);
   }
 
   async create(user: AuthenticationRegisterDto): Promise<void> {

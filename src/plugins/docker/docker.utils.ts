@@ -1,11 +1,9 @@
 import { CommandBuilder } from '@lib/command-builder';
 import { Limitations } from '@model/domain/limitations';
-import {
-  BuilderMapper,
-  InspectParam,
-  MappedLimitation,
-  RunOptions,
-} from '@plugins/docker/docker.model';
+import { InspectParam } from '@plugins/docker/model/inspect-param';
+import { RunOptions } from '@plugins/docker/model/run-options';
+import { MappedLimitation } from '@plugins/docker/model/mapped-limitation';
+import { BuilderMapper } from '@plugins/docker/model/builder-mapper';
 
 export const buildImage = (name: string, version?: string | number): string =>
   `${name}:${version ?? 'latest'}`;

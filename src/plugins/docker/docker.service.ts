@@ -1,10 +1,5 @@
 import * as pidusage from 'pidusage';
-import { CommandBuilder } from '@lib/command-builder';
-import { delay } from '@lib/time.utils';
-import { processExists } from '@lib/shell.utils';
-import { DockerBuildDto } from '@model/dto/docker-build.dto';
-import { InspectParam, RawStat } from '@plugins/docker/docker.model';
-import { DockerRunDto } from '@model/dto/docker-run.dto';
+
 import {
   buildDockerfile,
   buildImage,
@@ -12,6 +7,13 @@ import {
   buildLimitations,
   buildRunOptions,
 } from '@plugins/docker/docker.utils';
+import { InspectParam } from '@plugins/docker/model/inspect-param';
+import { RawStat } from '@plugins/docker/model/raw-stat';
+import { CommandBuilder } from '@lib/command-builder';
+import { delay } from '@lib/time.utils';
+import { processExists } from '@lib/shell.utils';
+import { DockerBuildDto } from '@model/dto/docker-build.dto';
+import { DockerRunDto } from '@model/dto/docker-run.dto';
 
 export class DockerService {
   async run(dto: DockerRunDto) {

@@ -7,13 +7,11 @@ export class RoleService {
   constructor(private dao: RoleDao, private groupService: GroupService) {}
 
   async findByName(roleName: string): Promise<Role | undefined> {
-    const role = await this.dao.findByName(roleName);
-    return role;
+    return this.dao.findByName(roleName);
   }
 
   async findByGroupAndUser(groupId: number, userId: number): Promise<string[]> {
-    const roles = await this.dao.findByUserAndGroup(groupId, userId);
-    return roles;
+    return this.dao.findByUserAndGroup(groupId, userId);
   }
 
   async add(groupId: number, userId: number, roleId: number): Promise<void> {
