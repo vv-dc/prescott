@@ -1,0 +1,9 @@
+{
+  "$id": "api/authentication/access-token.json",
+  "type": "object",
+  "properties": {
+    "authorization": { "type": "string" }
+  },
+  "required": [],
+  "additionalProperties": false
+}

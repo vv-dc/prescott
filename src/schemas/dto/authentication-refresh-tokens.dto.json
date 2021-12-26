@@ -1,0 +1,9 @@
+{
+  "$id": "dto/authentication-refresh-tokens.json",
+  "type": "object",
+  "properties": {
+    "refreshToken": { "type": "string", "format": "uuid" }
+  },
+  "required": ["refreshToken"],
+  "additionalProperties": false
+}

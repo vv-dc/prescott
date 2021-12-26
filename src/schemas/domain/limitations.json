@@ -1,0 +1,27 @@
+{
+  "$id": "domain/limitations.json",
+  "type": "object",
+  "properties": {
+    "ram": {
+      "$ref": "#/$defs/MemoryLimit"
+    },
+    "rom": {
+      "$ref": "#/$defs/MemoryLimit"
+    },
+    "ttl": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "cpus": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "MemoryLimit": {
+      "type": "string",
+      "pattern": "^[0-9]+(b|k|m|g)$"
+    }
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "$id": "dto/task-config.dto.json",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "osInfo": {
+      "$ref": "domain/os-info.json"
+    },
+    "once": { "type": "boolean", "default": false },
+    "config": {
+      "anyOf": [
+        { "$ref": "#/$defs/LocalTaskConfig" },
+        { "$ref": "#/$defs/RepositoryTaskConfig" }
+      ]
+    }
+  },
+  "required": ["name", "osInfo", "config"],
+  "additionalProperties": false,
+  "$defs": {
+    "Step": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "script": { "type": "string" },
+        "ignoreFailure": { "type": "boolean", "default": false }
+      },
+      "required": ["name", "script"],
+      "additionalProperties": false
+    },
+    "BaseTaskConfig": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        },
+        "limitations": {
+          "$ref": "domain/limitations.json"
+        }
+      },
+      "required": ["steps"],
+      "additionalProperties": false
+    },
+    "LocalTaskConfig": {
+      "type": "object",
+      "properties": {
+        "local": {
+          "type": "object",
+          "properties": {
+            "cronString": { "type": "string" }
+          },
+          "required": ["cronString"],
+          "additionalProperties": false
+        },
+        "appConfig": {
+          "$ref": "#/$defs/BaseTaskConfig"
+        }
+      },
+      "required": ["local", "appConfig"],
+      "additionalProperties": false
+    },
+    "RepositoryTaskConfig": {
+      "type": "object",
+      "properties": {
+        "repository": {
+          "type": "object",
+          "properties": {
+            "url": { "type": "string" },
+            "branch": { "type": "string" }
+          },
+          "required": ["url", "branch"],
+          "additionalProperties": false
+        },
+        "appConfig": {
+          "$ref": "#/$defs/BaseTaskConfig"
+        }
+      },
+      "required": ["repository"],
+      "additionalProperties": false
+    }
+  }
+}

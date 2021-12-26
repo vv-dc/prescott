@@ -1,0 +1,9 @@
+{
+  "$id": "api/task/task-create-params.json",
+  "type": "object",
+  "properties": {
+    "groupId": { "type": "integer" }
+  },
+  "required": ["groupId"],
+  "additionalProperties": false
+}
