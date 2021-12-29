@@ -4,10 +4,9 @@ export const taskConfig = {
     name: 'alpine',
     version: 3.15,
   },
-  once: true,
   config: {
     local: {
-      cronString: '*/10 * * * * *', // every 10 seconds
+      cronString: '*/2 * * * * *', // every 2 seconds
     },
     appConfig: {
       steps: [
