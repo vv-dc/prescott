@@ -31,7 +31,4 @@ const schema: FastifyPluginAsync = async (fastify) => {
 
 export default fp(schema, {
   name: 'schema',
-  decorators: {
-    fastify: ['getPrescottSchema'],
-  },
 });
