@@ -24,7 +24,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/groups/:groupId/tasks',
     schema: {
       params: fastify.getSchema('api/task/task-create-params.json'),
-      body: fastify.getSchema('dto/task-config.dto.json#'),
+      body: fastify.getSchema('dto/task-config.dto.json'),
       response: {
         200: fastify.getSchema('api/task/task-id-response.json'),
       },
@@ -82,7 +82,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
       params: fastify.getSchema('api/task/task-all-params.json'),
-      body: fastify.getSchema('dto/task-config.dto.json#/properties/config'),
+      // body: fastify.getSchema('dto/task-config.dto.json#/properties/config'),
     },
     preHandler: [authHooks.permissionHook('update_task')],
     handler: async (request, reply) => {

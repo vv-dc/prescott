@@ -5,10 +5,10 @@ import fp from 'fastify-plugin';
 import { config, SCHEMAS_CONFIG } from '@config/config';
 import { getDirectoryFilesSync } from '@lib/file.utils';
 
-const { path } = config[SCHEMAS_CONFIG];
+const { schemasPath } = config[SCHEMAS_CONFIG];
 
 const schema: FastifyPluginAsync = async (fastify) => {
-  const files = getDirectoryFilesSync(path);
+  const files = getDirectoryFilesSync(schemasPath);
   for (const file of files) {
     const content = readFileSync(file, 'utf-8');
     fastify.addSchema(JSON.parse(content));
