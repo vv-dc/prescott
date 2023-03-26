@@ -17,9 +17,9 @@ export class TaskDao {
     return this.db<Task>('tasks').select('*');
   }
 
-  async create(task: Task): Promise<number> {
+  async create(task: Omit<Task, 'id'>): Promise<number> {
     const { name, userId, groupId, config, active } = task;
-    const [id] = await this.db('tasks')
+    const [{ id }] = await this.db('tasks')
       .insert({
         name,
         userId,
@@ -27,7 +27,7 @@ export class TaskDao {
         config,
         active,
       })
-      .returning('id');
+      .returning<{ id: number }[]>('id');
     return id;
   }
 

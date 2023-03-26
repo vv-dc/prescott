@@ -15,9 +15,13 @@ export async function up(knex: Knex): Promise<void> {
     'view_metrics',
   ];
 
-  const permissionIds = await knex('permissions')
-    .insert(permissionNames.map((permissionName) => ({ name: permissionName })))
-    .returning('id');
+  const permissionIds = (
+    await knex('permissions')
+      .insert(
+        permissionNames.map((permissionName) => ({ name: permissionName }))
+      )
+      .returning<{ id: number }[]>('id')
+  ).map(({ id }) => id);
 
   const permissionMap: { [key: string]: number } = permissionNames
     .map((name, index) => ({
@@ -40,9 +44,11 @@ export async function up(knex: Knex): Promise<void> {
     'metric_viewer',
   ];
 
-  const roleIds = await knex('roles')
-    .insert(roleNames.map((roleName) => ({ name: roleName })))
-    .returning<number[]>('id');
+  const roleIds = (
+    await knex('roles')
+      .insert(roleNames.map((roleName) => ({ name: roleName })))
+      .returning<{ id: number }[]>('id')
+  ).map(({ id }) => id);
 
   const roleMap: { [key: string]: number } = roleNames
     .map((name, index) => ({

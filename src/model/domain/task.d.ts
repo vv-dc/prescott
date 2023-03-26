@@ -1,5 +1,5 @@
 export interface Task {
-  id?: number;
+  id: number;
   name: string;
   userId: number;
   groupId: number;

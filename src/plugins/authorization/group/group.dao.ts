@@ -39,9 +39,9 @@ export class GroupDao {
   }
 
   async create(name: string, ownerId: number): Promise<number> {
-    const [groupId] = await this.pg<Group>('groups')
+    const [{ id: groupId }] = await this.pg<Group>('groups')
       .insert({ name, ownerId })
-      .returning<number[]>('id');
+      .returning<[{ id: number }]>('id');
     return groupId;
   }
 

@@ -24,6 +24,7 @@ import {
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
+import { TaskConfig } from '@model/domain/task-config';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -217,9 +218,7 @@ export class TaskService {
     await this.register(identifier, taskId, newTaskConfig);
   }
 
-  async getTask(
-    taskId: number
-  ): Promise<Task & (TaskConfigDto | RepositoryTaskConfig)> {
+  async getTask(taskId: number): Promise<Task & TaskConfigDto> {
     const task = await this.dao.findById(taskId);
     if (task == undefined) {
       throw new EntityNotFound('Task does not exist');

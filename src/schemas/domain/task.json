@@ -13,6 +13,6 @@
     },
     "active": { "type": "boolean", "default": true }
   },
-  "required": ["name", "userId", "groupId", "config"],
+  "required": ["id", "name", "userId", "groupId", "config"],
   "additionalProperties": false
 }

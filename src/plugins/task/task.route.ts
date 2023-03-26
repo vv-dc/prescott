@@ -41,13 +41,25 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
-  fastify.route<{ Params: TaskAllParams; Headers: AccessToken }>({
+  fastify.route<{
+    Params: TaskAllParams;
+    Headers: AccessToken;
+  }>({
     method: 'GET',
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
       params: fastify.getPrescottSchema('api/task/task-all-params'),
       response: {
-        200: fastify.getPrescottSchema('dto/task-config.dto'),
+        200: {
+          $merge: {
+            source: fastify.getPrescottSchema('domain/task'),
+            with: {
+              properties: {
+                config: fastify.getPrescottSchema('dto/task-config.dto'),
+              },
+            },
+          },
+        },
       },
     },
     preHandler: [authHooks.permissionHook('view_task')],

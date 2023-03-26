@@ -58,7 +58,7 @@
     "fastify": "^4.15.0",
     "fastify-plugin": "^4.5.0",
     "jsonwebtoken": "^9.0.0",
-    "knex": "^0.95.13",
+    "knex": "^2.4.2",
     "node-cron": "^3.0.2",
     "pg": "^8.10.0",
     "pidusage": "^3.0.2"
