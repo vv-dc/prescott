@@ -3,6 +3,9 @@ export interface Task {
   name: string;
   userId: number;
   groupId: number;
+  /**
+   * base64 encoded TaskConfig
+   */
   config: string;
   active?: boolean;
 }

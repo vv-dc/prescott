@@ -1,0 +1,18 @@
+{
+  "$id": "schema://prescott.dev/domain/base-task-config.json",
+  "title": "BaseTaskConfig",
+  "type": "object",
+  "properties": {
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "schema://prescott.dev/domain/task-step.json"
+      }
+    },
+    "limitations": {
+      "$ref": "schema://prescott.dev/domain/limitations.json"
+    }
+  },
+  "required": ["steps"],
+  "additionalProperties": false
+}

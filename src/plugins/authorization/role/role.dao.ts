@@ -1,6 +1,6 @@
 import { Role } from '@plugins/authorization/role/model/role';
 import { PgConnection } from '@model/shared/pg-connection';
-import { UserRole } from '@model/api/authorization/user-role';
+import { UserRole } from '@model/domain/user-role';
 
 export class RoleDao {
   constructor(private pg: PgConnection) {}

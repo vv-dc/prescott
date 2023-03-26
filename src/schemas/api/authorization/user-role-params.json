@@ -1,5 +1,6 @@
 {
-  "$id": "api/authorization/user-role-params.json",
+  "$id": "schema://prescott.dev/api/authorization/user-role-params.json",
+  "title": "UserRoleParams",
   "type": "object",
   "properties": {
     "role": {

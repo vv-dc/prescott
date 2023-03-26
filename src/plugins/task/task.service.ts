@@ -18,12 +18,12 @@ import { generateRandomString } from '@lib/random.utils';
 import { cronEveryNMinutes } from '@lib/cron.utils';
 import {
   TaskConfigDto,
-  Step,
   LocalTaskConfig,
   RepositoryTaskConfig,
 } from '@model/dto/task-config.dto';
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
+import { TaskStep } from '@model/domain/task-step';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -105,7 +105,7 @@ export class TaskService {
     taskId: number,
     identifier: string,
     osInfo: OsInfo,
-    steps: Step[]
+    steps: TaskStep[]
   ): Promise<void> {
     await this.dockerService.build({
       tag: identifier,

@@ -1,15 +1,17 @@
+export type TaskConfigResponse = Task & TaskConfig;
 export type TaskConfig = LocalTaskConfig | RepositoryTaskConfig;
 export type MemoryLimit = string;
 
-export interface TaskConfigDto {
+export interface Task {
+  id?: number;
   name: string;
-  osInfo: OsInfo;
-  once?: boolean;
-  config: TaskConfig;
-}
-export interface OsInfo {
-  name: string;
-  version?: number | string;
+  userId: number;
+  groupId: number;
+  /**
+   * base64 encoded TaskConfig
+   */
+  config: string;
+  active?: boolean;
 }
 export interface LocalTaskConfig {
   local: {

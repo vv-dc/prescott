@@ -21,10 +21,10 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/',
     method: 'POST',
     schema: {
-      headers: fastify.getSchema('api/authentication/access-token.json'),
-      body: fastify.getSchema('dto/authorization-create-group.json'),
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      body: fastify.getPrescottSchema('dto/authorization-create-group.dto'),
       response: {
-        200: fastify.getSchema('api/authorization/group-id.json'),
+        200: fastify.getPrescottSchema('api/authorization/group-id'),
       },
     },
     handler: async (request, reply) => {
@@ -39,8 +39,8 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/:groupId',
     method: 'DELETE',
     schema: {
-      headers: fastify.getSchema('api/authentication/access-token.json'),
-      params: fastify.getSchema('api/authorization/group-id.json'),
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      params: fastify.getPrescottSchema('api/authorization/group-id'),
     },
     preHandler: [authHooks.groupOwnerHook],
     handler: async (request, reply) => {
@@ -58,9 +58,9 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/:groupId/users',
     method: 'POST',
     schema: {
-      headers: fastify.getSchema('api/authentication/access-token.json'),
-      params: fastify.getSchema('api/authorization/group-id.json'),
-      body: fastify.getSchema('dto/authorization-add-to-group.json'),
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      params: fastify.getPrescottSchema('api/authorization/group-id'),
+      body: fastify.getPrescottSchema('dto/authorization-add-to-group.dto'),
     },
     preHandler: [authHooks.roleHook('group_manager')],
     handler: async (request, reply) => {
@@ -75,8 +75,8 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/:groupId/users/:userId',
     method: 'DELETE',
     schema: {
-      headers: fastify.getSchema('api/authentication/access-token.json'),
-      params: fastify.getSchema('api/authorization/user-group-params.json'),
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      params: fastify.getPrescottSchema('api/authorization/user-group-params'),
     },
     preHandler: [authHooks.roleHook('group_manager')],
     handler: async (request, reply) => {
@@ -95,9 +95,9 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/:groupId/users/:userId/roles',
     method: 'POST',
     schema: {
-      headers: fastify.getSchema('api/authentication/access-token.json'),
-      params: fastify.getSchema('api/authorization/user-group-params.json'),
-      body: fastify.getSchema('dto/authorization-add-role.json'),
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      params: fastify.getPrescottSchema('api/authorization/user-group-params'),
+      body: fastify.getPrescottSchema('dto/authorization-add-role.dto'),
     },
     preHandler: [authHooks.roleHook('role_manager')],
     handler: async (request, reply) => {
@@ -113,8 +113,8 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/:groupId/users/:userId/roles/:role',
     method: 'DELETE',
     schema: {
-      headers: fastify.getSchema('api/authentication/access-token.json'),
-      params: fastify.getSchema('api/authorization/user-role-params.json'),
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      params: fastify.getPrescottSchema('api/authorization/user-role-params'),
     },
     preHandler: [authHooks.roleHook('role_manager')],
     handler: async (request, reply) => {

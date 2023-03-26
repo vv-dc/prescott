@@ -34,11 +34,12 @@ export const config: {
   } as PgConfig,
   [SCHEMAS_CONFIG]: {
     schemasPath: join(__dirname, '../', 'schemas/'),
+    schemasIdPrefix: 'schema://prescott.dev/',
     tsPath: join(__dirname, '../', 'model'),
     ajvOptions: {
       allowUnionTypes: true,
     },
-  } as SchemasConfig,
+  },
   [AUTH_CONFIG]: {
     passwordConfig: {
       type: argon2id,
@@ -51,5 +52,5 @@ export const config: {
       refreshExpiresIn: 5.184e9,
     } as JwtConfig,
     maxSessions: 5,
-  } as AuthConfig,
+  },
 };

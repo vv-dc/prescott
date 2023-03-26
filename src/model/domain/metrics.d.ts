@@ -1,10 +1,10 @@
 export interface Metrics {
   timeTaken?: number;
   retries?: number;
-  ram?: Metric;
-  cpu?: Metric;
+  ram?: MetricValue;
+  cpu?: MetricValue;
 }
-export interface Metric {
+export interface MetricValue {
   max: number;
   avg: number;
   std: number;

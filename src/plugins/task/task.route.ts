@@ -1,6 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { getTaskSchema } from '@plugins/task/task.schema';
 import { TaskCreateParams } from '@model/api/task/task-create-params';
 import {
   LocalTaskConfig,
@@ -23,10 +22,10 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'POST',
     url: '/groups/:groupId/tasks',
     schema: {
-      params: fastify.getSchema('api/task/task-create-params.json'),
-      body: fastify.getSchema('dto/task-config.dto.json'),
+      params: fastify.getPrescottSchema('api/task/task-create-params'),
+      body: fastify.getPrescottSchema('dto/task-config.dto'),
       response: {
-        200: fastify.getSchema('api/task/task-id-response.json'),
+        200: fastify.getPrescottSchema('api/task/task-id-response'),
       },
     },
     preHandler: [authHooks.permissionHook('create_task')],
@@ -46,9 +45,9 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'GET',
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
-      params: fastify.getSchema('api/task/task-all-params.json'),
+      params: fastify.getPrescottSchema('api/task/task-all-params'),
       response: {
-        200: getTaskSchema,
+        200: fastify.getPrescottSchema('dto/task-config.dto'),
       },
     },
     preHandler: [authHooks.permissionHook('view_task')],
@@ -63,7 +62,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'DELETE',
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
-      params: fastify.getSchema('api/task/task-all-params.json'),
+      params: fastify.getPrescottSchema('api/task/task-all-params'),
     },
     preHandler: [authHooks.permissionHook('delete_task')],
     handler: async (request, reply) => {
@@ -81,8 +80,8 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'PUT',
     url: '/groups/:groupId/tasks/:taskId',
     schema: {
-      params: fastify.getSchema('api/task/task-all-params.json'),
-      // body: fastify.getSchema('dto/task-config.dto.json#/properties/config'),
+      params: fastify.getPrescottSchema('api/task/task-all-params'),
+      body: fastify.getPrescottSchema('domain/task-config'),
     },
     preHandler: [authHooks.permissionHook('update_task')],
     handler: async (request, reply) => {
@@ -99,7 +98,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'POST',
     url: '/groups/:groupId/tasks/:taskId/stop',
     schema: {
-      params: fastify.getSchema('api/task/task-all-params.json'),
+      params: fastify.getPrescottSchema('api/task/task-all-params'),
     },
     preHandler: [authHooks.permissionHook('stop_task')],
     handler: async (request, reply) => {
@@ -113,7 +112,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'POST',
     url: '/groups/:groupId/tasks/:taskId/start',
     schema: {
-      params: fastify.getSchema('api/task/task-all-params.json'),
+      params: fastify.getPrescottSchema('api/task/task-all-params'),
     },
     preHandler: [authHooks.permissionHook('start_task')],
     handler: async (request, reply) => {

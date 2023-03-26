@@ -1,0 +1,11 @@
+{
+  "$id": "schema://prescott.dev/domain/user-role.json",
+  "title": "UserRole",
+  "type": "object",
+  "properties": {
+    "userGroupId": { "type": "number" },
+    "roleId": { "type": "number" }
+  },
+  "required": ["userGroupId", "roleId"],
+  "additionalProperties": false
+}

@@ -5,7 +5,8 @@ import { CommandBuilder } from '@lib/command-builder';
 import { PgConnection } from '@model/shared/pg-connection';
 import { OsInfo } from '@model/domain/os-info';
 import { DOCKER_IMAGES } from '@test/lib/test.const';
-import { Step, TaskConfigDto } from '@model/dto/task-config.dto';
+import { TaskConfigDto } from '@model/dto/task-config.dto';
+import { TaskStep } from '@model/domain/task-step';
 
 export const getTimeoutRejectPromise = (timeout: number): Promise<unknown> =>
   new Promise((resolve, reject) => {
@@ -34,7 +35,7 @@ export const deleteImages = async (images: OsInfo[]): Promise<void> => {
 
 export const buildLocalTask = (
   name: string,
-  steps: Step[],
+  steps: TaskStep[],
   cronString: string,
   once = false
 ): TaskConfigDto => ({

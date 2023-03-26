@@ -1,5 +1,6 @@
 {
-  "$id": "api/authorization/user-group-params.json",
+  "$id": "schema://prescott.dev/api/authorization/user-group-params.json",
+  "title": "UserGroupParams",
   "type": "object",
   "properties": {
     "groupId": { "type": "integer" },

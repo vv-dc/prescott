@@ -1,11 +1,24 @@
 import { readFileSync } from 'fs';
-import { FastifyPluginAsync } from 'fastify';
+import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
 
 import { config, SCHEMAS_CONFIG } from '@config/config';
 import { getDirectoryFilesSync } from '@lib/file.utils';
 
-const { schemasPath } = config[SCHEMAS_CONFIG];
+const { schemasPath, schemasIdPrefix } = config[SCHEMAS_CONFIG];
+
+const getPrescottSchema = function (
+  this: FastifyInstance,
+  schemaId: string
+): unknown {
+  const fullSchemaId = `${schemasIdPrefix}${schemaId}.json`;
+  const schema = this.getSchema(fullSchemaId);
+  if (!schema) {
+    const reason = `getPrescottSchema: unable to resolve schemaId=${schemaId}`;
+    throw new Error(reason);
+  }
+  return schema;
+};
 
 const schema: FastifyPluginAsync = async (fastify) => {
   const files = getDirectoryFilesSync(schemasPath);
@@ -13,6 +26,12 @@ const schema: FastifyPluginAsync = async (fastify) => {
     const content = readFileSync(file, 'utf-8');
     fastify.addSchema(JSON.parse(content));
   }
+  fastify.decorate('getPrescottSchema', getPrescottSchema);
 };
 
-export default fp(schema, { name: 'schema' });
+export default fp(schema, {
+  name: 'schema',
+  decorators: {
+    fastify: ['getPrescottSchema'],
+  },
+});

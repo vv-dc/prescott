@@ -1,5 +1,6 @@
 {
-  "$id": "api/authentication/access-token.json",
+  "$id": "schema://prescott.dev/api/authentication/access-token.json",
+  "title": "AccessToken",
   "type": "object",
   "properties": {
     "authorization": { "type": "string" }

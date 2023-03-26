@@ -1,5 +1,6 @@
 {
-  "$id": "api/task/task-id-response.json",
+  "$id": "schema://prescott.dev/api/task/task-id-response.json",
+  "title": "TaskIdResponse",
   "type": "object",
   "properties": {
     "taskId": { "type": "number" }

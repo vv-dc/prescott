@@ -1,0 +1,10 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-config-response.json",
+  "title": "TaskConfigResponse",
+  "type": "object",
+  "allOf": [
+    { "$ref": "schema://prescott.dev/domain/task.json" },
+    { "$ref": "schema://prescott.dev/domain/task-config.json" }
+  ],
+  "additionalProperties": false
+}
