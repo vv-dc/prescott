@@ -16,6 +16,6 @@
       "$ref": "schema://prescott.dev/domain/base-task-config.json"
     }
   },
-  "required": ["repository"],
+  "required": ["repository", "appConfig"],
   "additionalProperties": false
 }

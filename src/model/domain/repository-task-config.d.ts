@@ -5,7 +5,7 @@ export interface RepositoryTaskConfig {
     url: string;
     branch: string;
   };
-  appConfig?: BaseTaskConfig;
+  appConfig: BaseTaskConfig;
 }
 export interface BaseTaskConfig {
   steps: TaskStep[];
