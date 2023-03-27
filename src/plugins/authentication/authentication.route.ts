@@ -11,7 +11,7 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'POST',
     url: '/register',
     schema: {
-      body: fastify.getSchema('dto/authentication-register.json'),
+      body: fastify.getPrescottSchema('dto/authentication-register.dto'),
     },
     handler: async (request, reply) => {
       const { body: registerData } = request;
@@ -24,9 +24,9 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/login',
     method: 'POST',
     schema: {
-      body: fastify.getSchema('dto/authentication-login.json'),
+      body: fastify.getPrescottSchema('dto/authentication-login.dto'),
       response: {
-        200: fastify.getSchema('api/authentication/token-pair.json'),
+        200: fastify.getPrescottSchema('dto/token-pair.dto'),
       },
     },
     handler: async (request, reply) => {
@@ -40,9 +40,9 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/refresh-tokens',
     method: 'POST',
     schema: {
-      body: fastify.getSchema('dto/authentication-refresh-tokens.json'),
+      body: fastify.getPrescottSchema('dto/authentication-refresh-tokens.dto'),
       response: {
-        200: fastify.getSchema('api/authentication/token-pair.json'),
+        200: fastify.getPrescottSchema('dto/token-pair.dto'),
       },
     },
     handler: async (request, reply) => {
@@ -60,7 +60,7 @@ export const authenticationRoutes: FastifyPluginAsync = async (fastify) => {
     url: '/logout',
     method: 'POST',
     schema: {
-      body: fastify.getSchema('dto/authentication-refresh-tokens.json'),
+      body: fastify.getPrescottSchema('dto/authentication-refresh-tokens.dto'),
     },
     handler: async (request, reply) => {
       const { refreshToken } = request.body;

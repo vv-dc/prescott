@@ -1,27 +1,16 @@
 {
-  "$id": "domain/metrics.json",
+  "$id": "schema://prescott.dev/domain/metrics.json",
+  "title": "Metrics",
   "type": "object",
   "properties": {
     "timeTaken": { "type": "number", "exclusiveMinimum": 0 },
     "retries": { "type": "number", "exclusiveMinimum": 0 },
     "ram": {
-      "$ref": "#/$defs/Metric"
+      "$ref": "schema://prescott.dev/domain/metric-value.json"
     },
     "cpu": {
-      "$ref": "#/$defs/Metric"
+      "$ref": "schema://prescott.dev/domain/metric-value.json"
     }
   },
-  "additionalProperties": false,
-  "$defs": {
-    "Metric": {
-      "type": "object",
-      "properties": {
-        "max": { "type": "number", "exclusiveMinimum": 0 },
-        "avg": { "type": "number", "exclusiveMinimum": 0 },
-        "std": { "type": "number" }
-      },
-      "required": ["max", "avg", "std"],
-      "additionalProperties": false
-    }
-  }
+  "additionalProperties": false
 }

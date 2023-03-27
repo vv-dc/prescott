@@ -21,6 +21,7 @@ declare module 'fastify' {
     authorizationService: AuthorizationService;
     jwtValidationHook: JwtValidationHook;
     authHooks: AuthHooks;
+    getPrescottSchema: (schemaId: string) => unknown;
   }
 
   export interface FastifyRequest {

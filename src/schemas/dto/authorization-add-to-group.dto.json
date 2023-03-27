@@ -1,5 +1,6 @@
 {
-  "$id": "dto/authorization-add-to-group.json",
+  "$id": "schema://prescott.dev/dto/authorization-add-to-group.dto.json",
+  "title": "AuthorizationAddToGroupDto",
   "type": "object",
   "properties": {
     "userId": { "type": "integer" }

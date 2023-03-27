@@ -1,5 +1,6 @@
 {
-  "$id": "dto/authentication-refresh-tokens.json",
+  "$id": "schema://prescott.dev/dto/authentication-refresh-tokens.dto.json",
+  "title": "AuthenticationRefreshTokensDto",
   "type": "object",
   "properties": {
     "refreshToken": { "type": "string", "format": "uuid" }

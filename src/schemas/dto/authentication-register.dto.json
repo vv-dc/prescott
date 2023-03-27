@@ -1,5 +1,6 @@
 {
-  "$id": "dto/authentication-register.json",
+  "$id": "schema://prescott.dev/dto/authentication-register.dto.json",
+  "title": "AuthenticationRegisterDto",
   "type": "object",
   "properties": {
     "login": { "type": "string", "maxLength": 120 },

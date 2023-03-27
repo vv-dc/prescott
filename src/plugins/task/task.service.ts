@@ -18,12 +18,13 @@ import { generateRandomString } from '@lib/random.utils';
 import { cronEveryNMinutes } from '@lib/cron.utils';
 import {
   TaskConfigDto,
-  Step,
   LocalTaskConfig,
   RepositoryTaskConfig,
 } from '@model/dto/task-config.dto';
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
+import { TaskStep } from '@model/domain/task-step';
+import { TaskConfig } from '@model/domain/task-config';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -105,7 +106,7 @@ export class TaskService {
     taskId: number,
     identifier: string,
     osInfo: OsInfo,
-    steps: Step[]
+    steps: TaskStep[]
   ): Promise<void> {
     await this.dockerService.build({
       tag: identifier,
@@ -217,9 +218,7 @@ export class TaskService {
     await this.register(identifier, taskId, newTaskConfig);
   }
 
-  async getTask(
-    taskId: number
-  ): Promise<Task & (TaskConfigDto | RepositoryTaskConfig)> {
+  async getTask(taskId: number): Promise<Task & TaskConfigDto> {
     const task = await this.dao.findById(taskId);
     if (task == undefined) {
       throw new EntityNotFound('Task does not exist');

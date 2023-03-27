@@ -1,0 +1,20 @@
+{
+  "$id": "schema://prescott.dev/domain/local-task-config.json",
+  "title": "LocalTaskConfig",
+  "type": "object",
+  "properties": {
+    "local": {
+      "type": "object",
+      "properties": {
+        "cronString": { "type": "string" }
+      },
+      "required": ["cronString"],
+      "additionalProperties": false
+    },
+    "appConfig": {
+      "$ref": "schema://prescott.dev/domain/base-task-config.json"
+    }
+  },
+  "required": ["local", "appConfig"],
+  "additionalProperties": false
+}

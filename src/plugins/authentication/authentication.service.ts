@@ -14,7 +14,7 @@ import {
 } from '@modules/errors/abstract-errors';
 import { AuthenticationRegisterDto } from '@model/dto/authentication-register.dto';
 import { AuthenticationLoginDto } from '@model/dto/authentication-login.dto';
-import { TokenPairDto } from '@model/api/authentication/token-pair.dto';
+import { TokenPairDto } from '@model/dto/token-pair.dto';
 import { UserPayload } from '@model/domain/user-payload';
 
 const { maxSessions, jwtConfig } = config[AUTH_CONFIG];

@@ -1,5 +1,6 @@
 {
-  "$id": "dto/authentication-login.json",
+  "$id": "schema://prescott.dev/dto/authentication-login.dto.json",
+  "title": "AuthenticationLoginDto",
   "type": "object",
   "properties": {
     "login": {

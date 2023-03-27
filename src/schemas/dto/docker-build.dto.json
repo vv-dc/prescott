@@ -1,12 +1,13 @@
 {
-  "$id": "dto/docker-build.dto.json",
+  "$id": "schema://prescott.dev/dto/docker-build.dto.json",
+  "title": "DockerBuildDto",
   "type": "object",
   "properties": {
     "tag": {
       "type": "string"
     },
     "osInfo": {
-      "$ref": "domain/os-info.json"
+      "$ref": "schema://prescott.dev/domain/os-info.json"
     },
     "cmd": {
       "type": "string"

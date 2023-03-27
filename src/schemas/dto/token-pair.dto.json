@@ -1,5 +1,6 @@
 {
-  "$id": "api/authentication/token-pair.json",
+  "$id": "schema://prescott.dev/dto/token-pair.dto.json",
+  "title": "TokenPairDto",
   "type": "object",
   "properties": {
     "accessToken": { "type": "string" },

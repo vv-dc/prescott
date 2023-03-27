@@ -1,8 +1,11 @@
 import { CommandBuilder } from '@lib/command-builder';
 import { decodeBase64 } from '@lib/string.utils';
-import { Step } from '@model/dto/task-config.dto';
+import { TaskStep } from '@model/domain/task-step';
 
-export const buildDockerCmd = (separator: string, steps: Step[]): string => {
+export const buildDockerCmd = (
+  separator: string,
+  steps: TaskStep[]
+): string => {
   const command = new CommandBuilder().init('echo').with(separator);
 
   for (const step of steps) {

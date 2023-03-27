@@ -18,24 +18,24 @@ describe('task.service integration', () => {
   let pg: PgConnection;
 
   const createGroup = async (ownerId: number): Promise<{ groupId: number }> => {
-    const [id] = await pg('groups')
+    const [{ id }] = await pg('groups')
       .insert({
         name: 'mock_group',
         ownerId,
       })
-      .returning('id');
+      .returning<{ id: number }[]>('id');
     return { groupId: id };
   };
 
   const createUser = async (): Promise<{ userId: number }> => {
-    const [id] = await pg('users')
+    const [{ id }] = await pg('users')
       .insert({
         login: 'mock_login',
         email: 'mock@mock.mock',
         fullName: 'Mock Mock',
         password: 'mock_password',
       })
-      .returning('id');
+      .returning<{ id: number }[]>('id');
     return { userId: id };
   };
 

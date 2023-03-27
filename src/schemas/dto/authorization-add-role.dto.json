@@ -1,5 +1,6 @@
 {
-  "$id": "dto/authorization-add-role.json",
+  "$id": "schema://prescott.dev/dto/authorization-add-role.dto.json",
+  "title": "AuthorizationAddRoleDto",
   "type": "object",
   "properties": {
     "role": {

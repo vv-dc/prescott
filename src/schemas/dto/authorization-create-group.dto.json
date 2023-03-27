@@ -1,5 +1,6 @@
 {
-  "$id": "dto/authorization-create-group.json",
+  "$id": "schema://prescott.dev/dto/authorization-create-group.dto.json",
+  "title": "AuthorizationCreateGroupDto",
   "type": "object",
   "properties": {
     "groupName": { "type": "string", "maxLength": 120 }

@@ -15,7 +15,7 @@ export class JwtService {
     });
   }
 
-  async verify(token: string): Promise<JwtPayload | undefined> {
+  async verify(token: string): Promise<JwtPayload | undefined | string> {
     const { secret } = this.options;
 
     return new Promise((resolve, reject) => {

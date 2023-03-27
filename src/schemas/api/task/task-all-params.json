@@ -1,5 +1,6 @@
 {
-  "$id": "api/task/task-all-params.json",
+  "$id": "schema://prescott.dev/api/task/task-all-params.json",
+  "title": "TaskAllParams",
   "type": "object",
   "properties": {
     "groupId": { "type": "integer" },

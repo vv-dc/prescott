@@ -1,5 +1,6 @@
 {
-  "$id": "domain/os-info.json",
+  "$id": "schema://prescott.dev/domain/os-info.json",
+  "title": "OsInfo",
   "type": "object",
   "properties": {
     "name": {

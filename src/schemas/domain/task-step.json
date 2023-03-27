@@ -1,0 +1,12 @@
+{
+  "$id": "schema://prescott.dev/domain/task-step.json",
+  "title": "TaskStep",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "script": { "type": "string" },
+    "ignoreFailure": { "type": "boolean", "default": false }
+  },
+  "required": ["name", "script"],
+  "additionalProperties": false
+}

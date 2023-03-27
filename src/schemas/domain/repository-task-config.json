@@ -1,0 +1,21 @@
+{
+  "$id": "schema://prescott.dev/domain/repository-task-config.json",
+  "title": "RepositoryTaskConfig",
+  "type": "object",
+  "properties": {
+    "repository": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "branch": { "type": "string" }
+      },
+      "required": ["url", "branch"],
+      "additionalProperties": false
+    },
+    "appConfig": {
+      "$ref": "schema://prescott.dev/domain/base-task-config.json"
+    }
+  },
+  "required": ["repository", "appConfig"],
+  "additionalProperties": false
+}

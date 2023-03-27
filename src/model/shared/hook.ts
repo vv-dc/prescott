@@ -1,6 +1,11 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import {
+  FastifyInstance,
+  FastifyRequest,
+  FastifyReply,
+  RouteGenericInterface,
+} from 'fastify';
 
-export type Hook<T> = (
+export type Hook<T extends RouteGenericInterface> = (
   this: FastifyInstance,
   request: FastifyRequest<T>,
   reply: FastifyReply

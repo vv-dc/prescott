@@ -1,5 +1,6 @@
 {
-  "$id": "api/authorization/group-id.json",
+  "$id": "schema://prescott.dev/api/authorization/group-id.json",
+  "title": "GroupId",
   "type": "object",
   "properties": {
     "groupId": { "type": "integer" }

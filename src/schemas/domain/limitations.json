@@ -1,12 +1,13 @@
 {
-  "$id": "domain/limitations.json",
+  "$id": "schema://prescott.dev/domain/limitations.json",
+  "title": "Limitations",
   "type": "object",
   "properties": {
     "ram": {
-      "$ref": "#/$defs/MemoryLimit"
+      "$ref": "schema://prescott.dev/domain/memory-limit.json"
     },
     "rom": {
-      "$ref": "#/$defs/MemoryLimit"
+      "$ref": "schema://prescott.dev/domain/memory-limit.json"
     },
     "ttl": {
       "type": "number",
@@ -17,11 +18,5 @@
       "exclusiveMinimum": 0
     }
   },
-  "additionalProperties": false,
-  "$defs": {
-    "MemoryLimit": {
-      "type": "string",
-      "pattern": "^[0-9]+(b|k|m|g)$"
-    }
-  }
+  "additionalProperties": false
 }

@@ -1,0 +1,6 @@
+{
+  "$id": "schema://prescott.dev/domain/memory-limit.json",
+  "title": "MemoryLimit",
+  "type": "string",
+  "pattern": "^[0-9]+(b|k|m|g)$"
+}

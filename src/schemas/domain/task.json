@@ -1,14 +1,18 @@
 {
-  "$id": "domain/task.json",
+  "$id": "schema://prescott.dev/domain/task.json",
+  "title": "Task",
   "type": "object",
   "properties": {
     "id": { "type": "integer" },
     "name": { "type": "string" },
     "userId": { "type": "integer" },
     "groupId": { "type": "integer" },
-    "config": { "type": "string" },
+    "config": {
+      "type": "string",
+      "description": "base64 encoded TaskConfig"
+    },
     "active": { "type": "boolean", "default": true }
   },
-  "required": ["name", "userId", "groupId", "config"],
+  "required": ["id", "name", "userId", "groupId", "config"],
   "additionalProperties": false
 }
