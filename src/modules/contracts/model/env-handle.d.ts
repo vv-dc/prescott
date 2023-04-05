@@ -10,9 +10,9 @@ export interface EnvHandle {
 
 export interface StopEnvHandleDto {
   timeout?: number;
-  force: boolean;
+  isForce: boolean;
 }
 
 export interface DeleteEnvHandleDto {
-  force: boolean;
+  isForce: boolean;
 }

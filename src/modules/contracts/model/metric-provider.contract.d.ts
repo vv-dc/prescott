@@ -1,8 +1,9 @@
 import { TaskInstanceId } from '@modules/contracts/model/task-instance-id';
 import { MetricEntry } from '@modules/contracts/model/metric-entry';
 import { EntryPage, EntryPaging } from '@modules/contracts/model/entry-paging';
+import { Contract } from '@modules/contracts/model/contract';
 
-export interface MetricProviderContract {
+export interface MetricProviderContract extends Contract {
   consumeMetricGenerator(
     id: TaskInstanceId,
     generator: AsyncGenerator<MetricEntry>

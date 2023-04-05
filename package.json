@@ -57,6 +57,7 @@
     "dotenv": "^16.0.3",
     "fastify": "^4.15.0",
     "fastify-plugin": "^4.5.0",
+    "joi": "^17.9.1",
     "jsonwebtoken": "^9.0.0",
     "knex": "^2.4.2",
     "node-cron": "^3.0.2",

@@ -1,8 +1,9 @@
 import { LogEntry } from '@modules/contracts/model/log-entry';
 import { TaskInstanceId } from '@modules/contracts/model/task-instance-id';
 import { EntryPage, EntryPaging } from '@modules/contracts/model/entry-page';
+import { Contract } from '@modules/contracts/model/contract';
 
-export interface LogProviderContract {
+export interface LogProviderContract extends Contract {
   consumeLogGenerator(
     id: TaskInstanceId,
     generator: AsyncGenerator<LogEntry>
