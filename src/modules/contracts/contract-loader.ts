@@ -1,15 +1,16 @@
 import * as path from 'node:path';
 import {
   assertConfigIncludesAllTypes,
-  validContractImpl,
-} from '@modules/contracts/contractValidator';
+  validateContactImpl,
+} from '@modules/contracts/contract-validator';
 import {
+  CONTRACT_CONFIG_TYPES,
   ContractConfig,
   ContractConfigEntry,
-  CONTRACT_CONFIG_TYPES,
+  ContractMap,
   ContractSourceType,
 } from '@modules/contracts/model/contract-config';
-import { ContractMap, Contract } from '@modules/contracts/model/contract';
+import { Contract, ContractModule } from '@modules/contracts/model/contract';
 
 export const buildContractMap = async (
   config: ContractConfig
@@ -21,7 +22,7 @@ export const buildContractMap = async (
     const entry = config[type];
     const impl = await buildContract(entry);
 
-    const error: string | null = await validContractImpl(type, impl);
+    const error: string | null = validateContactImpl(type, impl);
     if (error !== null) {
       throw new Error(`Invalid implementation for ${type}: ${error}`);
     }
@@ -32,7 +33,7 @@ export const buildContractMap = async (
   return contractMap;
 };
 
-const buildContract = async (
+export const buildContract = async (
   configEntry: ContractConfigEntry
 ): Promise<Contract> => {
   const { type, key, opts } = configEntry;
@@ -63,8 +64,13 @@ const loadContract = async (
 };
 
 const loadNpmContract = async (key: string): Promise<Contract> => {
-  const module = await import(key);
-  return module.default;
+  return await importContractModule(key);
+};
+
+const importContractModule = async (path: string): Promise<Contract> => {
+  const module = await import(path);
+  const moduleContent: ContractModule = module.default ?? module;
+  return moduleContent.buildContract();
 };
 
 const loadFileContract = async (key: string): Promise<Contract> => {
@@ -73,6 +79,5 @@ const loadFileContract = async (key: string): Promise<Contract> => {
     const reason = `unsupported extension: ${ext}`;
     throw new Error(`Unable to load contract from file: ${reason}`);
   }
-  const module = await import(key);
-  return module.default;
+  return await importContractModule(key);
 };

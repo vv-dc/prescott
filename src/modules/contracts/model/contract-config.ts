@@ -1,4 +1,4 @@
-import { ContractOpts } from '@modules/contracts/model/contract';
+import { Contract, ContractOpts } from '@modules/contracts/model/contract';
 
 export type ContractConfig = Record<ContractType, ContractConfigEntry>;
 
@@ -12,3 +12,5 @@ export interface ContractConfigEntry {
 }
 
 export type ContractSourceType = 'http' | 'file' | 'npm';
+
+export type ContractMap = Record<ContractType, Contract>;
