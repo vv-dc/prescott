@@ -1,7 +1,7 @@
 import {
   ContractConfigFile,
   ContractMap,
-} from '@modules/contracts/model/contract-config';
+} from '@modules/contract/model/contract-config';
 
 export interface RootConfigFile {
   contract: ContractConfigFile;

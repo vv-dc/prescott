@@ -1,11 +1,11 @@
 import {
   LogProviderContract,
   LogSearchDto,
-} from '@modules/contracts/model/log-provider.contract';
-import { TaskInstanceId } from '@modules/contracts/model/task-instance-id';
-import { LogEntry } from '@modules/contracts/model/log-entry';
-import { EntryPage, EntryPaging } from '@modules/contracts/model/entry-paging';
-import { ContractOpts } from '@modules/contracts/model/contract';
+} from '@modules/contract/model/log-provider.contract';
+import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { LogEntry } from '@modules/contract/model/log-entry';
+import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import { ContractOpts } from '@modules/contract/model/contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const init = async (opts?: ContractOpts): Promise<void> => {

@@ -1,11 +1,11 @@
-import { TaskInstanceId } from '@modules/contracts/model/task-instance-id';
-import { EntryPage, EntryPaging } from '@modules/contracts/model/entry-paging';
-import { ContractOpts } from '@modules/contracts/model/contract';
+import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import { ContractOpts } from '@modules/contract/model/contract';
 import {
   MetricProviderContract,
   MetricSearchDto,
-} from '@modules/contracts/model/metric-provider.contract';
-import { MetricEntry } from '@modules/contracts/model/metric-entry';
+} from '@modules/contract/model/metric-provider.contract';
+import { MetricEntry } from '@modules/contract/model/metric-entry';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const init = async (opts?: ContractOpts): Promise<void> => {

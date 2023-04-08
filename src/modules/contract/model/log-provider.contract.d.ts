@@ -1,7 +1,7 @@
-import { LogEntry } from '@modules/contracts/model/log-entry';
-import { TaskInstanceId } from '@modules/contracts/model/task-instance-id';
-import { EntryPage, EntryPaging } from '@modules/contracts/model/entry-page';
-import { Contract } from '@modules/contracts/model/contract';
+import { LogEntry } from '@modules/contract/model/log-entry';
+import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { EntryPage, EntryPaging } from '@modules/contract/model/entry-page';
+import { Contract } from '@modules/contract/model/contract';
 
 export interface LogProviderContract extends Contract {
   consumeLogGenerator(

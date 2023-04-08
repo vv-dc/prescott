@@ -1,8 +1,7 @@
 import { Limitations } from '@model/domain/limitations';
 import { OsInfo } from '@model/domain/os-info';
-import { EnvId } from '@plugins/docker/docker.service';
-import { EnvHandle } from '@modules/contracts/model/env-handle';
-import { Contract } from '@modules/contracts/model/contract';
+import { EnvHandle } from '@modules/contract/model/env-handle';
+import { Contract } from '@modules/contract/model/contract';
 
 export interface EnvProviderContract extends Contract {
   runEnv(dto: RunEnvDto): Promise<EnvHandle>;

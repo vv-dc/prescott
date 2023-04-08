@@ -2,15 +2,15 @@ import * as path from 'node:path';
 import {
   validateContactImpl,
   validateContractConfig,
-} from '@modules/contracts/contract-validator';
+} from '@modules/contract/contract-validator';
 import {
   CONTRACT_CONFIG_TYPES,
   ContractConfigFile,
   ContractConfigFileEntry,
   ContractMap,
   ContractSourceType,
-} from '@modules/contracts/model/contract-config';
-import { Contract, ContractModule } from '@modules/contracts/model/contract';
+} from '@modules/contract/model/contract-config';
+import { Contract, ContractModule } from '@modules/contract/model/contract';
 
 export const buildContractMap = async (
   config: ContractConfigFile,

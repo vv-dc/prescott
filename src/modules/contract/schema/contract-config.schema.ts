@@ -3,7 +3,7 @@ import {
   CONTRACT_CONFIG_SOURCE_TYPES,
   ContractConfigFile,
   ContractConfigFileEntry,
-} from '@modules/contracts/model/contract-config';
+} from '@modules/contract/model/contract-config';
 
 export const contractConfigEntrySchema = Joi.object<ContractConfigFileEntry>({
   type: Joi.string()

@@ -1,8 +1,8 @@
 import { randomInt } from 'node:crypto';
-import { buildContract } from '@modules/contracts/contract-loader';
+import { buildContract } from '@modules/contract/contract-loader';
 import { generateRandomString } from '@lib/random.utils';
-import { ContractConfigFileEntry } from '@modules/contracts/model/contract-config';
-import { Contract, ContractModule } from '@modules/contracts/model/contract';
+import { ContractConfigFileEntry } from '@modules/contract/model/contract-config';
+import { Contract, ContractModule } from '@modules/contract/model/contract';
 
 describe('contract-loader unit', () => {
   describe('buildContract', () => {

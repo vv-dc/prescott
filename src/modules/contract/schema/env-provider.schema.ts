@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
-import { EnvProviderContract } from '@modules/contracts/model/env-provider.contract';
+import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
 
 export const envProviderSchema = Joi.object<EnvProviderContract>({
   init: Joi.function().minArity(1).required(),

@@ -3,10 +3,10 @@ import {
   DeleteEnvDto,
   EnvProviderContract,
   RunEnvDto,
-} from '@modules/contracts/model/env-provider.contract';
-import { EnvHandle } from '@modules/contracts/model/env-handle';
+} from '@modules/contract/model/env-provider.contract';
+import { EnvHandle } from '@modules/contract/model/env-handle';
 import { generateRandomString } from '@lib/random.utils';
-import { ContractOpts } from '@modules/contracts/model/contract';
+import { ContractOpts } from '@modules/contract/model/contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const init = async (opts?: ContractOpts): Promise<void> => {

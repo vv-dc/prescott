@@ -1,16 +1,16 @@
 import {
   validateContactImpl,
   validateContractConfig,
-} from '@modules/contracts/contract-validator';
+} from '@modules/contract/contract-validator';
 import { generateRandomString } from '@lib/random.utils';
-import { Contract } from '@modules/contracts/model/contract';
-import { EnvProviderContract } from '@modules/contracts/model/env-provider.contract';
-import { EnvHandle } from '@modules/contracts/model/env-handle';
-import { LogProviderContract } from '@modules/contracts/model/log-provider.contract';
-import { MetricProviderContract } from '@modules/contracts/model/metric-provider.contract';
-import { EntryPage } from '@modules/contracts/model/entry-paging';
-import { MetricEntry } from '@modules/contracts/model/metric-entry';
-import { ContractConfigFile } from '@modules/contracts/model/contract-config';
+import { Contract } from '@modules/contract/model/contract';
+import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
+import { EnvHandle } from '@modules/contract/model/env-handle';
+import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
+import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import { EntryPage } from '@modules/contract/model/entry-paging';
+import { MetricEntry } from '@modules/contract/model/metric-entry';
+import { ContractConfigFile } from '@modules/contract/model/contract-config';
 
 describe('contract-validator unit', () => {
   it('should validate env - INVALID', () => {

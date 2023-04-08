@@ -1,4 +1,4 @@
-import { Contract, ContractOpts } from '@modules/contracts/model/contract';
+import { Contract, ContractOpts } from '@modules/contract/model/contract';
 
 export type ContractConfigFile = Record<ContractType, ContractConfigFileEntry>;
 

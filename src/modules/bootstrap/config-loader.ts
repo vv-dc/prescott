@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { buildContractMap } from '@modules/contracts/contract-loader';
+import { buildContractMap } from '@modules/contract/contract-loader';
 import { validateRootConfigFile } from '@modules/bootstrap/config-validator';
 import {
   RootConfig,
@@ -10,11 +10,15 @@ import {
 export const getRootConfig = async (workDir: string): Promise<RootConfig> => {
   const configPath = buildRootConfigPath(workDir);
   const configFile = await loadRootConfigFile(configPath);
-  return await parseRootConfigFile(configFile, workDir);
+  const contractPath = buildContractDirPath(workDir);
+  return await parseRootConfigFile(configFile, contractPath);
 };
 
 const buildRootConfigPath = (workDir: string): string =>
   path.join(workDir, 'config.json');
+
+const buildContractDirPath = (workDir: string): string =>
+  path.join(workDir, 'contract');
 
 const loadRootConfigFile = async (path: string): Promise<RootConfigFile> => {
   const rawContent = await fs.readFile(path, 'utf-8');

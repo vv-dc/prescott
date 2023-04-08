@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
-import { MetricProviderContract } from '@modules/contracts/model/metric-provider.contract';
+import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 
 export const metricProviderSchema = Joi.object<MetricProviderContract>({
   init: Joi.function().minArity(1).required(),

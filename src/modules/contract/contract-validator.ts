@@ -1,13 +1,13 @@
 import { Schema } from 'joi';
-import { Contract } from '@modules/contracts/model/contract';
+import { Contract } from '@modules/contract/model/contract';
 import {
   ContractConfigFile,
   ContractType,
-} from '@modules/contracts/model/contract-config';
-import { envProviderSchema } from '@modules/contracts/schema/env-provider.schema';
-import { logProviderSchema } from '@modules/contracts/schema/log-provider.schema';
-import { metricProviderSchema } from '@modules/contracts/schema/metric-provider.schema';
-import { contractConfigSchema } from '@modules/contracts/schema/contract-config.schema';
+} from '@modules/contract/model/contract-config';
+import { envProviderSchema } from '@modules/contract/schema/env-provider.schema';
+import { logProviderSchema } from '@modules/contract/schema/log-provider.schema';
+import { metricProviderSchema } from '@modules/contract/schema/metric-provider.schema';
+import { contractConfigSchema } from '@modules/contract/schema/contract-config.schema';
 
 const contractSchema: Record<ContractType, Schema> = {
   env: envProviderSchema,

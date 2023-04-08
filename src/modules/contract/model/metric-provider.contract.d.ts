@@ -1,7 +1,7 @@
-import { TaskInstanceId } from '@modules/contracts/model/task-instance-id';
-import { MetricEntry } from '@modules/contracts/model/metric-entry';
-import { EntryPage, EntryPaging } from '@modules/contracts/model/entry-paging';
-import { Contract } from '@modules/contracts/model/contract';
+import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { MetricEntry } from '@modules/contract/model/metric-entry';
+import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import { Contract } from '@modules/contract/model/contract';
 
 export interface MetricProviderContract extends Contract {
   consumeMetricGenerator(

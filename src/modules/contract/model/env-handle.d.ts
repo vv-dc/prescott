@@ -1,5 +1,3 @@
-import { LogEntry, MetricEntry } from '@plugins/docker/docker.service';
-
 export interface EnvHandle {
   stop(dto: StopEnvHandleDto): Promise<void>;
   delete(dto: DeleteEnvHandleDto): Promise<void>;
