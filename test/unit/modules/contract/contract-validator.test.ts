@@ -1,6 +1,6 @@
 import {
-  assertConfigIncludesAllTypes,
   validateContactImpl,
+  validateContractConfig,
 } from '@modules/contracts/contract-validator';
 import { generateRandomString } from '@lib/random.utils';
 import { Contract } from '@modules/contracts/model/contract';
@@ -10,7 +10,7 @@ import { LogProviderContract } from '@modules/contracts/model/log-provider.contr
 import { MetricProviderContract } from '@modules/contracts/model/metric-provider.contract';
 import { EntryPage } from '@modules/contracts/model/entry-paging';
 import { MetricEntry } from '@modules/contracts/model/metric-entry';
-import { ContractConfig } from '@modules/contracts/model/contract-config';
+import { ContractConfigFile } from '@modules/contracts/model/contract-config';
 
 describe('contract-validator unit', () => {
   it('should validate env - INVALID', () => {
@@ -79,21 +79,37 @@ describe('contract-validator unit', () => {
     expect(error).toBeNull();
   });
 
-  it('should validate config keys - INVALID', () => {
-    expect(() => {
-      assertConfigIncludesAllTypes({
-        env: {},
-      } as ContractConfig);
-    }).toThrow(Error);
+  it('should validate config - VALID', () => {
+    const config: ContractConfigFile = {
+      env: {
+        type: 'npm',
+        key: 'some-env-contract-impl',
+        opts: { envParam: generateRandomString('env') },
+      },
+      log: {
+        type: 'file',
+        key: '/home/someone/some-log-contract-impl.js',
+        opts: { logParam: generateRandomString('log') },
+      },
+      metric: {
+        type: 'npm',
+        key: 'some-metric-contract-impl',
+        opts: { metricParam: generateRandomString('metric') },
+      },
+    };
+    const error = validateContractConfig(config);
+    expect(error).toBeNull();
   });
 
-  it('should validate config keys - VALID', () => {
-    expect(() => {
-      assertConfigIncludesAllTypes({
-        env: {},
-        log: {},
-        metric: {},
-      } as ContractConfig);
-    }).not.toThrow();
+  it('should validate config - INVALID', () => {
+    const config = {
+      env: {
+        type: 'some',
+        key: 'some-env-contract-impl',
+        opts: { envParam: generateRandomString('env') },
+      },
+    } as unknown as ContractConfigFile;
+    const error = validateContractConfig(config);
+    expect(error).not.toBeNull();
   });
 });

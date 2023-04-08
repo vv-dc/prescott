@@ -10,6 +10,7 @@ import { JwtValidationHook } from '@plugins/authentication/jwt/model/jwt-validat
 import { AuthHooks } from '@plugins/authorization/model/auth-hooks';
 import { PgConnection } from '@model/shared/pg-connection';
 import { UserPayload } from '@model/domain/user-payload';
+import { ContractMap } from '@modules/contracts/model/contract-config';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -22,6 +23,7 @@ declare module 'fastify' {
     jwtValidationHook: JwtValidationHook;
     authHooks: AuthHooks;
     getPrescottSchema: (schemaId: string) => unknown;
+    contractMap: ContractMap;
   }
 
   export interface FastifyRequest {

@@ -7,7 +7,11 @@ const { ajvOptions } = config[SCHEMAS_CONFIG];
 
 const bootstrap = async (app: FastifyPluginAsync) => {
   try {
-    const server = Fastify({ logger, ajv: { customOptions: ajvOptions } });
+    const server = Fastify({
+      logger,
+      ajv: { customOptions: ajvOptions },
+      pluginTimeout: 2400000,
+    });
     await server.register(app);
     await server.listen({ port, host });
   } catch (err) {

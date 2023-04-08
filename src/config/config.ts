@@ -8,18 +8,24 @@ import { SchemasConfig } from '@config/model/schemas.config';
 import { PasswordConfig } from '@config/model/password.config';
 import { JwtConfig } from '@config/model/jwt.config';
 import { AuthConfig } from '@config/model/auth.config';
+import { PrescottConfig } from '@config/model/prescott.config';
 
 export const SERVER_CONFIG = 'SERVER';
 export const PG_CONFIG = 'PG';
 export const SCHEMAS_CONFIG = 'SCHEMAS';
 export const AUTH_CONFIG = 'AUTH';
+export const PRESCOTT_CONFIG = 'PRESCOTT';
 
 export const config: {
+  [PRESCOTT_CONFIG]: PrescottConfig;
   [SERVER_CONFIG]: ServerConfig;
   [PG_CONFIG]: PgConfig;
   [SCHEMAS_CONFIG]: SchemasConfig;
   [AUTH_CONFIG]: AuthConfig;
 } = {
+  [PRESCOTT_CONFIG]: {
+    workDir: process.env.PRESCOTT_WORKDIR as string,
+  },
   [SERVER_CONFIG]: {
     port: process.env.PORT ?? 8080,
     host: process.env.HOST ?? '0.0.0.0',

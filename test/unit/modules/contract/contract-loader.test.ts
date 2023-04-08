@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { buildContract } from '@modules/contracts/contract-loader';
 import { generateRandomString } from '@lib/random.utils';
-import { ContractConfigEntry } from '@modules/contracts/model/contract-config';
+import { ContractConfigFileEntry } from '@modules/contracts/model/contract-config';
 import { Contract, ContractModule } from '@modules/contracts/model/contract';
 
 describe('contract-loader unit', () => {
@@ -18,7 +18,7 @@ describe('contract-loader unit', () => {
         virtual: true,
       });
 
-      const configEntry: ContractConfigEntry = {
+      const configEntry: ContractConfigFileEntry = {
         type: 'npm',
         key: 'some-random-contract-42',
         opts: {
@@ -27,7 +27,7 @@ describe('contract-loader unit', () => {
         },
       };
 
-      const contract = await buildContract(configEntry);
+      const contract = await buildContract(configEntry, generateRandomString());
       expect(contract).toEqual(mockContract);
       expect(mockContract.init).toBeCalledWith(configEntry.opts);
     });
@@ -35,10 +35,13 @@ describe('contract-loader unit', () => {
     it('should throw if file contract extension is not supported', async () => {
       const fileKey = 'some-file.py';
       await expect(
-        buildContract({
-          type: 'file',
-          key: fileKey,
-        })
+        buildContract(
+          {
+            type: 'file',
+            key: fileKey,
+          },
+          generateRandomString()
+        )
       ).rejects.toThrow(Error);
     });
 
@@ -50,7 +53,7 @@ describe('contract-loader unit', () => {
         buildContract: async (): Promise<Contract> => mockContract,
       };
       jest.mock(
-        'some-random-contract.js',
+        'src/some-random-contract',
         () => ({
           default: contractModule,
         }),
@@ -59,7 +62,7 @@ describe('contract-loader unit', () => {
         }
       );
 
-      const configEntry: ContractConfigEntry = {
+      const configEntry: ContractConfigFileEntry = {
         type: 'file',
         key: 'some-random-contract.js',
         opts: {
@@ -68,7 +71,7 @@ describe('contract-loader unit', () => {
         },
       };
 
-      const contract = await buildContract(configEntry);
+      const contract = await buildContract(configEntry, 'src');
       expect(contract).toEqual(mockContract);
       expect(mockContract.init).toBeCalledWith(configEntry.opts);
     });

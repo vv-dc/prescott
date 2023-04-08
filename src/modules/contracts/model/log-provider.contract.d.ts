@@ -11,13 +11,13 @@ export interface LogProviderContract extends Contract {
   writeLog(id: TaskInstanceId, entry: LogEntry): Promise<void>;
   writeLogBatch(id: TaskInstanceId, entries: LogEntry): Promise<void>;
   searchLog(
-    id: TaskRunId,
+    id: TaskInstanceId,
     paging: EntryPaging,
-    dto: SearchLogDto
+    dto: LogSearchDto
   ): Promise<EntryPage<string>>;
 }
 
-export interface SearchLogDto {
+export interface LogSearchDto {
   fromDate?: Date;
   toDate?: Date;
   searchTerm?: string;

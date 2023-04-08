@@ -1,30 +1,34 @@
 import * as path from 'node:path';
 import {
-  assertConfigIncludesAllTypes,
   validateContactImpl,
+  validateContractConfig,
 } from '@modules/contracts/contract-validator';
 import {
   CONTRACT_CONFIG_TYPES,
-  ContractConfig,
-  ContractConfigEntry,
+  ContractConfigFile,
+  ContractConfigFileEntry,
   ContractMap,
   ContractSourceType,
 } from '@modules/contracts/model/contract-config';
 import { Contract, ContractModule } from '@modules/contracts/model/contract';
 
 export const buildContractMap = async (
-  config: ContractConfig
+  config: ContractConfigFile,
+  workDir: string
 ): Promise<ContractMap> => {
-  const contractMap = {} as ContractMap;
-  assertConfigIncludesAllTypes(config);
+  const configError = validateContractConfig(config);
+  if (configError !== null) {
+    throw new Error(configError);
+  }
 
+  const contractMap = {} as ContractMap;
   for (const type of CONTRACT_CONFIG_TYPES) {
     const entry = config[type];
-    const impl = await buildContract(entry);
+    const impl = await buildContract(entry, workDir);
 
-    const error: string | null = validateContactImpl(type, impl);
-    if (error !== null) {
-      throw new Error(`Invalid implementation for ${type}: ${error}`);
+    const entryError: string | null = validateContactImpl(type, impl);
+    if (entryError !== null) {
+      throw new Error(entryError);
     }
 
     contractMap[type] = impl;
@@ -34,11 +38,12 @@ export const buildContractMap = async (
 };
 
 export const buildContract = async (
-  configEntry: ContractConfigEntry
+  configEntry: ContractConfigFileEntry,
+  workDir: string
 ): Promise<Contract> => {
   const { type, key, opts } = configEntry;
   try {
-    const contract = await loadContract(type, key);
+    const contract = await loadContract(type, key, workDir);
     await contract.init(opts);
     return contract;
   } catch (err) {
@@ -51,13 +56,14 @@ export const buildContract = async (
 
 const loadContract = async (
   type: ContractSourceType,
-  key: string
+  key: string,
+  workDir: string
 ): Promise<Contract> => {
   switch (type) {
     case 'npm':
       return loadNpmContract(key);
     case 'file':
-      return loadFileContract(key);
+      return loadFileContract(path.join(workDir, key));
   }
   const reason = `unsupported type of contract source: ${type}`;
   throw new Error(`Unable to load contract: ${reason}`);
@@ -74,10 +80,11 @@ const importContractModule = async (path: string): Promise<Contract> => {
 };
 
 const loadFileContract = async (key: string): Promise<Contract> => {
-  const ext = path.extname(key);
-  if (!['.js'].includes(ext)) {
+  const { ext, dir, name } = path.parse(key);
+  if (!['.js', '.ts'].includes(ext)) {
     const reason = `unsupported extension: ${ext}`;
     throw new Error(`Unable to load contract from file: ${reason}`);
   }
-  return await importContractModule(key);
+  const moduleKey = path.join(dir, name);
+  return await importContractModule(moduleKey);
 };
