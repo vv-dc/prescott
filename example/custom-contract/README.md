@@ -10,11 +10,10 @@ If you use an `npm` package just provide its name and make sure to add it to Pre
 ```sh
 yarn add my-amazing-package
 ```
-**NOTE**: Prescott won't try to download the package. It should be here **BEFORE** the start of the server.
-**TODO**: Automatically install packages
+**NOTE**: Prescott won't try to download the package. It should be here **BEFORE** the start of the server.\
 
 ### File
-In the case of the `file,` the value should be relative to `$PRESCOTT_WORKDIR/contract`.
+In the case of the `file`, the value should be relative to `$PRESCOTT_WORKDIR/contract`.
 It may seem to be limiting, but `../../../` are allowed.
 
 ## Configuration
@@ -35,36 +34,35 @@ Before the start of the server, Prescott reads the root configuration file. It's
   }
 }
 ```
-
 The value of the `opts` will be passed to the `init` function of the contract.
 
 ## Implementation
-The first requirement, your contract should implement the interface Prescott's part you want to replace.
+The first requirement, your contract should implement the interface of Prescott's part you want to replace.
 `@prescott/contract` provides up-to-date interfaces and schemas for every one of the contracts.
-Make sure to **fully** implement it, as Prescott validates that your implementation has all the
-needed functions and accepts a correct number of arguments.
+Make sure to **fully** implement it, as Prescott validates that provided implementation has all the
+defined functions and accepts a correct number of arguments.
 
 The second one, every contract should have default export with the `buildContract` function that returns the contract.
 According to it, the minimal example of the contract's implementation is the following:\
-ESM:
+**ESM**:
 ```ts
 export default {
-  buildContract: () => {
-    init: async (opts?: ContractOpts) => {};
-  },
+  buildContract: () => ({
+    init: async (opts?: ContractOpts) => {},
+  }),
 };
 ```
-CJS:
+**CJS**:
 ```ts
 module.exports = {
-  buildContract: () => {
-    init: async (opts?: ContractOpts) => {};
-  },
+  buildContract: () => ({
+    init: async (opts?: ContractOpts) => {},
+  }),
 };
 ```
 
-## Docker (TBD)
-There is an example how you can set up `file` and `npm` contracts implementation in Prescott running inside Docker.
+## Docker
+There is an example how you can set up `file` and `npm` contracts implementation in Prescott running inside Docker.\
 **Dockerfile**:
 ```dockerfile
 FROM prescott:lts AS base
