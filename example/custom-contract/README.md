@@ -1,5 +1,4 @@
 # Custom contract implementation
-The instructions below do not depend on the type of the contract.
 See `@prescott/contract` for a list of available contracts.
 
 ## Types
@@ -21,7 +20,6 @@ It may seem to be limiting, but `../../../` are allowed.
 ## Configuration
 Before the start of the server, Prescott reads the root configuration file. It's a plain JSON file that is located at
 `$PRESCOTT_WORKDIR/config.json`. Here you can provide an implementation as follows:
-
 ```json
 {
   "contract": {
@@ -47,7 +45,7 @@ Make sure to **fully** implement it, as Prescott validates that your implementat
 needed functions and accepts a correct number of arguments.
 
 The second one, every contract should have default export with the `buildContract` function that returns the contract.
-According to it, the minimal example of the contract's implementation is the following:
+According to it, the minimal example of the contract's implementation is the following:\
 ESM:
 ```ts
 export default {
@@ -56,7 +54,7 @@ export default {
   },
 };
 ```
-In CJS:
+CJS:
 ```ts
 module.exports = {
   buildContract: () => {
@@ -67,8 +65,9 @@ module.exports = {
 
 ## Docker (TBD)
 There is an example how you can set up `file` and `npm` contracts implementation in Prescott running inside Docker.
+**Dockerfile**:
 ```dockerfile
-FROM prescott:latest AS base
+FROM prescott:lts AS base
 
 ARG PRESCOTT_WORKDIR=/var/log/prescott
 
@@ -77,7 +76,7 @@ COPY config.json $PRESCOTT_WORKDIR/config.json
 
 RUN yarn add log-npm-contract
 ```
-Fill `config.json` with the following
+**config.json**
 ```json
 {
   "contract": {

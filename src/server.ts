@@ -10,7 +10,6 @@ const bootstrap = async (app: FastifyPluginAsync) => {
     const server = Fastify({
       logger,
       ajv: { customOptions: ajvOptions },
-      pluginTimeout: 2400000,
     });
     await server.register(app);
     await server.listen({ port, host });

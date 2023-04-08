@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { join } from 'path';
+import * as process from 'node:process';
+import * as path from 'node:path';
 import { argon2id } from 'argon2';
 
 import { PgConfig } from '@config/model/pg.config';
@@ -24,7 +25,7 @@ export const config: {
   [AUTH_CONFIG]: AuthConfig;
 } = {
   [PRESCOTT_CONFIG]: {
-    workDir: process.env.PRESCOTT_WORKDIR as string,
+    workDir: process.env.PRESCOTT_WORKDIR || path.join(__dirname, '../workdir'),
   },
   [SERVER_CONFIG]: {
     port: process.env.PORT ?? 8080,
@@ -39,9 +40,9 @@ export const config: {
     database: process.env.PGDB,
   } as PgConfig,
   [SCHEMAS_CONFIG]: {
-    schemasPath: join(__dirname, '../', 'schemas/'),
+    schemasPath: path.join(__dirname, '../', 'schemas/'),
     schemasIdPrefix: 'schema://prescott.dev/',
-    tsPath: join(__dirname, '../', 'model'),
+    tsPath: path.join(__dirname, '../', 'model'),
     ajvOptions: {
       allowUnionTypes: true,
     },
