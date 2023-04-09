@@ -35,6 +35,25 @@ Before the start of the server, Prescott reads the root configuration file. It's
 }
 ```
 The value of the `opts` will be passed to the `init` function of the contract.
+By default, Prescott will use the following configuration:
+```json
+{
+  "contract": {
+    "env": {
+      "type": "file",
+      "key": "env-provider.ts"
+    },
+    "log": {
+      "type": "file",
+      "key": "log-provider.ts"
+    },
+    "metric": {
+      "type": "file",
+      "key": "metric-provider.ts"
+    }
+  }
+}
+```
 
 ## Implementation
 The first requirement, your contract should implement the interface of Prescott's part you want to replace.
@@ -63,7 +82,7 @@ module.exports = {
 
 ## Docker
 There is an example how you can set up `file` and `npm` contracts implementation in Prescott running inside Docker.\
-**Dockerfile**:
+**Dockerfile**
 ```dockerfile
 FROM prescott:lts AS base
 

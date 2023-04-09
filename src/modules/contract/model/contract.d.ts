@@ -1,4 +1,4 @@
-export type ContractOpts = object;
+export type ContractOpts = Record<string, unknown>;
 
 export interface Contract {
   init: (opts?: ContractOpts) => Promise<void>;

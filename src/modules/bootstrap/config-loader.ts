@@ -6,6 +6,23 @@ import {
   RootConfig,
   RootConfigFile,
 } from '@modules/bootstrap/model/root-config';
+import { ContractConfigFile } from '@modules/contract/model/contract-config';
+
+// TODO: move default implementations to npm packages
+const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
+  env: {
+    type: 'file',
+    key: 'env-provider.ts',
+  },
+  log: {
+    type: 'file',
+    key: 'log-provider.ts',
+  },
+  metric: {
+    type: 'file',
+    key: 'metric-provider.ts',
+  },
+};
 
 export const getRootConfig = async (workDir: string): Promise<RootConfig> => {
   const configPath = buildRootConfigPath(workDir);
@@ -37,7 +54,17 @@ const parseRootConfigFile = async (
   workDir: string
 ): Promise<RootConfig> => {
   const { contract } = configFile;
+  const completeContract = completeContractConfig(contract ?? {});
   return {
-    contractMap: await buildContractMap(contract, workDir),
+    contractMap: await buildContractMap(completeContract, workDir),
   };
+};
+
+const completeContractConfig = (
+  configFile: Partial<ContractConfigFile>
+): ContractConfigFile => {
+  return {
+    ...DEFAULT_CONTRACT_CONFIG_FILE,
+    ...configFile,
+  } as ContractConfigFile;
 };

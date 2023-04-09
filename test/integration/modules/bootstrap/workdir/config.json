@@ -1,0 +1,18 @@
+{
+  "contract": {
+    "env": {
+      "type": "file",
+      "key": "custom-env-file-provider.ts",
+      "opts": {
+        "envParam": -3
+      }
+    },
+    "metric": {
+      "type": "npm",
+      "key": "custom-metric-npm-provider",
+      "opts": {
+        "metricParam": 424242
+      }
+    }
+  }
+}

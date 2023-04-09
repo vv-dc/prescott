@@ -4,7 +4,7 @@ import {
 } from '@modules/contract/model/contract-config';
 
 export interface RootConfigFile {
-  contract: ContractConfigFile;
+  contract?: Partial<ContractConfigFile>;
 }
 
 export interface RootConfig {
