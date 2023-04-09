@@ -38,5 +38,5 @@ const envProvider: EnvProviderContract = {
 };
 
 export default {
-  buildContract: () => envProvider,
+  buildContract: async () => envProvider,
 };

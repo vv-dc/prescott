@@ -25,7 +25,7 @@ const writeLog = async (id: TaskInstanceId, entry: LogEntry): Promise<void> => {
 
 const writeLogBatch = async (
   id: TaskInstanceId,
-  entries: LogEntry
+  entries: LogEntry[]
 ): Promise<void> => {
   //
 };
@@ -50,5 +50,5 @@ const logProvider: LogProviderContract = {
 };
 
 export default {
-  buildContract: () => logProvider,
+  buildContract: async () => logProvider,
 };

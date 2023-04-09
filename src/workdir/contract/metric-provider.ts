@@ -53,5 +53,5 @@ const metricProvider: MetricProviderContract = {
 };
 
 export default {
-  buildContract: () => metricProvider,
+  buildContract: async () => metricProvider,
 };
