@@ -13,7 +13,6 @@ import {
   EntityConflict,
   EntityNotFound,
 } from '@modules/errors/abstract-errors';
-import { asyncGeneratorToArray } from '@lib/async.utils';
 import { generateRandomString } from '@lib/random.utils';
 import { cronEveryNMinutes } from '@lib/cron.utils';
 import {
@@ -24,7 +23,6 @@ import {
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
-import { TaskConfig } from '@model/domain/task-config';
 
 export class TaskService {
   constructor(private dao: TaskDao, private dockerService: DockerService) {}
@@ -46,19 +44,19 @@ export class TaskService {
       limitations: config.appConfig?.limitations,
     });
 
-    const rawStatsGenerator = this.dockerService.stats(container);
-    const rawStats = await asyncGeneratorToArray(rawStatsGenerator);
-    const logs = await this.dockerService.logs(container);
+    // const rawStatsGenerator = this.dockerService.stats(container);
+    // const rawStats = await asyncGeneratorToArray(rawStatsGenerator);
+    // const logs = await this.dockerService.logs(container);
 
-    await this.dockerService.deleteContainer(container);
+    await this.dockerService.deleteContainer(container, true);
     if (once) {
       await this.deleteTask(taskId);
-      await this.dockerService.deleteImage(identifier);
+      await this.dockerService.deleteImage(identifier, true);
     }
     // await this.metricsService.save(rawStats, logs)
   }
 
-  // TODO: implement watch for repository
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   async runWatch(
     identifier: string,
     taskId: number,
@@ -67,6 +65,7 @@ export class TaskService {
     // TODO: try to clone, build and then run
     return {} as TaskRegisterResult;
   }
+  // eslint-enable @typescript-eslint/no-unused-vars
 
   private async register(
     identifier: string,

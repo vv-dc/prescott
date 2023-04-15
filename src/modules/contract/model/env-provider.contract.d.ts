@@ -7,14 +7,15 @@ export interface EnvProviderContract extends Contract {
   runEnv(dto: RunEnvDto): Promise<EnvHandle>;
   compileEnv(dto: CompileEnvDto): Promise<string>;
   deleteEnv(dto: DeleteEnvDto): Promise<void>;
-  deleteEnvHierarchical(dto: DeleteEnvDto): Promise<void>;
+  getEnvChildren(envId: EnvId): Promise<string[]>;
+  getEnvHandle(handleId: string): Promise<EnvHandle>;
 }
 
 export type EnvId = string;
 
 export interface RunEnvDto {
   envId: EnvId;
-  limitations: Limitations;
+  limitations?: Limitations;
 }
 
 export interface CompileEnvDto {

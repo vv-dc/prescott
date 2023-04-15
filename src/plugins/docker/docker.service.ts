@@ -39,7 +39,10 @@ export class DockerService {
   async deleteImage(imageTag: string, force = false): Promise<void> {
     const command = new CommandBuilder().init('docker rmi');
     if (force) command.param('force');
-    await command.with(imageTag).execAsync();
+    const { stderr } = await command.with(imageTag).execAsync();
+    if (stderr) {
+      throw new Error(stderr);
+    }
   }
 
   async deleteContainer(container: string, force = false): Promise<void> {

@@ -6,5 +6,6 @@ export const envProviderSchema = Joi.object<EnvProviderContract>({
   runEnv: Joi.function().minArity(1).required(),
   compileEnv: Joi.function().minArity(1).required(),
   deleteEnv: Joi.function().minArity(1).required(),
-  deleteEnvHierarchical: Joi.function().minArity(1).required(),
+  getEnvChildren: Joi.function().minArity(1).required(),
+  getEnvHandle: Joi.function().minArity(1).required(),
 });

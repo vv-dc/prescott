@@ -8,7 +8,7 @@ import {
 import { MetricEntry } from '@modules/contract/model/metric-entry';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-const init = async (opts?: ContractOpts): Promise<void> => {
+const init = async (opts: ContractOpts): Promise<void> => {
   //
 };
 

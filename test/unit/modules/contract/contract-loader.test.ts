@@ -29,7 +29,10 @@ describe('contract-loader unit', () => {
 
       const contract = await buildContract(configEntry, generateRandomString());
       expect(contract).toEqual(mockContract);
-      expect(mockContract.init).toBeCalledWith(configEntry.opts);
+      expect(mockContract.init).toBeCalledWith({
+        workDir: expect.any(String),
+        ...configEntry.opts,
+      });
     });
 
     it('should throw if file contract extension is not supported', async () => {
@@ -73,7 +76,10 @@ describe('contract-loader unit', () => {
 
       const contract = await buildContract(configEntry, 'src');
       expect(contract).toEqual(mockContract);
-      expect(mockContract.init).toBeCalledWith(configEntry.opts);
+      expect(mockContract.init).toBeCalledWith({
+        workDir: expect.any(String),
+        ...configEntry.opts,
+      });
     });
   });
 });

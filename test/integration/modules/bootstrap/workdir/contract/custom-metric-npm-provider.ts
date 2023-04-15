@@ -1,12 +1,13 @@
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
-import { ContractOpts } from '@modules/contract/model/contract';
 
 export let metricParam = 0;
+export let metricWorkDir = '';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const metricProvider: MetricProviderContract = {
   init: async (opts) => {
-    metricParam = (opts as ContractOpts).metricParam as number;
+    metricParam = opts.metricParam as number;
+    metricWorkDir = opts.workDir;
   },
   writeMetricBatch: async (id, entries) => {},
   writeMetric: async (id, entry) => {},

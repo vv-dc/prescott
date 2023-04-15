@@ -1,6 +1,7 @@
 import {
   CompileEnvDto,
   DeleteEnvDto,
+  EnvId,
   EnvProviderContract,
   RunEnvDto,
 } from '@modules/contract/model/env-provider.contract';
@@ -9,7 +10,7 @@ import { generateRandomString } from '@lib/random.utils';
 import { ContractOpts } from '@modules/contract/model/contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-const init = async (opts?: ContractOpts): Promise<void> => {
+const init = async (opts: ContractOpts): Promise<void> => {
   // no-op
 };
 
@@ -25,8 +26,12 @@ const deleteEnv = async (dto: DeleteEnvDto): Promise<void> => {
   // no-op
 };
 
-const deleteEnvHierarchical = async (dto: DeleteEnvDto): Promise<void> => {
-  // no-op
+const getEnvChildren = async (envId: EnvId): Promise<string[]> => {
+  return [];
+};
+
+const getEnvHandle = async (handleId: string): Promise<EnvHandle> => {
+  return {} as EnvHandle;
 };
 
 const envProvider: EnvProviderContract = {
@@ -34,7 +39,8 @@ const envProvider: EnvProviderContract = {
   runEnv,
   compileEnv,
   deleteEnv,
-  deleteEnvHierarchical,
+  getEnvChildren,
+  getEnvHandle,
 };
 
 export default {

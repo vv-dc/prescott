@@ -1,4 +1,5 @@
 export interface LogEntry {
-  stdout: string;
-  stderr: string;
+  type: 'stdout' | 'stderr';
+  date: Date;
+  content: string;
 }

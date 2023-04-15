@@ -1,9 +1,12 @@
+import { LogEntry } from '@modules/contract/model/log-entry';
+import { MetricEntry } from '@modules/contract/model/metric-entry';
+
 export interface EnvHandle {
   stop(dto: StopEnvHandleDto): Promise<void>;
   delete(dto: DeleteEnvHandleDto): Promise<void>;
   id(): string;
   logs(): AsyncGenerator<LogEntry>;
-  metrics(): AsyncGenerator<MetricEntry>;
+  metrics(intervalMs: number): AsyncGenerator<MetricEntry>;
 }
 
 export interface StopEnvHandleDto {

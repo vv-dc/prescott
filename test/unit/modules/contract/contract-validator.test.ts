@@ -28,7 +28,8 @@ describe('contract-validator unit', () => {
       runEnv: async (dto) => ({} as EnvHandle),
       compileEnv: async (dto) => generateRandomString(),
       deleteEnv: async (dto) => {},
-      deleteEnvHierarchical: async (dto) => {},
+      getEnvChildren: async (envId) => [],
+      getEnvHandle: async (handleId) => ({} as EnvHandle),
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContactImpl('env', envImpl);

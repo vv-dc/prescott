@@ -44,7 +44,7 @@ export const buildContract = async (
   const { type, key, opts } = configEntry;
   try {
     const contract = await loadContract(type, key, workDir);
-    await contract.init(opts);
+    await contract.init({ ...opts, workDir });
     return contract;
   } catch (err) {
     const reason = (err as Error).message;

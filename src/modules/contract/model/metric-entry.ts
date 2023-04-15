@@ -1,1 +1,3 @@
-export type MetricEntry = Record<string, string>;
+export type MetricEntry = {
+  [key: string]: string;
+};

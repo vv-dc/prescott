@@ -8,7 +8,7 @@ import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
 import { ContractOpts } from '@modules/contract/model/contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-const init = async (opts?: ContractOpts): Promise<void> => {
+const init = async (opts: ContractOpts): Promise<void> => {
   //
 };
 
