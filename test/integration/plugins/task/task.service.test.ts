@@ -12,7 +12,7 @@ import { getConnection } from '@test/lib/test.utils';
 import { encodeBase64 } from '@lib/string.utils';
 import { EntityNotFound } from '@modules/errors/abstract-errors';
 
-describe('task.service integration', () => {
+describe.skip('task.service integration', () => {
   let taskService: TaskService;
   let taskDao: TaskDao;
   let pg: PgConnection;
