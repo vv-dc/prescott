@@ -1,6 +1,6 @@
+import { setImmediate } from 'node:timers';
 import * as taskRepository from '@plugins/task/task.repository';
 
-import { DockerService } from '@plugins/docker/docker.service';
 import { TaskDao } from '@plugins/task/task.dao';
 import {
   buildDockerCmd,
@@ -13,7 +13,6 @@ import {
   EntityConflict,
   EntityNotFound,
 } from '@modules/errors/abstract-errors';
-import { generateRandomString } from '@lib/random.utils';
 import { cronEveryNMinutes } from '@lib/cron.utils';
 import {
   TaskConfigDto,
@@ -23,37 +22,59 @@ import {
 import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
+import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
+import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
+import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import { EnvHandle } from '@modules/contract/model/env-handle';
 
 export class TaskService {
-  constructor(private dao: TaskDao, private dockerService: DockerService) {}
+  constructor(
+    private dao: TaskDao,
+    private envProvider: EnvProviderContract,
+    private logProvider: LogProviderContract,
+    private metricProvider: MetricProviderContract
+  ) {}
 
   // task is like a clean function, so there is no need to re-build it
   private async runTask(
     identifier: string,
     taskId: number,
     taskConfig: TaskConfigDto
-  ): Promise<void> {
+  ): Promise<TaskInstanceId> {
     const { once, config } = taskConfig;
-    const container = generateRandomString(identifier);
 
-    await this.dockerService.run({
-      image: identifier,
-      container,
-      detached: true,
-      withDelete: false,
+    const envHandle = await this.envProvider.runEnv({
+      envId: identifier,
       limitations: config.appConfig?.limitations,
+      options: {
+        isDelete: true,
+      },
     });
 
-    // const rawStatsGenerator = this.dockerService.stats(container);
-    // const rawStats = await asyncGeneratorToArray(rawStatsGenerator);
-    // const logs = await this.dockerService.logs(container);
+    const instanceId = { instanceId: envHandle.id(), taskId: identifier };
+    this.registerEnvHandle(instanceId, envHandle);
 
-    await this.dockerService.deleteContainer(container, true);
     if (once) {
       await this.deleteTask(taskId);
-      await this.dockerService.deleteImage(identifier, true);
     }
-    // await this.metricsService.save(rawStats, logs)
+
+    return instanceId;
+  }
+
+  registerEnvHandle(id: TaskInstanceId, envHandle: EnvHandle): void {
+    const logGenerator = envHandle.logs();
+    const metricGenerator = envHandle.metrics(100); // TODO: via config
+    setImmediate(async () => {
+      for await (const logEntry of logGenerator) {
+        await this.logProvider.writeLog(id, logEntry);
+      }
+    });
+    setImmediate(async () => {
+      for await (const metricEntry of metricGenerator) {
+        await this.metricProvider.writeMetric(id, metricEntry);
+      }
+    });
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -104,15 +125,14 @@ export class TaskService {
   private async buildClearTask(
     taskId: number,
     identifier: string,
-    osInfo: OsInfo,
+    envInfo: OsInfo,
     steps: TaskStep[]
   ): Promise<void> {
-    await this.dockerService.build({
-      tag: identifier,
-      osInfo,
-      cmd: buildDockerCmd(identifier, steps),
-      once: true,
-      copy: false,
+    await this.envProvider.compileEnv({
+      alias: identifier,
+      envInfo,
+      script: buildDockerCmd(identifier, steps),
+      isCache: false,
     });
     taskRepository.startTask(taskId);
   }
@@ -154,12 +174,13 @@ export class TaskService {
     await this.assertTaskExists(taskId);
 
     const identifier = buildTaskIdentifier(taskId);
-    const containers = await this.dockerService.getImageAncestors(identifier);
-    for (const container of containers) {
-      await this.dockerService.deleteContainer(container, true);
+    const handleIds = await this.envProvider.getEnvChildren(identifier);
+    for (const handleId of handleIds) {
+      const envHandle = await this.envProvider.getEnvHandle(handleId);
+      await envHandle.delete({ isForce: true });
     }
 
-    await this.dockerService.deleteImage(identifier, true);
+    await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
     await this.dao.delete(taskId);
   }
 
@@ -169,9 +190,10 @@ export class TaskService {
     const identifier = buildTaskIdentifier(taskId);
     taskRepository.stopTask(taskId);
 
-    const containers = await this.dockerService.getImageAncestors(identifier);
-    for (const container of containers) {
-      await this.dockerService.stop(container);
+    const handleIds = await this.envProvider.getEnvChildren(identifier);
+    for (const handleId of handleIds) {
+      const envHandle = await this.envProvider.getEnvHandle(handleId);
+      await envHandle.stop({ isForce: true });
     }
 
     await this.dao.setActive(taskId, false);
@@ -213,7 +235,7 @@ export class TaskService {
     const newTaskConfig = { ...oldTaskConfig, config: taskConfig };
 
     await this.dao.update(taskId, JSON.stringify(newTaskConfig));
-    await this.dockerService.deleteImage(identifier, true);
+    await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
     await this.register(identifier, taskId, newTaskConfig);
   }
 
