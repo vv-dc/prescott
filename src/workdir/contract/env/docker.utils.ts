@@ -18,8 +18,8 @@ export const execDockerCommandWithCheck = async (
   entityId: string,
   command: CommandBuilder
 ): Promise<{ stdout: string; stderr: string }> => {
-  const { stdout, stderr } = await command.execAsync();
-  if (stderr) {
+  const { stdout, stderr, child } = await command.execAsync();
+  if (stderr && child.exitCode !== 0) {
     throw new DockerEnvError(entityId, stderr);
   }
   return { stdout, stderr };
@@ -40,20 +40,22 @@ export const buildDockerImage = (
 ): string => `${name}:${version ?? 'latest'}`;
 
 export const escapeBash = (cmd: string): string =>
-  cmd.replace(/"/g, `\\` + `"`).replace(/'/, `\\'`);
+  cmd.replace(/'/g, `\\` + `'`);
 
 export const buildDockerfile = (
   image: string,
   cmd: string,
   copy = false
 ): string => {
+  const escapedCmd = escapeBash(cmd);
   const statements = [
     `FROM ${image} AS base`,
     `WORKDIR /usr/src/app`,
+    `RUN echo '${escapedCmd}' > /usr/bin/prescott_init && chmod +x /usr/bin/prescott_init`,
     ...(copy ? ['COPY . .'] : []),
-    `CMD ${cmd}`,
+    `CMD '/usr/bin/prescott_init'`,
   ];
-  return escapeBash(statements.join('\n'));
+  return statements.join('\n');
 };
 
 const LIMITATIONS_MAP: Record<MappedLimitation, BuilderMapper> = {

@@ -1,15 +1,8 @@
-import Fastify from 'fastify';
-import fp from 'fastify-plugin';
-
-import { app } from '@src/app';
+import { buildServer } from '@src/app';
 
 describe.skip('app e2e', () => {
   it('should register all plugins and start application', async () => {
-    const fastify = Fastify({
-      logger: true,
-      // pluginTimeout: 24000000,
-    });
-    await fastify.register(fp(app));
+    const fastify = await buildServer();
     expect(fastify.contractMap).toBeDefined();
     expect(Object.keys(fastify.getSchemas()).length).toBeGreaterThan(1);
   });

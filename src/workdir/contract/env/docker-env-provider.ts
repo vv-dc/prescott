@@ -42,12 +42,11 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
 };
 
 const compileEnv = async (dto: CompileEnvDto): Promise<string> => {
-  const { envInfo, script, isCache, alias } = dto;
+  const { envInfo, script, isCache, alias: imageTag } = dto;
   const { name, version } = envInfo;
 
   const baseImage = buildDockerImage(name, version);
   const dockerfile = buildDockerfile(baseImage, script, false);
-  const imageTag = generateRandomString(alias);
 
   const command = new CommandBuilder()
     .init('printf')

@@ -27,8 +27,7 @@ const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
 export const getRootConfig = async (workDir: string): Promise<RootConfig> => {
   const configPath = buildRootConfigPath(workDir);
   const configFile = await loadRootConfigFile(configPath);
-  const contractPath = buildContractDirPath(workDir);
-  return await parseRootConfigFile(configFile, contractPath);
+  return await parseRootConfigFile(configFile, workDir);
 };
 
 const buildRootConfigPath = (workDir: string): string =>

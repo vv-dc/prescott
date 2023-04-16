@@ -1,11 +1,16 @@
-import { join } from 'path';
-import { FastifyPluginAsync } from 'fastify';
-import bootstrap from '@plugins/bootstrap';
+import { join } from 'node:path';
+import Fastify, { FastifyInstance, FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
 import fastifyAutoload, { AutoloadPluginOptions } from '@fastify/autoload';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import bootstrap from '@plugins/bootstrap';
 
 import { handleError } from '@modules/fastify/error-handler';
+import { config, SCHEMAS_CONFIG, SERVER_CONFIG } from '@config/config';
+
+const { logger } = config[SERVER_CONFIG];
+const { ajvOptions } = config[SCHEMAS_CONFIG];
 
 export type AutoloadOptions = {
   // additional options
@@ -39,4 +44,13 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
   fastify.setErrorHandler(handleError);
 };
 
-export { app };
+const buildServer = async (): Promise<FastifyInstance> => {
+  const server = Fastify({
+    logger,
+    ajv: { customOptions: ajvOptions },
+  });
+  await server.register(fp(app));
+  return server;
+};
+
+export { buildServer };

@@ -34,3 +34,6 @@ build/
 
 # hooks config
 .husky/_
+
+# prescott data
+workdir/data/*

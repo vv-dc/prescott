@@ -43,7 +43,8 @@ export const buildContract = async (
 ): Promise<Contract> => {
   const { type, key, opts } = configEntry;
   try {
-    const contract = await loadContract(type, key, workDir);
+    const contractWorkdir = path.join(workDir, 'contract');
+    const contract = await loadContract(type, key, contractWorkdir);
     await contract.init({ ...opts, workDir });
     return contract;
   } catch (err) {

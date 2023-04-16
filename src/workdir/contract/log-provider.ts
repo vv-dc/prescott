@@ -1,3 +1,5 @@
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 import {
   LogProviderContract,
   LogSearchDto,
@@ -7,9 +9,13 @@ import { LogEntry } from '@modules/contract/model/log-entry';
 import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
 import { ContractOpts } from '@modules/contract/model/contract';
 
+const config = {
+  workDir: '',
+};
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const init = async (opts: ContractOpts): Promise<void> => {
-  //
+  config.workDir = opts.workDir;
 };
 
 const consumeLogGenerator = async (
@@ -20,7 +26,13 @@ const consumeLogGenerator = async (
 };
 
 const writeLog = async (id: TaskInstanceId, entry: LogEntry): Promise<void> => {
-  //
+  const logPath = path.join(
+    config.workDir,
+    'data',
+    'log',
+    `${id.instanceId}.json`
+  );
+  await fs.appendFile(logPath, JSON.stringify(entry), 'utf-8');
 };
 
 const writeLogBatch = async (

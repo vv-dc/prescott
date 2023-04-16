@@ -3,7 +3,7 @@ import * as taskRepository from '@plugins/task/task.repository';
 
 import { TaskDao } from '@plugins/task/task.dao';
 import {
-  buildDockerCmd,
+  buildTaskCmd,
   buildTaskIdentifier,
   buildTaskUniqueName,
 } from '@plugins/task/task.utils';
@@ -48,7 +48,7 @@ export class TaskService {
       envId: identifier,
       limitations: config.appConfig?.limitations,
       options: {
-        isDelete: true,
+        isDelete: false,
       },
     });
 
@@ -64,17 +64,17 @@ export class TaskService {
 
   registerEnvHandle(id: TaskInstanceId, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
-    const metricGenerator = envHandle.metrics(100); // TODO: via config
+    // const metricGenerator = envHandle.metrics(100); // TODO: via config
     setImmediate(async () => {
       for await (const logEntry of logGenerator) {
         await this.logProvider.writeLog(id, logEntry);
       }
     });
-    setImmediate(async () => {
-      for await (const metricEntry of metricGenerator) {
-        await this.metricProvider.writeMetric(id, metricEntry);
-      }
-    });
+    // setImmediate(async () => {
+    //   for await (const metricEntry of metricGenerator) {
+    //     await this.metricProvider.writeMetric(id, metricEntry);
+    //   }
+    // });
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -131,7 +131,7 @@ export class TaskService {
     await this.envProvider.compileEnv({
       alias: identifier,
       envInfo,
-      script: buildDockerCmd(identifier, steps),
+      script: buildTaskCmd(identifier, steps),
       isCache: false,
     });
     taskRepository.startTask(taskId);
@@ -161,9 +161,9 @@ export class TaskService {
 
     if (clearTask) {
       const { steps } = config.appConfig;
-      setImmediate(() => {
-        this.buildClearTask(taskId, identifier, osInfo, steps);
-      });
+      // setImmediate(async () => {
+      await this.buildClearTask(taskId, identifier, osInfo, steps);
+      // });
     }
 
     return taskId;

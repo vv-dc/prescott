@@ -2,7 +2,7 @@
   "contract": {
     "env": {
       "type": "file",
-      "key": "env-provider.ts"
+      "key": "env/docker-env-provider.ts"
     },
     "log": {
       "type": "file",

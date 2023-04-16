@@ -43,7 +43,7 @@ export class DockerEnvHandle implements EnvHandle {
   async *logs(): AsyncGenerator<LogEntry> {
     const command = new CommandBuilder().init('docker logs');
     command.param('follow');
-    command.prepend(this.container);
+    command.with(this.container);
 
     const child = command.exec();
 
