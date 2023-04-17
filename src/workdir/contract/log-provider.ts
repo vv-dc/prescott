@@ -32,7 +32,7 @@ const writeLog = async (id: TaskInstanceId, entry: LogEntry): Promise<void> => {
     'log',
     `${id.instanceId}.json`
   );
-  await fs.appendFile(logPath, JSON.stringify(entry), 'utf-8');
+  await fs.appendFile(logPath, JSON.stringify(entry) + '\n', 'utf-8');
 };
 
 const writeLogBatch = async (

@@ -3,13 +3,13 @@ import {
   EnvId,
   RunEnvOptions,
 } from '@modules/contract/model/env-provider.contract';
-import { InspectParam } from '@plugins/docker/model/inspect-param';
-import { MappedLimitation } from '@plugins/docker/model/mapped-limitation';
-import { BuilderMapper } from '@plugins/docker/model/builder-mapper';
 import { Limitations } from '@model/domain/limitations';
+import { MappedLimitation } from '@src/workdir/contract/env/model/mapped-limitation';
+import { BuilderMapper } from '@src/workdir/contract/env/model/builder-mapper';
+import { InspectParam } from '@src/workdir/contract/env/model/inspect-param';
 
 export class DockerEnvError extends Error {
-  constructor(private entityId: string | EnvId, message: string) {
+  constructor(private resourceId: string | EnvId, message: string) {
     super(message);
   }
 }
@@ -19,7 +19,7 @@ export const execDockerCommandWithCheck = async (
   command: CommandBuilder
 ): Promise<{ stdout: string; stderr: string }> => {
   const { stdout, stderr, child } = await command.execAsync();
-  if (stderr && child.exitCode !== 0) {
+  if (child.exitCode !== 0) {
     throw new DockerEnvError(entityId, stderr);
   }
   return { stdout, stderr };
@@ -29,9 +29,8 @@ export const applyDockerRunOptions = (
   builder: CommandBuilder,
   options: RunEnvOptions
 ): void => {
-  const { context, isDelete } = options;
+  const { isDelete } = options;
   if (isDelete) builder.param('rm');
-  if (context !== undefined) builder.prepend(`cd ${context}`);
 };
 
 export const buildDockerImage = (
@@ -39,21 +38,31 @@ export const buildDockerImage = (
   version?: string | number
 ): string => `${name}:${version ?? 'latest'}`;
 
-export const escapeBash = (cmd: string): string =>
-  cmd.replace(/'/g, `\\` + `'`);
+export const removeClrScrEscapeChar = (str: string) =>
+  // eslint-disable-next-line no-control-regex
+  str.replace(/\x1b\[2J\x1b\[H/g, '');
+
+export const formatDockerBytes = (bytes: number) => {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+  const pow = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, pow)).toFixed(3))} ${sizes[pow]}`;
+};
+
+export const normalizeDockerContainerName = (name: string): string =>
+  name.replaceAll(':', '_');
 
 export const buildDockerfile = (
   image: string,
   cmd: string,
   copy = false
 ): string => {
-  const escapedCmd = escapeBash(cmd);
   const statements = [
     `FROM ${image} AS base`,
     `WORKDIR /usr/src/app`,
-    `RUN echo '${escapedCmd}' > /usr/bin/prescott_init && chmod +x /usr/bin/prescott_init`,
     ...(copy ? ['COPY . .'] : []),
-    `CMD '/usr/bin/prescott_init'`,
+    `CMD ${cmd}`,
   ];
   return statements.join('\n');
 };
@@ -82,13 +91,13 @@ export const applyDockerLimitations = (
   }
 };
 
-export const inspectContainer = async (
+export const inspectDockerContainer = async (
   container: string,
   params: InspectParam[]
 ): Promise<string[]> => {
   const formatBody = `"${params.map(buildContainerInspectParam).join(',')}"`;
   const command = new CommandBuilder()
-    .init('docker inspect')
+    .init('docker container inspect')
     .param('format', formatBody)
     .with(container);
   const { stdout } = await execDockerCommandWithCheck(container, command);
@@ -97,11 +106,26 @@ export const inspectContainer = async (
 
 const INSPECT_MAP: Record<InspectParam, string> = {
   pid: '{{ .State.Pid }}',
-  returned: '{{ .Status.ExitCode }}',
+  exitCode: '{{ .State.ExitCode }}',
   status: '{{ .State.Status }}',
   startedAt: '{{ .State.StartedAt }}',
   finishedAt: '{{ .State.FinishedAt }}',
   retries: '{{ .RestartCount }}',
+};
+
+export const isDockerResourceExist = async (
+  resource: string
+): Promise<boolean> => {
+  try {
+    const command = new CommandBuilder()
+      .init('docker inspect')
+      .with(resource)
+      .param('format', `"{{.Id}}"`);
+    await execDockerCommandWithCheck(resource, command);
+    return true;
+  } catch (err) {
+    return false;
+  }
 };
 
 export const buildContainerInspectParam = (param: InspectParam): string => {
@@ -112,6 +136,6 @@ export const buildContainerInspectParam = (param: InspectParam): string => {
 };
 
 export const getContainerPid = async (container: string): Promise<number> => {
-  const [pid] = await inspectContainer(container, ['pid']);
+  const [pid] = await inspectDockerContainer(container, ['pid']);
   return parseInt(pid, 10);
 };

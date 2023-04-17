@@ -1,9 +1,14 @@
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import * as process from 'node:process';
+
 import { generateRandomString } from '@lib/random.utils';
 import {
-  applyDockerRunOptions,
   applyDockerLimitations,
-  buildDockerImage,
+  applyDockerRunOptions,
   buildDockerfile,
+  buildDockerImage,
+  normalizeDockerContainerName,
   execDockerCommandWithCheck,
 } from '@src/workdir/contract/env/docker.utils';
 import {
@@ -19,45 +24,69 @@ import { CommandBuilder } from '@lib/command-builder';
 import { DockerEnvHandle } from '@src/workdir/contract/env/docker-env-handle';
 
 const config = {
-  workDir: '',
+  workDir: process.env.PRESCOTT_WORKDIR || '',
 };
 
 const init = async (opts: ContractOpts): Promise<void> => {
   config.workDir = opts.workDir;
 };
 
-const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
-  const { limitations, envId: image, options } = dto;
-
-  const container = generateRandomString(image);
-  const command = new CommandBuilder()
-    .init('docker run')
-    .param('name', container);
-
-  if (limitations) applyDockerLimitations(command, limitations);
-  applyDockerRunOptions(command, options);
-
-  await execDockerCommandWithCheck(image, command.with(image));
-  return new DockerEnvHandle(container);
+const compileEnv = async (dto: CompileEnvDto): Promise<string> => {
+  const dockerfileName = generateRandomString('dockerfile');
+  const dockerfilePath = path.join(config.workDir, dockerfileName);
+  try {
+    return await compileEnvImpl(dto, dockerfilePath);
+  } finally {
+    await fs.rm(dockerfilePath).catch();
+  }
 };
 
-const compileEnv = async (dto: CompileEnvDto): Promise<string> => {
+const compileEnvImpl = async (
+  dto: CompileEnvDto,
+  dockerfilePath: string
+): Promise<string> => {
   const { envInfo, script, isCache, alias: imageTag } = dto;
   const { name, version } = envInfo;
 
   const baseImage = buildDockerImage(name, version);
   const dockerfile = buildDockerfile(baseImage, script, false);
+  await fs.writeFile(dockerfilePath, dockerfile);
 
   const command = new CommandBuilder()
-    .init('printf')
-    .with(`"${dockerfile}"`)
-    .pipe('docker build')
-    .param('tag', imageTag);
+    .init('docker build')
+    .param('tag', imageTag)
+    .with('- <') // ignore context
+    .with(dockerfilePath); // read from dockerfile
 
   if (!isCache) command.param('no-cache');
-  await execDockerCommandWithCheck(imageTag, command.with('-'));
+  await execDockerCommandWithCheck(imageTag, command);
 
   return imageTag;
+};
+
+const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
+  const { limitations, envId: image, options } = dto;
+
+  const safeImage = normalizeDockerContainerName(image);
+  const container = generateRandomString(safeImage);
+  const command = new CommandBuilder()
+    .init('docker run')
+    .param('name', container)
+    .param('detach');
+
+  if (limitations) applyDockerLimitations(command, limitations);
+  applyDockerRunOptions(command, options);
+
+  await execDockerCommandWithCheck(image, command.with(image));
+  const envHandle = new DockerEnvHandle(container);
+
+  if (limitations?.ttl) {
+    setTimeout(async () => {
+      await envHandle.stop({});
+    }, limitations.ttl);
+  }
+
+  return envHandle;
 };
 
 const deleteEnv = async (dto: DeleteEnvDto): Promise<void> => {
@@ -72,6 +101,7 @@ const getEnvChildren = async (envId: EnvId): Promise<string[]> => {
     .init('docker ps')
     .arg('a')
     .arg('q')
+    .param('format', `"{{.Names}}"`)
     .param('filter')
     .with(`ancestor=${envId}`);
   const { stdout } = await execDockerCommandWithCheck(envId, command);

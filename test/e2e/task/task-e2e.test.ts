@@ -26,7 +26,7 @@ describe.skip('task e2e', () => {
       osInfo: DOCKER_IMAGES.alpine,
       once: false,
       config: {
-        local: { cronString: cronEveryNSeconds(5) },
+        local: { cronString: cronEveryNSeconds(15) },
         appConfig: {
           steps: [
             {
@@ -59,6 +59,8 @@ describe.skip('task e2e', () => {
     expect(getRes.json()).toMatchObject({
       //
     });
+
+    await delay(30_000);
 
     await fastify.close();
   });

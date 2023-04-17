@@ -1,6 +1,6 @@
 import { setImmediate } from 'node:timers';
-import * as taskRepository from '@plugins/task/task.repository';
 
+import * as taskRepository from '@plugins/task/task.repository';
 import { TaskDao } from '@plugins/task/task.dao';
 import {
   buildTaskCmd,
@@ -8,7 +8,6 @@ import {
   buildTaskUniqueName,
 } from '@plugins/task/task.utils';
 import { TaskCronConfig } from '@plugins/task/model/task-cron-config';
-import { TaskRegisterResult } from '@plugins/task/model/task-register-result';
 import {
   EntityConflict,
   EntityNotFound,
@@ -64,17 +63,17 @@ export class TaskService {
 
   registerEnvHandle(id: TaskInstanceId, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
-    // const metricGenerator = envHandle.metrics(100); // TODO: via config
+    const metricGenerator = envHandle.metrics(25); // TODO: via config
     setImmediate(async () => {
       for await (const logEntry of logGenerator) {
         await this.logProvider.writeLog(id, logEntry);
       }
     });
-    // setImmediate(async () => {
-    //   for await (const metricEntry of metricGenerator) {
-    //     await this.metricProvider.writeMetric(id, metricEntry);
-    //   }
-    // });
+    setImmediate(async () => {
+      for await (const metricEntry of metricGenerator) {
+        await this.metricProvider.writeMetric(id, metricEntry);
+      }
+    });
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -82,9 +81,8 @@ export class TaskService {
     identifier: string,
     taskId: number,
     config: TaskConfigDto
-  ): Promise<TaskRegisterResult> {
+  ): Promise<void> {
     // TODO: try to clone, build and then run
-    return {} as TaskRegisterResult;
   }
   // eslint-enable @typescript-eslint/no-unused-vars
 
@@ -193,7 +191,7 @@ export class TaskService {
     const handleIds = await this.envProvider.getEnvChildren(identifier);
     for (const handleId of handleIds) {
       const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.stop({ isForce: true });
+      await envHandle.stop({});
     }
 
     await this.dao.setActive(taskId, false);

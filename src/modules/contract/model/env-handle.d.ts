@@ -6,12 +6,11 @@ export interface EnvHandle {
   delete(dto: DeleteEnvHandleDto): Promise<void>;
   id(): string;
   logs(): AsyncGenerator<LogEntry>;
-  metrics(intervalMs: number): AsyncGenerator<MetricEntry>;
+  metrics(intervalMs?: number): AsyncGenerator<MetricEntry>;
 }
 
 export interface StopEnvHandleDto {
   timeout?: number;
-  isForce: boolean;
 }
 
 export interface DeleteEnvHandleDto {

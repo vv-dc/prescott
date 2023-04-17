@@ -1,6 +1,6 @@
 export type InspectParam =
   | 'pid'
-  | 'returned'
+  | 'exitCode'
   | 'startedAt'
   | 'finishedAt'
   | 'status'

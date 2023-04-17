@@ -33,9 +33,6 @@ export const getRootConfig = async (workDir: string): Promise<RootConfig> => {
 const buildRootConfigPath = (workDir: string): string =>
   path.join(workDir, 'config.json');
 
-const buildContractDirPath = (workDir: string): string =>
-  path.join(workDir, 'contract');
-
 const loadRootConfigFile = async (path: string): Promise<RootConfigFile> => {
   const rawContent = await fs.readFile(path, 'utf-8');
   const configFile: RootConfigFile = JSON.parse(rawContent);

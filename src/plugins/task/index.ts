@@ -29,5 +29,5 @@ export default fp(task, {
   decorators: {
     fastify: ['pg', 'contractMap'],
   },
-  dependencies: ['pg', 'docker', 'schema', 'authentication'],
+  dependencies: ['pg', 'schema', 'authentication'],
 });

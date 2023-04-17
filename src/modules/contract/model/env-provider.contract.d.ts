@@ -21,7 +21,6 @@ export interface RunEnvDto {
 
 export interface RunEnvOptions {
   isDelete: boolean;
-  context?: string;
 }
 
 export interface CompileEnvDto {
