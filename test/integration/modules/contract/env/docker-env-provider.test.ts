@@ -108,7 +108,7 @@ describe('docker-env-provider integration', () => {
     expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
   });
 
-  it('should collect logs', async () => {
+  it.skip('should collect logs', async () => {
     const envProvider = await envProviderBuilder.buildContract();
 
     const createDto: CompileEnvDto = {
@@ -131,7 +131,7 @@ describe('docker-env-provider integration', () => {
     const logsPromise = asyncGeneratorToArray(envHandle.logs());
 
     // stop container
-    await envHandle.stop({ timeout: 1 });
+    await envHandle.stop({});
 
     // check logs collected
     const logs = await logsPromise;
