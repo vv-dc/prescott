@@ -54,8 +54,11 @@ export class TaskService {
     const instanceId = { instanceId: envHandle.id(), taskId: identifier };
     this.registerEnvHandle(instanceId, envHandle);
 
+    // TODO: review
+    await envHandle.delete({ isForce: false });
     if (once) {
-      await this.deleteTask(taskId);
+      await this.envProvider.deleteEnv({ envId: identifier, isForce: false });
+      await this.stopTask(taskId);
     }
 
     return instanceId;
@@ -63,16 +66,18 @@ export class TaskService {
 
   registerEnvHandle(id: TaskInstanceId, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
-    const metricGenerator = envHandle.metrics(25); // TODO: via config
+    const metricGenerator = envHandle.metrics();
     setImmediate(async () => {
       for await (const logEntry of logGenerator) {
         await this.logProvider.writeLog(id, logEntry);
       }
+      console.info('LOGS done');
     });
     setImmediate(async () => {
       for await (const metricEntry of metricGenerator) {
         await this.metricProvider.writeMetric(id, metricEntry);
       }
+      console.info('METRICS done');
     });
   }
 
@@ -159,9 +164,9 @@ export class TaskService {
 
     if (clearTask) {
       const { steps } = config.appConfig;
-      // setImmediate(async () => {
-      await this.buildClearTask(taskId, identifier, osInfo, steps);
-      // });
+      setImmediate(async () => {
+        await this.buildClearTask(taskId, identifier, osInfo, steps);
+      });
     }
 
     return taskId;
@@ -237,11 +242,12 @@ export class TaskService {
     await this.register(identifier, taskId, newTaskConfig);
   }
 
-  async getTask(taskId: number): Promise<Task & TaskConfigDto> {
+  async getTask(taskId: number): Promise<Task | { config: TaskConfigDto }> {
     const task = await this.dao.findById(taskId);
     if (task == undefined) {
       throw new EntityNotFound('Task does not exist');
     }
-    return { ...task, ...JSON.parse(task.config) };
+    const configDto: TaskConfigDto = JSON.parse(task.config);
+    return { ...task, name: configDto.name, config: configDto };
   }
 }

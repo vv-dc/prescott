@@ -36,4 +36,4 @@ build/
 .husky/_
 
 # prescott data
-**/workdir/data/**/.*json
+**/workdir/data/**/*.json

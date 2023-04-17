@@ -41,7 +41,11 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
     options: opts,
     maxDepth: 1,
   });
+
   fastify.setErrorHandler(handleError);
+  fastify.addHook('onClose', async () => {
+    await fastify.pg.destroy();
+  });
 };
 
 const buildServer = async (): Promise<FastifyInstance> => {

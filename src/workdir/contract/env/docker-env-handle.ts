@@ -129,6 +129,6 @@ export class DockerEnvHandle implements EnvHandle {
   }
 
   private isEndOfMetrics(rawMetric: Record<string, string>): boolean {
-    return rawMetric['CPUPerc'] === '--';
+    return rawMetric['PIDs'] === '--' || rawMetric['PIDs'] === '0';
   }
 }

@@ -131,7 +131,7 @@ describe('docker-env-provider integration', () => {
     const logsPromise = asyncGeneratorToArray(envHandle.logs());
 
     // stop container
-    await envHandle.stop({});
+    await envHandle.stop({ timeout: 1 });
 
     // check logs collected
     const logs = await logsPromise;
@@ -178,10 +178,8 @@ describe('docker-env-provider integration', () => {
     // start consuming metrics
     const metricsPromise = asyncGeneratorToArray(envHandle.metrics());
 
-    // delete container
+    // stop container - metrics collecting should be stopped
     await envHandle.stop({});
-    await envHandle.delete({ isForce: true }); // wait until completed
-    expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
 
     // check metrics collected
     const metrics = await metricsPromise;
@@ -196,8 +194,12 @@ describe('docker-env-provider integration', () => {
       } as MetricEntry);
     }
 
+    // clean
     await envProvider.deleteEnv({ envId, isForce: true });
     expect(await isDockerResourceExist(envId)).toEqual(false);
+
+    await envHandle.delete({ isForce: true }); // wait until completed
+    expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
   });
 
   it('should collect metrics - INTERVAL', async () => {
@@ -223,10 +225,8 @@ describe('docker-env-provider integration', () => {
     const intervalMs = 50;
     const metricsPromise = asyncGeneratorToArray(envHandle.metrics(intervalMs));
 
-    // delete container
+    // stop container - metrics collecting should be stopped
     await envHandle.stop({});
-    await envHandle.delete({ isForce: true }); // wait until completed
-    expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
 
     // check metrics collected
     const metrics = await metricsPromise;
@@ -241,7 +241,11 @@ describe('docker-env-provider integration', () => {
       } as MetricEntry);
     }
 
+    // clean
     await envProvider.deleteEnv({ envId, isForce: true });
     expect(await isDockerResourceExist(envId)).toEqual(false);
+
+    await envHandle.delete({ isForce: true }); // wait until completed
+    expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
   });
 });
