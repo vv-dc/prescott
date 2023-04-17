@@ -27,7 +27,7 @@ const task: FastifyPluginAsync = async (fastify) => {
 export default fp(task, {
   name: 'task',
   decorators: {
-    fastify: ['pg', 'contractMap'],
+    fastify: ['pg', 'contractMap', 'authHooks'],
   },
-  dependencies: ['pg', 'schema', 'authentication'],
+  dependencies: ['pg', 'schema', 'authentication', 'authorization'],
 });
