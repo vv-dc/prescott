@@ -52,9 +52,8 @@ export class TaskService {
     });
 
     const instanceId = { instanceId: envHandle.id(), taskId: identifier };
-    this.registerEnvHandle(instanceId, envHandle);
+    this.registerEnvHandleListeners(instanceId, envHandle);
 
-    // TODO: review
     await envHandle.delete({ isForce: false });
     if (once) {
       await this.envProvider.deleteEnv({ envId: identifier, isForce: false });
@@ -64,20 +63,18 @@ export class TaskService {
     return instanceId;
   }
 
-  registerEnvHandle(id: TaskInstanceId, envHandle: EnvHandle): void {
+  registerEnvHandleListeners(id: TaskInstanceId, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
     const metricGenerator = envHandle.metrics();
     setImmediate(async () => {
       for await (const logEntry of logGenerator) {
         await this.logProvider.writeLog(id, logEntry);
       }
-      console.info('LOGS done');
     });
     setImmediate(async () => {
       for await (const metricEntry of metricGenerator) {
         await this.metricProvider.writeMetric(id, metricEntry);
       }
-      console.info('METRICS done');
     });
   }
 
@@ -164,9 +161,8 @@ export class TaskService {
 
     if (clearTask) {
       const { steps } = config.appConfig;
-      setImmediate(async () => {
-        await this.buildClearTask(taskId, identifier, osInfo, steps);
-      });
+      // TODO: do it asynchronously
+      await this.buildClearTask(taskId, identifier, osInfo, steps);
     }
 
     return taskId;
@@ -177,14 +173,26 @@ export class TaskService {
     await this.assertTaskExists(taskId);
 
     const identifier = buildTaskIdentifier(taskId);
-    const handleIds = await this.envProvider.getEnvChildren(identifier);
-    for (const handleId of handleIds) {
-      const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.delete({ isForce: true });
-    }
+    await this.deleteAllEnvs(identifier);
 
     await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
     await this.dao.delete(taskId);
+  }
+
+  private async deleteAllEnvs(identifier: string): Promise<void> {
+    const handleIds = await this.envProvider.getEnvChildren(identifier);
+    for (const handleId of handleIds) {
+      const envHandle = await this.envProvider.getEnvHandle(handleId);
+      await envHandle.delete({ isForce: true }).catch(() => {}); // TODO: handle does not exist
+    }
+  }
+
+  private async stopAllEnvs(identifier: string): Promise<void> {
+    const handleIds = await this.envProvider.getEnvChildren(identifier);
+    for (const handleId of handleIds) {
+      const envHandle = await this.envProvider.getEnvHandle(handleId);
+      await envHandle.stop({}).catch(() => {}); // TODO: handle does not exist
+    }
   }
 
   async stopTask(taskId: number): Promise<void> {
@@ -192,12 +200,7 @@ export class TaskService {
 
     const identifier = buildTaskIdentifier(taskId);
     taskRepository.stopTask(taskId);
-
-    const handleIds = await this.envProvider.getEnvChildren(identifier);
-    for (const handleId of handleIds) {
-      const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.stop({});
-    }
+    await this.stopAllEnvs(identifier);
 
     await this.dao.setActive(taskId, false);
   }
@@ -226,19 +229,17 @@ export class TaskService {
     taskId: number,
     taskConfig: LocalTaskConfig | RepositoryTaskConfig
   ): Promise<void> {
+    await this.assertTaskExists(taskId);
+
     const identifier = buildTaskIdentifier(taskId);
     taskRepository.deleteTask(taskId);
+    await this.deleteAllEnvs(identifier);
 
-    const task = await this.dao.findById(taskId);
-    if (task === undefined) {
-      throw new EntityNotFound('Task does not exist');
-    }
-
+    const task = (await this.dao.findById(taskId)) as Task;
     const oldTaskConfig = JSON.parse(task.config);
     const newTaskConfig = { ...oldTaskConfig, config: taskConfig };
 
     await this.dao.update(taskId, JSON.stringify(newTaskConfig));
-    await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
     await this.register(identifier, taskId, newTaskConfig);
   }
 

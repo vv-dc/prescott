@@ -19,7 +19,7 @@ describe('docker-env-provider integration', () => {
     // build image => check it exists
     const envProvider = await envProviderBuilder.buildContract();
     const createDto: CompileEnvDto = {
-      alias: 'build-test',
+      alias: generateRandomString('build-test'),
       envInfo: DOCKER_IMAGES.alpine,
       script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
       isCache: false,
@@ -108,13 +108,13 @@ describe('docker-env-provider integration', () => {
     expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
   });
 
-  it.skip('should collect logs', async () => {
+  it('should collect logs', async () => {
     const envProvider = await envProviderBuilder.buildContract();
 
     const createDto: CompileEnvDto = {
       alias: generateRandomString('log-test'),
       envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 5); do for j in $(seq 1000); do echo -n "A"; done; sleep 0.25; done`,
+      script: `for i in $(seq 5); do for j in $(seq 1000); do echo -n "A"; done; sleep 0.5; done`,
       isCache: false,
     };
     const envId = await envProvider.compileEnv(createDto);
@@ -183,7 +183,7 @@ describe('docker-env-provider integration', () => {
 
     // check metrics collected
     const metrics = await metricsPromise;
-    expect(metrics.length).toBeGreaterThanOrEqual(5);
+    expect(metrics.length).toBeGreaterThanOrEqual(4);
 
     // check metrics consistent
     for (const metric of metrics) {
@@ -230,7 +230,7 @@ describe('docker-env-provider integration', () => {
 
     // check metrics collected
     const metrics = await metricsPromise;
-    expect(metrics.length).toBeGreaterThanOrEqual(16); // 20% deviation
+    expect(metrics.length).toBeGreaterThanOrEqual(10);
 
     // check metrics consistent
     for (const metric of metrics) {

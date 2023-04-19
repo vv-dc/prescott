@@ -38,9 +38,9 @@ export const buildDockerImage = (
   version?: string | number
 ): string => `${name}:${version ?? 'latest'}`;
 
-export const removeClrScrEscapeChar = (str: string) =>
+export const removeEscapeCharacters = (str: string) =>
   // eslint-disable-next-line no-control-regex
-  str.replace(/\x1b\[2J\x1b\[H/g, '');
+  str.replace(/\x1b\[[0-9]?[J,H]/g, '');
 
 export const formatDockerBytes = (bytes: number) => {
   if (!bytes) return '0 B';
@@ -136,6 +136,10 @@ export const buildContainerInspectParam = (param: InspectParam): string => {
 };
 
 export const getContainerPid = async (container: string): Promise<number> => {
-  const [pid] = await inspectDockerContainer(container, ['pid']);
-  return parseInt(pid, 10);
+  try {
+    const [pid] = await inspectDockerContainer(container, ['pid']);
+    return parseInt(pid, 10);
+  } catch (err) {
+    return 0;
+  }
 };

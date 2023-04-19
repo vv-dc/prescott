@@ -6,7 +6,7 @@ import {
   execDockerCommandWithCheck,
   formatDockerBytes,
   getContainerPid,
-  removeClrScrEscapeChar,
+  removeEscapeCharacters,
 } from '@src/workdir/contract/env/docker.utils';
 import {
   DeleteEnvHandleDto,
@@ -88,7 +88,7 @@ export class DockerEnvHandle implements EnvHandle {
     } catch (err) {
       if ((await getContainerPid(this.container)) !== 0) {
         throw err;
-      }
+      } // else ignore as the container was stopped
     }
   }
 
@@ -102,7 +102,7 @@ export class DockerEnvHandle implements EnvHandle {
     const startTime = Date.now();
 
     for await (const stdout of child.stdout) {
-      const cleanStdout = removeClrScrEscapeChar(stdout).trim();
+      const cleanStdout = removeEscapeCharacters(stdout).trim();
       if (cleanStdout === '') continue;
 
       for (const cleanPart of cleanStdout.split('\n')) {
