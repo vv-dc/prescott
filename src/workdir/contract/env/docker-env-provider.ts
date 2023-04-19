@@ -96,16 +96,20 @@ const deleteEnv = async (dto: DeleteEnvDto): Promise<void> => {
   await execDockerCommandWithCheck(image, command.with(image));
 };
 
+// docker searches containers not for exact match, by rather by BASE image
 const getEnvChildren = async (envId: EnvId): Promise<string[]> => {
   const command = new CommandBuilder()
-    .init('docker ps')
+    .init('docker container ls')
     .arg('a')
-    .arg('q')
-    .param('format', `"{{.Names}}"`)
+    .param('format', `"{{.Names}}\t{{.Image}}"`)
     .param('filter')
     .with(`ancestor=${envId}`);
   const { stdout } = await execDockerCommandWithCheck(envId, command);
-  return stdout.split('\n').slice(0, -1);
+  const rows: Array<[string, string]> = stdout
+    .split('\n')
+    .slice(0, -1) // exclude last '\n'
+    .map((row) => row.split('\t') as [string, string]);
+  return rows.filter((row) => row[1] === envId).map((row) => row[0]);
 };
 
 const getEnvHandle = async (handleId: string): Promise<EnvHandle> => {

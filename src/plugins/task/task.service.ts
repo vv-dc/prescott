@@ -183,7 +183,7 @@ export class TaskService {
     const handleIds = await this.envProvider.getEnvChildren(identifier);
     for (const handleId of handleIds) {
       const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.delete({ isForce: true }).catch(() => {}); // TODO: handle does not exist
+      await envHandle.delete({ isForce: true });
     }
   }
 
@@ -191,7 +191,7 @@ export class TaskService {
     const handleIds = await this.envProvider.getEnvChildren(identifier);
     for (const handleId of handleIds) {
       const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.stop({}).catch(() => {}); // TODO: handle does not exist
+      await envHandle.stop({}).catch(() => {});
     }
   }
 

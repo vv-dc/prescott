@@ -39,7 +39,7 @@ describe('docker-env-provider integration', () => {
     const children = await envProvider.getEnvChildren(envId);
     expect(children).toEqual([envHandle.id()]);
 
-    // delete env container stop logs collecting => check it does not exist
+    //  delete env container stop logs collecting => check it does not exist
     await envHandle.delete({ isForce: true });
     expect(await envProvider.getEnvChildren(envId)).toHaveLength(0);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
@@ -122,6 +122,9 @@ describe('docker-env-provider integration', () => {
 
     const runDto: RunEnvDto = {
       envId,
+      limitations: {
+        ttl: 2500, // 2.5s
+      },
       options: { isDelete: false },
     };
     const envHandle = await envProvider.runEnv(runDto);
@@ -129,9 +132,6 @@ describe('docker-env-provider integration', () => {
 
     // start consuming logs
     const logsPromise = asyncGeneratorToArray(envHandle.logs());
-
-    // stop container
-    await envHandle.stop({});
 
     // check logs collected
     const logs = await logsPromise;
@@ -170,6 +170,9 @@ describe('docker-env-provider integration', () => {
 
     const runDto: RunEnvDto = {
       envId,
+      limitations: {
+        ttl: 3000, // 3s
+      },
       options: { isDelete: false },
     };
     const envHandle = await envProvider.runEnv(runDto);
@@ -177,9 +180,6 @@ describe('docker-env-provider integration', () => {
 
     // start consuming metrics
     const metricsPromise = asyncGeneratorToArray(envHandle.metrics());
-
-    // stop container - metrics collecting should be stopped
-    await envHandle.stop({});
 
     // check metrics collected
     const metrics = await metricsPromise;
@@ -206,7 +206,7 @@ describe('docker-env-provider integration', () => {
     const envProvider = await envProviderBuilder.buildContract();
 
     const createDto: CompileEnvDto = {
-      alias: generateRandomString('metrics-continuous-test'),
+      alias: generateRandomString('metrics-interval-test'),
       envInfo: DOCKER_IMAGES.alpine,
       script: `for i in $(seq 5); do for j in $(seq 10000); do echo -n 'A'; done; sleep 0.2; done`,
       isCache: false,
@@ -216,6 +216,9 @@ describe('docker-env-provider integration', () => {
 
     const runDto: RunEnvDto = {
       envId,
+      limitations: {
+        ttl: 1000, // 1s
+      },
       options: { isDelete: false },
     };
     const envHandle = await envProvider.runEnv(runDto);
@@ -224,9 +227,6 @@ describe('docker-env-provider integration', () => {
     // start consuming metrics
     const intervalMs = 50;
     const metricsPromise = asyncGeneratorToArray(envHandle.metrics(intervalMs));
-
-    // stop container - metrics collecting should be stopped
-    await envHandle.stop({});
 
     // check metrics collected
     const metrics = await metricsPromise;
