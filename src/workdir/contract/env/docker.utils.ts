@@ -42,12 +42,17 @@ export const removeEscapeCharacters = (str: string) =>
   // eslint-disable-next-line no-control-regex
   str.replace(/\x1b\[[0-9]?[J,H]/g, '');
 
-export const formatDockerBytes = (bytes: number) => {
-  if (!bytes) return '0 B';
-  const k = 1024;
+export const dockerSizeToBytes = (sizeString: string): number => {
   const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-  const pow = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, pow)).toFixed(3))} ${sizes[pow]}`;
+  const value = parseInt(sizeString, 10);
+
+  const size = sizeString.slice(`${value}`.length);
+  if (size === 'B') return value;
+
+  const pow = sizes.findIndex((el) => el === size);
+  if (pow === -1) return value;
+
+  return value * Math.pow(1024, pow);
 };
 
 export const normalizeDockerContainerName = (name: string): string =>

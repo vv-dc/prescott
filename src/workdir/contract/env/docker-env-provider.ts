@@ -72,6 +72,7 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
   const command = new CommandBuilder()
     .init('docker run')
     .param('name', container)
+    .param('log-driver', 'local')
     .param('detach');
 
   if (limitations) applyDockerLimitations(command, limitations);

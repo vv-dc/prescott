@@ -1,5 +1,5 @@
 export interface LogEntry {
   type: 'stdout' | 'stderr';
-  date: Date;
+  time: Date;
   content: string;
 }

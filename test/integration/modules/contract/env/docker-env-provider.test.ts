@@ -114,7 +114,7 @@ describe('docker-env-provider integration', () => {
     const createDto: CompileEnvDto = {
       alias: generateRandomString('log-test'),
       envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 5); do for j in $(seq 1000); do echo -n "A"; done; sleep 0.5; done`,
+      script: `for i in $(seq 20); do for j in $(seq 250); do echo -n 'A'; done; sleep 0.1; done; echo -n 'ERROR!' >&2; sleep 1;`,
       isCache: false,
     };
     const envId = await envProvider.compileEnv(createDto);
@@ -123,7 +123,7 @@ describe('docker-env-provider integration', () => {
     const runDto: RunEnvDto = {
       envId,
       limitations: {
-        ttl: 2500, // 2.5s
+        ttl: 2.5, // 2.5s
       },
       options: { isDelete: false },
     };
@@ -135,18 +135,22 @@ describe('docker-env-provider integration', () => {
 
     // check logs collected
     const logs = await logsPromise;
-    expect(logs.length).toBeGreaterThanOrEqual(1);
+    expect(logs).toHaveLength(2);
 
-    for (const log of logs) {
-      expect(log).toMatchObject({
-        content: expect.any(String),
-        type: 'stdout',
-        date: expect.any(Date),
-      } as LogEntry);
-    }
-
-    const composedLog = logs.map((log) => log.content).join();
-    expect(composedLog).toEqual('A'.repeat(5000));
+    expect(logs).toEqual(
+      expect.arrayContaining([
+        {
+          type: 'stdout',
+          content: 'A'.repeat(5_000),
+          time: expect.any(Date),
+        },
+        {
+          type: 'stderr',
+          content: 'ERROR!',
+          time: expect.any(Date),
+        },
+      ] as LogEntry[])
+    );
 
     // clear
     await envHandle.delete({ isForce: true });
@@ -190,7 +194,7 @@ describe('docker-env-provider integration', () => {
       expect(metric).toMatchObject({
         ram: expect.any(String),
         cpu: expect.any(String),
-        elapsed: expect.any(String),
+        time: expect.any(String),
       } as MetricEntry);
     }
 
@@ -237,7 +241,7 @@ describe('docker-env-provider integration', () => {
       expect(metric).toMatchObject({
         ram: expect.any(String),
         cpu: expect.any(String),
-        elapsed: expect.any(String),
+        time: expect.any(String),
       } as MetricEntry);
     }
 

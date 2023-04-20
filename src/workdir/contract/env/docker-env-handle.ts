@@ -4,7 +4,7 @@ import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
 import {
   execDockerCommandWithCheck,
-  formatDockerBytes,
+  dockerSizeToBytes,
   getContainerPid,
   removeEscapeCharacters,
 } from '@src/workdir/contract/env/docker.utils';
@@ -15,6 +15,12 @@ import {
 } from '@modules/contract/model/env-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric-entry';
+
+// .split is faster than JSON.parse
+const METRICS_SEPARATOR = '\t';
+const METRICS_FORMAT = `"{{.PIDs}}${METRICS_SEPARATOR}{{.MemUsage}}}${METRICS_SEPARATOR}{{.CPUPerc}}"`;
+
+type RawDockerMetric = [string, string, string];
 
 export class DockerEnvHandle implements EnvHandle {
   constructor(private container: string) {}
@@ -49,16 +55,16 @@ export class DockerEnvHandle implements EnvHandle {
     command.param('follow');
     command.with(this.container);
 
-    const child = command.exec();
+    const child = command.spawn();
 
     if (child.stdout) {
       for await (const stdout of child.stdout) {
-        yield { type: 'stdout', content: stdout, date: new Date() };
+        yield { type: 'stdout', content: stdout.toString(), time: new Date() };
       }
     }
     if (child.stderr) {
       for await (const stderr of child.stderr) {
-        yield { type: 'stderr', content: stderr, date: new Date() };
+        yield { type: 'stderr', content: stderr.toString(), time: new Date() };
       }
     }
   }
@@ -77,11 +83,11 @@ export class DockerEnvHandle implements EnvHandle {
 
     try {
       while (true) {
-        const { memory, cpu, elapsed } = await pidUsage(containerPid);
+        const { memory, cpu, timestamp } = await pidUsage(containerPid);
         yield {
-          ram: formatDockerBytes(memory),
-          cpu: cpu.toFixed(3),
-          elapsed: elapsed.toString(),
+          ram: memory.toFixed(2),
+          cpu: cpu.toFixed(2),
+          time: timestamp.toString(),
         };
         await delay(intervalMs);
       }
@@ -94,41 +100,40 @@ export class DockerEnvHandle implements EnvHandle {
 
   private async *metricsContinuous(): AsyncGenerator<MetricEntry> {
     const command = new CommandBuilder().init('docker stats');
-    command.param('format', '"{{ json . }}"');
+    command.param('format', METRICS_FORMAT);
     command.param('no-trunc');
 
-    const child = command.with(this.container).exec();
+    const child = command.with(this.container).spawn();
     if (!child.stdout) return;
-    const startTime = Date.now();
 
     for await (const stdout of child.stdout) {
-      const cleanStdout = removeEscapeCharacters(stdout).trim();
+      const cleanStdout = removeEscapeCharacters(stdout.toString()).trim();
       if (cleanStdout === '') continue;
 
       for (const cleanPart of cleanStdout.split('\n')) {
         if (cleanPart === '') continue;
+        const timestamp = Date.now();
 
-        const elapsed = Date.now() - startTime;
-        const rawMetric = JSON.parse(cleanPart);
-
+        const rawMetric = cleanPart.split(METRICS_SEPARATOR) as RawDockerMetric;
         if (this.isEndOfMetrics(rawMetric)) return;
-        yield this.formatRawMetric(rawMetric, elapsed);
+        yield this.formatRawMetric(rawMetric, timestamp);
       }
     }
   }
 
-  private formatRawMetric(
-    rawMetric: Record<string, string>,
-    elapsedMs: number
-  ): MetricEntry {
-    return {
-      ram: rawMetric['MemUsage'].split('/')[0].trim(),
-      cpu: parseInt(rawMetric['CPUPerc'], 10).toFixed(3),
-      elapsed: elapsedMs.toString(),
-    };
+  private isEndOfMetrics(rawMetric: RawDockerMetric): boolean {
+    return rawMetric[0] === '--' || rawMetric[0] === '0';
   }
 
-  private isEndOfMetrics(rawMetric: Record<string, string>): boolean {
-    return rawMetric['PIDs'] === '--' || rawMetric['PIDs'] === '0';
+  private formatRawMetric(
+    rawMetric: RawDockerMetric,
+    timestamp: number
+  ): MetricEntry {
+    const [, memUsage, cpuPercentage] = rawMetric;
+    return {
+      ram: dockerSizeToBytes(memUsage.split('/')[0].slice(0, -1)).toFixed(2), // exclude whitespace
+      cpu: cpuPercentage.slice(0, -1), // exclude %
+      time: timestamp.toString(),
+    };
   }
 }

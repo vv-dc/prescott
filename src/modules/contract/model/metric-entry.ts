@@ -1,6 +1,6 @@
 export type MetricEntry = {
   cpu: string;
   ram: string;
-  elapsed: string;
+  time: string;
   [key: string]: string;
 };
