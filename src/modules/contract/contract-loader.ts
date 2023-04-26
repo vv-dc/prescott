@@ -1,4 +1,6 @@
 import * as path from 'node:path';
+import * as vm from 'node:vm';
+import * as fs from 'node:fs/promises';
 import {
   validateContactImpl,
   validateContractConfig,
@@ -47,7 +49,7 @@ export const buildContract = async (
     await contract.init({ ...opts, workDir });
     return contract;
   } catch (err) {
-    const reason = (err as Error).message;
+    const reason = err instanceof Error ? err.message : 'Unknown error';
     throw new Error(
       `Unable to build contract for ${JSON.stringify(configEntry)}: ${reason}`
     );
@@ -63,7 +65,7 @@ const loadContract = async (
     case 'npm':
       return loadNpmContract(key);
     case 'file':
-      return loadFileContract(path.join(workDir, key));
+      return loadFileContract(workDir, key);
   }
   const reason = `unsupported type of contract source: ${type}`;
   throw new Error(`Unable to load contract: ${reason}`);
@@ -79,8 +81,16 @@ const importContractModule = async (path: string): Promise<Contract> => {
   return moduleContent.buildContract();
 };
 
-const loadFileContract = async (key: string): Promise<Contract> => {
-  const { ext, dir, name } = path.parse(key);
+const loadFileContract = async (
+  workDir: string,
+  key: string
+): Promise<Contract> => {
+  const keyPath = path.normalize(path.join(workDir, key));
+  const { ext, dir, name } = path.parse(keyPath);
+  if (path.relative(dir, workDir) !== '') {
+    const reason = `contract should be located within: ${workDir} directory`;
+    throw new Error(`Unable to load contact from file: ${reason}`);
+  }
   if (!['.js', '.ts'].includes(ext)) {
     const reason = `unsupported extension: ${ext}`;
     throw new Error(`Unable to load contract from file: ${reason}`);

@@ -29,8 +29,9 @@ yarn add my-amazing-package
 **NOTE**: Prescott won't try to download the package. It should be here **BEFORE** the start of the server.
 
 ### File
-In the case of `file`, the value should be relative to `$PRESCOTT_WORKDIR/contract`.
-It may seem limiting, but `../../` are allowed.
+In the case of `file`, the value should be relative to `$PRESCOTT_WORKDIR/contract`.\
+Contacts loader uses `await import()` under the hood, so symlinks will be followed as well.\
+**NOTE**: Prescott will exit with an error in case of using `../../` to go outside the `PRESCOTT_WORKDIR`.
 
 ## Implementation
 The first requirement, your contract should implement the interface of Prescott's part you want to replace.
