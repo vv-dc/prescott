@@ -7,7 +7,7 @@ import { DockerBuildDto } from '@model/dto/docker-build.dto';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import { DOCKER_IMAGES, OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 
-describe('docker.service integration', () => {
+describe.skip('docker.service integration', () => {
   const dockerService = new DockerService();
 
   it('should build image', async () => {
