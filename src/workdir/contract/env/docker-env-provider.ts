@@ -83,7 +83,8 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
 
   if (limitations?.ttl) {
     setTimeout(async () => {
-      await envHandle.stop({});
+      // some containers don't support 124
+      await envHandle.kill({ signal: 9, reason: 'TTL elapsed' });
     }, limitations.ttl);
   }
 

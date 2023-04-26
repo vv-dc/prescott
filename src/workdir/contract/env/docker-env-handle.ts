@@ -11,6 +11,7 @@ import {
 import {
   DeleteEnvHandleDto,
   EnvHandle,
+  KillEnvHandleDto,
   StopEnvHandleDto,
 } from '@modules/contract/model/env-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
@@ -40,6 +41,17 @@ export class DockerEnvHandle implements EnvHandle {
     );
   }
 
+  async kill(dto: KillEnvHandleDto): Promise<void> {
+    const { signal } = dto;
+    const command = new CommandBuilder()
+      .init('docker kill')
+      .param('signal', signal);
+    await execDockerCommandWithCheck(
+      this.container,
+      command.with(this.container)
+    );
+  }
+
   async delete(dto: DeleteEnvHandleDto): Promise<void> {
     const { isForce } = dto;
     const command = new CommandBuilder().init('docker rm');
@@ -48,6 +60,15 @@ export class DockerEnvHandle implements EnvHandle {
       this.container,
       command.with(this.container)
     );
+  }
+
+  async wait(): Promise<number> {
+    const command = new CommandBuilder().init('docker wait');
+    const { stdout } = await execDockerCommandWithCheck(
+      this.container,
+      command.with(this.container)
+    );
+    return parseInt(stdout.slice(0, -1), 10); // skip last \n
   }
 
   async *logs(): AsyncGenerator<LogEntry> {

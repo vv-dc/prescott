@@ -70,11 +70,8 @@ describe('docker-env-provider integration', () => {
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
     // wait until container killed
-    await asyncGeneratorToArray(envHandle.logs());
-
-    // check exit reason
-    const [code] = await inspectDockerContainer(envHandle.id(), ['exitCode']);
-    expect(code).toEqual(OUT_OF_MEMORY_CODE.toString());
+    const exitCode = await envHandle.wait();
+    expect(exitCode).toEqual(OUT_OF_MEMORY_CODE);
 
     // clear
     await envHandle.delete({ isForce: true });
@@ -97,7 +94,8 @@ describe('docker-env-provider integration', () => {
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
     // wait until container killed
-    await asyncGeneratorToArray(envHandle.logs());
+    const exitCode = await envHandle.wait();
+    expect(exitCode).not.toEqual(0);
 
     // check it was stopped
     const [status] = await inspectDockerContainer(envHandle.id(), ['status']);
@@ -122,9 +120,6 @@ describe('docker-env-provider integration', () => {
 
     const runDto: RunEnvDto = {
       envId,
-      limitations: {
-        ttl: 2.5, // 2.5s
-      },
       options: { isDelete: false },
     };
     const envHandle = await envProvider.runEnv(runDto);
@@ -134,6 +129,7 @@ describe('docker-env-provider integration', () => {
     const logsPromise = asyncGeneratorToArray(envHandle.logs());
 
     // check logs collected
+    await envHandle.wait();
     const logs = await logsPromise;
     expect(logs).toHaveLength(2);
 
@@ -174,9 +170,6 @@ describe('docker-env-provider integration', () => {
 
     const runDto: RunEnvDto = {
       envId,
-      limitations: {
-        ttl: 3000, // 3s
-      },
       options: { isDelete: false },
     };
     const envHandle = await envProvider.runEnv(runDto);
@@ -186,6 +179,7 @@ describe('docker-env-provider integration', () => {
     const metricsPromise = asyncGeneratorToArray(envHandle.metrics());
 
     // check metrics collected
+    await envHandle.wait();
     const metrics = await metricsPromise;
     expect(metrics.length).toBeGreaterThanOrEqual(4);
 
@@ -220,9 +214,6 @@ describe('docker-env-provider integration', () => {
 
     const runDto: RunEnvDto = {
       envId,
-      limitations: {
-        ttl: 1000, // 1s
-      },
       options: { isDelete: false },
     };
     const envHandle = await envProvider.runEnv(runDto);
@@ -233,6 +224,7 @@ describe('docker-env-provider integration', () => {
     const metricsPromise = asyncGeneratorToArray(envHandle.metrics(intervalMs));
 
     // check metrics collected
+    await envHandle.wait();
     const metrics = await metricsPromise;
     expect(metrics.length).toBeGreaterThanOrEqual(10);
 

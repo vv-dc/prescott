@@ -1,17 +1,17 @@
-import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { TaskRunId } from '@modules/contract/model/task-run-id';
 import { MetricEntry } from '@modules/contract/model/metric-entry';
 import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
 import { Contract } from '@modules/contract/model/contract';
 
 export interface MetricProviderContract extends Contract {
   consumeMetricGenerator(
-    id: TaskInstanceId,
+    id: TaskRunId,
     generator: AsyncGenerator<MetricEntry>
   ): Promise<void>;
-  writeMetric(id: TaskInstanceId, entry: MetricEntry): Promise<void>;
-  writeMetricBatch(id: TaskInstanceId, entries: MetricEntry[]): Promise<void>;
+  writeMetric(id: TaskRunId, entry: MetricEntry): Promise<void>;
+  writeMetricBatch(id: TaskRunId, entries: MetricEntry[]): Promise<void>;
   searchMetric(
-    id: TaskInstanceId,
+    id: TaskRunId,
     paging: EntryPaging,
     dto: MetricSearchDto
   ): Promise<EntryPage<MetricEntry>>;

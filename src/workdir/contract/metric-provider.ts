@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
-import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { TaskRunId } from '@modules/contract/model/task-run-id';
 import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
 import { ContractOpts } from '@modules/contract/model/contract';
 import {
@@ -19,34 +19,34 @@ const init = async (opts: ContractOpts): Promise<void> => {
 };
 
 const consumeMetricGenerator = async (
-  id: TaskInstanceId,
+  id: TaskRunId,
   generator: AsyncGenerator<MetricEntry>
 ): Promise<void> => {
   // no-op
 };
 
 const writeMetric = async (
-  id: TaskInstanceId,
+  id: TaskRunId,
   entry: MetricEntry
 ): Promise<void> => {
   const logPath = path.join(
     config.workDir,
     'data',
     'metric',
-    `${id.instanceId}.json`
+    `${id.runId}.json`
   );
   await fs.appendFile(logPath, JSON.stringify(entry) + '\n', 'utf-8');
 };
 
 const writeMetricBatch = async (
-  id: TaskInstanceId,
+  id: TaskRunId,
   entries: MetricEntry[]
 ): Promise<void> => {
   //
 };
 
 const searchMetric = async (
-  id: TaskInstanceId,
+  id: TaskRunId,
   paging: EntryPaging,
   dto: MetricSearchDto
 ): Promise<EntryPage<MetricEntry>> => {

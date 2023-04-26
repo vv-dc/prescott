@@ -22,7 +22,7 @@ import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
-import { TaskInstanceId } from '@modules/contract/model/task-instance-id';
+import { TaskRunId } from '@modules/contract/model/task-run-id';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 import { EnvHandle } from '@modules/contract/model/env-handle';
@@ -40,7 +40,7 @@ export class TaskService {
     identifier: string,
     taskId: number,
     taskConfig: TaskConfigDto
-  ): Promise<TaskInstanceId> {
+  ): Promise<TaskRunId> {
     const { once, config } = taskConfig;
 
     const envHandle = await this.envProvider.runEnv({
@@ -51,8 +51,9 @@ export class TaskService {
       },
     });
 
-    const instanceId = { instanceId: envHandle.id(), taskId: identifier };
-    this.registerEnvHandleListeners(instanceId, envHandle);
+    const runId: TaskRunId = { runId: envHandle.id(), taskId: identifier };
+    this.registerEnvHandleListeners(runId, envHandle);
+    await envHandle.wait();
 
     await envHandle.delete({ isForce: false });
     if (once) {
@@ -60,10 +61,10 @@ export class TaskService {
       await this.stopTask(taskId);
     }
 
-    return instanceId;
+    return runId;
   }
 
-  registerEnvHandleListeners(id: TaskInstanceId, envHandle: EnvHandle): void {
+  registerEnvHandleListeners(id: TaskRunId, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
     const metricGenerator = envHandle.metrics();
     setImmediate(async () => {
