@@ -26,8 +26,7 @@ export class DockerService {
     buildRunOptions(command, options);
 
     await command.with(image).execAsync();
-    if (limitations?.ttl !== undefined)
-      await this.stop(container, limitations.ttl);
+    if (limitations?.ttl !== undefined) this.stop(container, limitations.ttl);
   }
 
   async pull(name: string, version?: string | number): Promise<void> {
@@ -39,19 +38,22 @@ export class DockerService {
   async deleteImage(imageTag: string, force = false): Promise<void> {
     const command = new CommandBuilder().init('docker rmi');
     if (force) command.param('force');
-    await command.with(imageTag).execAsync();
+    const { stderr } = await command.with(imageTag).execAsync();
+    if (stderr) throw new Error(stderr);
   }
 
   async deleteContainer(container: string, force = false): Promise<void> {
     const command = new CommandBuilder().init('docker rm');
     if (force) command.param('force');
-    await command.with(container).execAsync();
+    const { stderr } = await command.with(container).execAsync();
+    if (stderr) throw new Error(stderr);
   }
 
   async stop(container: string, timeout?: number): Promise<void> {
     const command = new CommandBuilder().init('docker stop').with(container);
     if (timeout) command.prepend(`sleep ${timeout} &&`);
-    command.exec();
+    const { stderr } = await command.execAsync();
+    if (stderr) throw new Error(stderr);
   }
 
   async build(dto: DockerBuildDto): Promise<void> {

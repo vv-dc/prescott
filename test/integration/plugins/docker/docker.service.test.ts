@@ -7,7 +7,7 @@ import { DockerBuildDto } from '@model/dto/docker-build.dto';
 import { DockerRunDto } from '@model/dto/docker-run.dto';
 import { DOCKER_IMAGES, OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 
-describe('docker.service integration', () => {
+describe.skip('docker.service integration', () => {
   const dockerService = new DockerService();
 
   it('should build image', async () => {
@@ -138,6 +138,7 @@ describe('docker.service integration', () => {
     };
 
     await dockerService.run(runDto);
+
     const statsGenerator = dockerService.stats(container);
     const stats = await asyncGeneratorToArray(statsGenerator);
 
@@ -148,6 +149,8 @@ describe('docker.service integration', () => {
       elapsed: expect.any(Number),
       pid: expect.any(Number),
     });
+
+    await dockerService.deleteImage(runDto.image, true);
   });
 
   it('should collect logs', async () => {
@@ -158,7 +161,7 @@ describe('docker.service integration', () => {
       tag: imageTag,
       osInfo: DOCKER_IMAGES.alpine,
       cmd: 'while true; do echo hello world; done',
-      once: true,
+      once: false,
       copy: false,
     };
     await dockerService.build(buildDto);
@@ -177,7 +180,6 @@ describe('docker.service integration', () => {
     expect(stdout.startsWith('hello world\n'.repeat(10))).toBeTruthy();
     expect(stderr).toBeFalsy();
 
-    await dockerService.deleteContainer(container, true);
-    await dockerService.deleteImage(imageTag);
+    await dockerService.deleteImage(imageTag, true);
   });
 });

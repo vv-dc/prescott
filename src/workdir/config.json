@@ -1,0 +1,16 @@
+{
+  "contract": {
+    "env": {
+      "type": "file",
+      "key": "env-provider.ts"
+    },
+    "log": {
+      "type": "file",
+      "key": "log-provider.ts"
+    },
+    "metric": {
+      "type": "file",
+      "key": "metric-provider.ts"
+    }
+  }
+}

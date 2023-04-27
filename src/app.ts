@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { FastifyPluginAsync } from 'fastify';
+import bootstrap from '@plugins/bootstrap';
 import fastifyAutoload, { AutoloadPluginOptions } from '@fastify/autoload';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
@@ -11,6 +12,7 @@ export type AutoloadOptions = {
 } & Partial<AutoloadPluginOptions>;
 
 const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
+  await fastify.register(bootstrap); // set up everything
   await fastify.register(fastifySwagger, {
     swagger: {
       info: {
@@ -30,6 +32,7 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
   });
   await fastify.register(fastifyAutoload, {
     dir: join(__dirname, 'plugins'),
+    ignoreFilter: (path) => path.includes('bootstrap/index'),
     options: opts,
     maxDepth: 1,
   });

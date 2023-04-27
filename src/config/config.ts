@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { join } from 'path';
+import * as process from 'node:process';
+import * as path from 'node:path';
 import { argon2id } from 'argon2';
 
 import { PgConfig } from '@config/model/pg.config';
@@ -8,18 +9,24 @@ import { SchemasConfig } from '@config/model/schemas.config';
 import { PasswordConfig } from '@config/model/password.config';
 import { JwtConfig } from '@config/model/jwt.config';
 import { AuthConfig } from '@config/model/auth.config';
+import { PrescottConfig } from '@config/model/prescott.config';
 
 export const SERVER_CONFIG = 'SERVER';
 export const PG_CONFIG = 'PG';
 export const SCHEMAS_CONFIG = 'SCHEMAS';
 export const AUTH_CONFIG = 'AUTH';
+export const PRESCOTT_CONFIG = 'PRESCOTT';
 
 export const config: {
+  [PRESCOTT_CONFIG]: PrescottConfig;
   [SERVER_CONFIG]: ServerConfig;
   [PG_CONFIG]: PgConfig;
   [SCHEMAS_CONFIG]: SchemasConfig;
   [AUTH_CONFIG]: AuthConfig;
 } = {
+  [PRESCOTT_CONFIG]: {
+    workDir: process.env.PRESCOTT_WORKDIR || path.join(__dirname, '../workdir'),
+  },
   [SERVER_CONFIG]: {
     port: process.env.PORT ?? 8080,
     host: process.env.HOST ?? '0.0.0.0',
@@ -33,9 +40,9 @@ export const config: {
     database: process.env.PGDB,
   } as PgConfig,
   [SCHEMAS_CONFIG]: {
-    schemasPath: join(__dirname, '../', 'schemas/'),
+    schemasPath: path.join(__dirname, '../', 'schemas/'),
     schemasIdPrefix: 'schema://prescott.dev/',
-    tsPath: join(__dirname, '../', 'model'),
+    tsPath: path.join(__dirname, '../', 'model'),
     ajvOptions: {
       allowUnionTypes: true,
     },
