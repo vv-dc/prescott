@@ -48,6 +48,14 @@ describe('contract-loader unit', () => {
       ).rejects.toThrow(Error);
     });
 
+    it('should throw if path is not within workDir', async () => {
+      const fileKey = '../../something.js';
+      const workDir = 'src/workdir';
+      await expect(
+        buildContract({ type: 'file', key: fileKey }, workDir)
+      ).rejects.toThrow(Error);
+    });
+
     it('should build file contract - ESM', async () => {
       const mockContract: Contract = {
         init: jest.fn(),
