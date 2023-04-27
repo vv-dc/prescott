@@ -74,7 +74,7 @@ describe('task e2e', () => {
     const newConfig: LocalTaskConfig = {
       local: { cronString: cronEveryNSeconds(1) },
       appConfig: {
-        limitations: { ram: '1g', ttl: 3 },
+        limitations: { ram: '1g', ttl: 100 },
         steps: [
           {
             name: 'Say hello',

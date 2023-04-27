@@ -1,4 +1,5 @@
 import pidUsage = require('pidusage');
+import { Buffer } from 'node:buffer';
 
 import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
@@ -14,12 +15,14 @@ import {
   KillEnvHandleDto,
   StopEnvHandleDto,
 } from '@modules/contract/model/env-handle';
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogEntry, LogEntryStream } from '@modules/contract/model/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric-entry';
+import * as buffer from 'buffer';
 
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';
 const METRICS_FORMAT = `"{{.PIDs}}${METRICS_SEPARATOR}{{.MemUsage}}}${METRICS_SEPARATOR}{{.CPUPerc}}"`;
+const LOG_TIMESTAMP_LENGTH = 35;
 
 type RawDockerMetric = [string, string, string];
 
@@ -74,19 +77,34 @@ export class DockerEnvHandle implements EnvHandle {
   async *logs(): AsyncGenerator<LogEntry> {
     const command = new CommandBuilder().init('docker logs');
     command.param('follow');
+    command.param('timestamps');
     command.with(this.container);
 
     const child = command.spawn();
 
     if (child.stdout) {
       for await (const stdout of child.stdout) {
-        yield { type: 'stdout', content: stdout.toString(), time: new Date() };
+        yield* this.parseRawLogEntry(stdout, 'stdout');
       }
     }
     if (child.stderr) {
       for await (const stderr of child.stderr) {
-        yield { type: 'stderr', content: stderr.toString(), time: new Date() };
+        yield* this.parseRawLogEntry(stderr, 'stderr');
       }
+    }
+  }
+
+  private *parseRawLogEntry(
+    buffer: Buffer,
+    stream: LogEntryStream
+  ): Generator<LogEntry> {
+    for (const rawLog of buffer.toString().split('\n')) {
+      if (rawLog === '') continue;
+      yield {
+        stream,
+        time: new Date(rawLog.slice(0, LOG_TIMESTAMP_LENGTH)),
+        content: rawLog.slice(LOG_TIMESTAMP_LENGTH + 1),
+      };
     }
   }
 

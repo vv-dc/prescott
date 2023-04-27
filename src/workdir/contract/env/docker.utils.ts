@@ -58,6 +58,10 @@ export const dockerSizeToBytes = (sizeString: string): number => {
 export const normalizeDockerContainerName = (name: string): string =>
   name.replaceAll(':', '_');
 
+// TODO: escape everything
+export const normalizeDockerCmd = (cmd: string): string =>
+  cmd.replaceAll('\n', '\\n');
+
 export const buildDockerfile = (
   image: string,
   cmd: string,
@@ -67,7 +71,7 @@ export const buildDockerfile = (
     `FROM ${image} AS base`,
     `WORKDIR /usr/src/app`,
     ...(copy ? ['COPY . .'] : []),
-    `CMD ${cmd}`,
+    `CMD ${normalizeDockerCmd(cmd)}`,
   ];
   return statements.join('\n');
 };
