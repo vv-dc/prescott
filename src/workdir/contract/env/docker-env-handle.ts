@@ -1,5 +1,5 @@
 import pidUsage = require('pidusage');
-import { Buffer } from 'node:buffer';
+import { Readable } from 'node:stream';
 
 import { CommandBuilder } from '@lib/command-builder';
 import { delay } from '@lib/time.utils';
@@ -73,38 +73,35 @@ export class DockerEnvHandle implements EnvHandle {
   }
 
   async *logs(): AsyncGenerator<LogEntry> {
-    const command = new CommandBuilder().init('docker logs');
-    command.param('follow');
-    command.param('timestamps');
-    command.with(this.container);
+    const command = new CommandBuilder()
+      .init('docker logs')
+      .param('follow')
+      .param('timestamps');
+    const child = command.with(this.container).spawn();
+    if (child.stdout) yield* this.consumeLogStream(child.stdout, 'stdout');
+    if (child.stderr) yield* this.consumeLogStream(child.stderr, 'stderr');
+  }
 
-    const child = command.spawn();
-
-    if (child.stdout) {
-      for await (const stdout of child.stdout) {
-        yield* this.parseRawLogEntry(stdout, 'stdout');
-      }
-    }
-    if (child.stderr) {
-      for await (const stderr of child.stderr) {
-        yield* this.parseRawLogEntry(stderr, 'stderr');
+  private async *consumeLogStream(
+    readable: Readable,
+    stream: LogEntryStream
+  ): AsyncGenerator<LogEntry> {
+    for await (const chunk of readable) {
+      const rawLogs = chunk.toString().split('\n');
+      for (const rawLog of rawLogs) {
+        if (rawLog === '') continue;
+        yield this.parseRawLogRow(rawLog, stream);
       }
     }
   }
 
-  private *parseRawLogEntry(
-    buffer: Buffer,
-    stream: LogEntryStream
-  ): Generator<LogEntry> {
-    for (const rawLog of buffer.toString().split('\n')) {
-      if (rawLog === '') continue;
-      const whiteSpaceIdx = rawLog.indexOf(' ');
-      yield {
-        stream,
-        time: new Date(rawLog.slice(0, whiteSpaceIdx)),
-        content: rawLog.slice(whiteSpaceIdx + 1),
-      };
-    }
+  private parseRawLogRow(rawLog: string, stream: LogEntryStream): LogEntry {
+    const whiteSpaceIdx = rawLog.indexOf(' ');
+    return {
+      stream,
+      time: Date.parse(rawLog.slice(0, whiteSpaceIdx)),
+      content: rawLog.slice(whiteSpaceIdx + 1),
+    };
   }
 
   metrics(intervalMs?: number): AsyncGenerator<MetricEntry> {

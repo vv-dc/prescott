@@ -1,6 +1,6 @@
 export interface LogEntry {
   stream: LogEntryStream;
-  time: Date;
+  time: number;
   content: string;
 }
 

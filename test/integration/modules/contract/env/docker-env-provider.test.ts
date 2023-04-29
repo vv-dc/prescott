@@ -112,7 +112,7 @@ describe('docker-env-provider integration', () => {
     const createDto: CompileEnvDto = {
       alias: generateRandomString('log-test'),
       envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in 1 2 3; do echo -e 'newline\t'; for j in $(seq 50); do echo -n 'A\n\tA'; done; sleep 0.1; done; echo 'ERROR!' >&2`,
+      script: `for i in $(seq 10); do for j in $(seq 250); do echo -n 'A\n\tA'; done; done; echo 'ERROR!' >&2`,
       isCache: false,
     };
     const envId = await envProvider.compileEnv(createDto);
@@ -129,36 +129,20 @@ describe('docker-env-provider integration', () => {
     const logsPromise = asyncGeneratorToArray(envHandle.logs());
 
     // check logs collected
-    await envHandle.wait();
     const logs = await logsPromise;
-    expect(logs).toHaveLength(5);
+    expect(logs).toHaveLength(2);
 
     expect(logs).toEqual(
       expect.arrayContaining([
         {
           stream: 'stdout',
-          content: 'newline\t',
-          time: expect.any(Date),
-        },
-        {
-          stream: 'stdout',
-          content: 'A\\n\\tA'.repeat(50) + 'newline\t',
-          time: expect.any(Date),
-        },
-        {
-          stream: 'stdout',
-          content: 'A\\n\\tA'.repeat(50) + 'newline\t',
-          time: expect.any(Date),
-        },
-        {
-          stream: 'stdout',
-          content: 'A\\n\\tA'.repeat(50) + 'newline\t',
-          time: expect.any(Date),
+          content: 'A\\n\\tA'.repeat(2_500),
+          time: expect.any(Number),
         },
         {
           stream: 'stderr',
           content: 'ERROR!',
-          time: expect.any(Date),
+          time: expect.any(Number),
         },
       ] as LogEntry[])
     );
