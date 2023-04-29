@@ -58,9 +58,17 @@ export const dockerSizeToBytes = (sizeString: string): number => {
 export const normalizeDockerContainerName = (name: string): string =>
   name.replaceAll(':', '_');
 
-// TODO: escape everything
+const ESCAPE_REPLACE_MAP: Record<string, string> = {
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+  '\b': '\\b',
+  '\f': '\\f',
+  '\v': '\\v',
+};
+
 export const normalizeDockerCmd = (cmd: string): string =>
-  cmd.replaceAll('\n', '\\n');
+  cmd.replace(/[\n\r\t\b\f\v]/g, (match) => ESCAPE_REPLACE_MAP[match]);
 
 export const buildDockerfile = (
   image: string,

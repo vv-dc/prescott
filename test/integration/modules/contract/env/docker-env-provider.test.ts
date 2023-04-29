@@ -112,7 +112,7 @@ describe('docker-env-provider integration', () => {
     const createDto: CompileEnvDto = {
       alias: generateRandomString('log-test'),
       envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 3); do echo 'newline'; for j in $(seq 250); do echo -n 'A\nA'; done; sleep 0.1; done; echo -n 'ERROR!' >&2; sleep 1;`,
+      script: `for i in $(seq 3); do echo -e 'newline\t'; for j in $(seq 250); do echo -n 'A\n\tA'; done; sleep 0.1; done; echo 'ERROR!' >&2; sleep 1;`,
       isCache: false,
     };
     const envId = await envProvider.compileEnv(createDto);
@@ -137,22 +137,22 @@ describe('docker-env-provider integration', () => {
       expect.arrayContaining([
         {
           stream: 'stdout',
-          content: 'newline',
+          content: 'newline\t',
           time: expect.any(Date),
         },
         {
           stream: 'stdout',
-          content: 'A\\nA'.repeat(250) + 'newline',
+          content: 'A\\n\\tA'.repeat(250) + 'newline\t',
           time: expect.any(Date),
         },
         {
           stream: 'stdout',
-          content: 'A\\nA'.repeat(250) + 'newline',
+          content: 'A\\n\\tA'.repeat(250) + 'newline\t',
           time: expect.any(Date),
         },
         {
           stream: 'stdout',
-          content: 'A\\nA'.repeat(250) + 'newline',
+          content: 'A\\n\\tA'.repeat(250) + 'newline\t',
           time: expect.any(Date),
         },
         {

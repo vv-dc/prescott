@@ -22,7 +22,6 @@ import * as buffer from 'buffer';
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';
 const METRICS_FORMAT = `"{{.PIDs}}${METRICS_SEPARATOR}{{.MemUsage}}}${METRICS_SEPARATOR}{{.CPUPerc}}"`;
-const LOG_TIMESTAMP_LENGTH = 35;
 
 type RawDockerMetric = [string, string, string];
 
@@ -100,10 +99,11 @@ export class DockerEnvHandle implements EnvHandle {
   ): Generator<LogEntry> {
     for (const rawLog of buffer.toString().split('\n')) {
       if (rawLog === '') continue;
+      const whiteSpaceIdx = rawLog.indexOf(' ');
       yield {
         stream,
-        time: new Date(rawLog.slice(0, LOG_TIMESTAMP_LENGTH)),
-        content: rawLog.slice(LOG_TIMESTAMP_LENGTH + 1),
+        time: new Date(rawLog.slice(0, whiteSpaceIdx)),
+        content: rawLog.slice(whiteSpaceIdx + 1),
       };
     }
   }
