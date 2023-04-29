@@ -1,6 +1,4 @@
 import * as path from 'node:path';
-import * as vm from 'node:vm';
-import * as fs from 'node:fs/promises';
 import {
   validateContactImpl,
   validateContractConfig,
