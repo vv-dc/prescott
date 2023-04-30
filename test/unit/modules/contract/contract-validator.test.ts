@@ -49,12 +49,11 @@ describe('contract-validator unit', () => {
     const logImpl: LogProviderContract = {
       init: async (opts) => {},
       consumeLogGenerator: async (id, generator) => {},
-      writeLog: async (id, entry) => {},
-      writeLogBatch: async (id, entries) => {},
       searchLog: async (id, paging, dto) => ({
         next: 42,
         entries: [],
       }),
+      flushLog: async (id) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContactImpl('log', logImpl);

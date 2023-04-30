@@ -91,12 +91,10 @@ export class TaskService {
     envHandle: EnvHandle
   ): void {
     const logGenerator = envHandle.logs();
+    setImmediate(() =>
+      this.logProvider.consumeLogGenerator(runHandle, logGenerator)
+    );
     const metricGenerator = envHandle.metrics();
-    setImmediate(async () => {
-      for await (const logEntry of logGenerator) {
-        await this.logProvider.writeLog(runHandle, logEntry);
-      }
-    });
     setImmediate(async () => {
       for await (const metricEntry of metricGenerator) {
         await this.metricProvider.writeMetric(runHandle, metricEntry);

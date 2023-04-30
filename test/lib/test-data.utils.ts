@@ -10,6 +10,8 @@ import { AuthenticationLoginDto } from '@model/dto/authentication-login.dto';
 import { AuthorizationService } from '@plugins/authorization/authorization.service';
 import { JwtService } from '@plugins/authentication/jwt/jwt.service';
 import { UserPayload } from '@model/domain/user-payload';
+import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
+import { randomInt } from 'node:crypto';
 
 export interface GroupTestInstance {
   groupId: number;
@@ -53,3 +55,9 @@ export const createTestGroup = async (
   const groupId = await authorizationService.createGroup(groupName, userId);
   return { groupId, groupName };
 };
+
+export const generateTaskRunHandle = (): TaskRunHandle => ({
+  taskId: randomInt(1, 1_000_000),
+  taskIdentifier: generateRandomString('task'),
+  handleId: generateRandomString('handle'),
+});

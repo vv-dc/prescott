@@ -3,13 +3,12 @@ import { LogProviderContract } from '@modules/contract/model/log-provider.contra
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const logProvider: LogProviderContract = {
   init: async (opts) => {},
-  writeLogBatch: async (id, entries): Promise<void> => {},
-  writeLog: async (id, entry) => {},
   consumeLogGenerator: async (id, generator) => {},
   searchLog: async (id, paging, dto) => ({
     next: 42,
     entries: [],
   }),
+  flushLog: async (id) => {},
 };
 /* eslint-enable @typescript-eslint/no-unused-vars */
 

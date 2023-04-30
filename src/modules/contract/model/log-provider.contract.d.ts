@@ -5,16 +5,15 @@ import { Contract } from '@modules/contract/model/contract';
 
 export interface LogProviderContract extends Contract {
   consumeLogGenerator(
-    id: TaskRunHandle,
+    runHandle: TaskRunHandle,
     generator: AsyncGenerator<LogEntry>
   ): Promise<void>;
-  writeLog(id: TaskRunHandle, entry: LogEntry): Promise<void>;
-  writeLogBatch(id: TaskRunHandle, entries: LogEntry[]): Promise<void>;
+  flushLog(runHandle: TaskRunHandle): Promise<void>;
   searchLog(
-    id: TaskRunHandle,
+    runHandle: TaskRunHandle,
     paging: EntryPaging,
     dto: LogSearchDto
-  ): Promise<EntryPage<string>>;
+  ): Promise<EntryPage<LogEntry>>;
 }
 
 export interface LogSearchDto {

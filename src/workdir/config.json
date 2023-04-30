@@ -6,7 +6,7 @@
     },
     "log": {
       "type": "file",
-      "key": "log-provider.ts"
+      "key": "log/file-log-provider.ts"
     },
     "metric": {
       "type": "file",
