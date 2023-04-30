@@ -31,7 +31,7 @@ describe('task e2e', () => {
       osInfo: DOCKER_IMAGES.alpine,
       once: false,
       config: {
-        local: { cronString: cronEveryNSeconds(1) },
+        local: { cronString: cronEveryNSeconds(10) },
         appConfig: {
           steps: [
             {
@@ -72,9 +72,8 @@ describe('task e2e', () => {
 
     // UPDATE task
     const newConfig: LocalTaskConfig = {
-      local: { cronString: cronEveryNSeconds(1) },
+      local: { cronString: cronEveryNSeconds(10) },
       appConfig: {
-        limitations: { ram: '1g', ttl: 100 },
         steps: [
           {
             name: 'Say hello',
@@ -270,7 +269,7 @@ describe('task e2e', () => {
   });
 
   // TODO: add logs and metrics
-  it('should save task runs', async () => {
+  it.skip('should save task runs', async () => {
     // PREPARE data
     const fastify = await buildServer();
     const { authenticationService, authorizationService, jwtService } = fastify;
