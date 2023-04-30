@@ -1,0 +1,15 @@
+{
+  "$id": "schema://prescott.dev/domain/task-run.json",
+  "title": "TaskRun",
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "handleId": { "type": "string" },
+    "taskId": { "type": "integer" },
+    "status": { "type": "string", "enum": ["running", "failed", "succeed"] },
+    "startedAt": { "type": "string", "format": "date-time", "tsType": "Date" },
+    "finishedAt": { "type": "string", "format": "date-time", "tsType": "Date" }
+  },
+  "required": ["id", "taskId", "status", "startedAt"],
+  "additionalProperties": false
+}

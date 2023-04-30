@@ -268,4 +268,58 @@ describe('task e2e', () => {
 
     await fastify.close();
   });
+
+  // TODO: add logs and metrics
+  it('should save task runs', async () => {
+    // PREPARE data
+    const fastify = await buildServer();
+    const { authenticationService, authorizationService, jwtService } = fastify;
+
+    const { userId, tokenPair } = await createAndLoginTestUser(
+      authenticationService,
+      jwtService
+    );
+    const { groupId } = await createTestGroup(authorizationService, userId);
+
+    // CREATE task
+    const taskConfig: TaskConfigDto = {
+      name: generateRandomString('task'),
+      osInfo: DOCKER_IMAGES.alpine,
+      once: true,
+      config: {
+        local: { cronString: cronEveryNSeconds(1) },
+        appConfig: {
+          steps: [{ name: 'Nop', script: encodeBase64(`echo 'nop'`) }],
+        },
+      },
+    };
+
+    const createRes = await fastify.inject({
+      method: 'POST',
+      url: `/groups/${groupId}/tasks`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+      payload: taskConfig,
+    });
+    expect(createRes.statusCode).toEqual(201);
+    expect(createRes.json()).toMatchObject({ taskId: expect.any(Number) });
+    const taskId: number = createRes.json().taskId;
+
+    await delay(5_000);
+    const getRunsRes = await fastify.inject({
+      method: 'GET',
+      url: `/groups/${groupId}/tasks/${taskId}/runs`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(getRunsRes.statusCode).toEqual(200);
+    expect(getRunsRes.json()).toHaveLength(1);
+
+    const deletedRes = await fastify.inject({
+      method: 'DELETE',
+      url: `/groups/${groupId}/tasks/${taskId}`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(deletedRes.statusCode).toEqual(204);
+
+    await fastify.close();
+  });
 });

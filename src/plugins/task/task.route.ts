@@ -10,7 +10,7 @@ import { TaskAllParams } from '@model/api/task/task-all-params';
 import { AccessToken } from '@model/api/authentication/access-token';
 
 export const taskRoutes: FastifyPluginAsync = async (fastify) => {
-  const { taskService, authHooks, jwtValidationHook } = fastify;
+  const { taskService, taskRunService, authHooks, jwtValidationHook } = fastify;
 
   fastify.addHook('preValidation', jwtValidationHook);
 
@@ -131,6 +131,23 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const { taskId } = request.params;
       await taskService.startTask(taskId);
       reply.code(204).send();
+    },
+  });
+
+  fastify.route<{ Params: TaskAllParams; Headers: AccessToken }>({
+    method: 'GET',
+    url: '/groups/:groupId/tasks/:taskId/runs',
+    schema: {
+      params: fastify.getPrescottSchema('api/task/task-all-params'),
+      response: {
+        200: fastify.getPrescottSchema('api/task/task-get-runs'),
+      },
+    },
+    preHandler: [authHooks.permissionHook('view_task')],
+    handler: async (request, reply) => {
+      const { taskId } = request.params;
+      const runs = await taskRunService.getAll(taskId);
+      reply.code(200).send(runs);
     },
   });
 };

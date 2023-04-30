@@ -2,6 +2,7 @@
 import * as fastify from 'fastify';
 
 import { TaskService } from '@plugins/task/task.service';
+import { TaskRunService } from '@plugins/task/task-run.service';
 import { UserService } from '@plugins/user/user.service';
 import { AuthenticationService } from '@plugins/authentication/authentication.service';
 import { AuthorizationService } from '@plugins/authorization/authorization.service';
@@ -16,6 +17,7 @@ declare module 'fastify' {
   export interface FastifyInstance {
     pg: PgConnection;
     taskService: TaskService;
+    taskRunService: TaskRunService;
     userService: UserService;
     authenticationService: AuthenticationService;
     authorizationService: AuthorizationService;

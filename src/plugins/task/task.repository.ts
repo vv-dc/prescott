@@ -13,7 +13,7 @@ export const deleteTask = (taskId: number): void => {
   if (task !== undefined) {
     task.stop();
     delete tasks[taskId];
-  } else throw new Error('Task does not exist');
+  }
 };
 
 export const addTask = (config: TaskCronConfig): ScheduledTask => {
@@ -27,7 +27,7 @@ export const stopTask = (taskId: number): void => {
   const task = tasks[taskId];
   if (task !== undefined) {
     task.stop();
-  } else throw new Error('Task does not exist');
+  }
 };
 
 export const startTask = (taskId: number): void => {

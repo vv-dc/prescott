@@ -4,7 +4,7 @@ import {
   LogProviderContract,
   LogSearchDto,
 } from '@modules/contract/model/log-provider.contract';
-import { TaskRunId } from '@modules/contract/model/task-run-id';
+import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
 import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
 import { ContractOpts } from '@modules/contract/model/contract';
@@ -19,26 +19,31 @@ const init = async (opts: ContractOpts): Promise<void> => {
 };
 
 const consumeLogGenerator = async (
-  id: TaskRunId,
+  id: TaskRunHandle,
   generator: AsyncGenerator<LogEntry>
 ): Promise<void> => {
   // no-op
 };
 
-const writeLog = async (id: TaskRunId, entry: LogEntry): Promise<void> => {
-  const logPath = path.join(config.workDir, 'data', 'log', `${id.runId}.json`);
+const writeLog = async (id: TaskRunHandle, entry: LogEntry): Promise<void> => {
+  const logPath = path.join(
+    config.workDir,
+    'data',
+    'log',
+    `${id.handleId}.json`
+  );
   await fs.appendFile(logPath, JSON.stringify(entry) + '\n', 'utf-8');
 };
 
 const writeLogBatch = async (
-  id: TaskRunId,
+  id: TaskRunHandle,
   entries: LogEntry[]
 ): Promise<void> => {
   //
 };
 
 const searchLog = async (
-  id: TaskRunId,
+  id: TaskRunHandle,
   paging: EntryPaging,
   dto: LogSearchDto
 ): Promise<EntryPage<string>> => {
