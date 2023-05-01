@@ -34,18 +34,11 @@ export class TaskService {
     taskId: number,
     taskConfig: TaskConfigDto
   ): Promise<void> {
-    taskRepository.stopTask(taskId); // to avoid race condition for fast-running tasks
-    const runsNumber = await this.runService.countAll(taskId);
-    if (runsNumber !== 0 && taskConfig.once) {
-      return;
-    }
     try {
       await this.runTaskImpl(identifier, taskId, taskConfig);
     } catch (err) {
-      // TODO: process error
       await this.stopTask(taskId);
     }
-    taskRepository.startTask(taskId);
   }
 
   // task is like a clean function, so there is no need to re-build it
@@ -55,13 +48,20 @@ export class TaskService {
     taskConfig: TaskConfigDto
   ): Promise<void> {
     const { once, config } = taskConfig;
+
+    const limit = once ? 1 : undefined;
+    const runHandle = await this.runService.tryToRegisterRun(taskId, limit);
+    if (runHandle === null) {
+      return;
+    }
+
     const envHandle = await this.envProvider.runEnv({
       envId: identifier,
       limitations: config.appConfig?.limitations,
       options: { isDelete: false },
     });
 
-    const runHandle = await this.runService.start(taskId, envHandle);
+    await this.runService.start(runHandle, envHandle);
     const exitCode: number = await envHandle.wait();
     await this.runService.finish(runHandle, exitCode === 0);
 

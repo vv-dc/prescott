@@ -1,8 +1,12 @@
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 import * as fs from 'node:fs/promises';
-import { createWriteStream, createReadStream } from 'fs';
-import { ensureDirectory, waitStreamFinished } from '@lib/file.utils';
+import { createWriteStream, createReadStream } from 'node:fs';
+import {
+  ensureDirectory,
+  isErrnoException,
+  waitStreamFinished,
+} from '@lib/file.utils';
 import {
   LogProviderContract,
   LogSearchDto,
@@ -98,8 +102,14 @@ const searchLog = async (
 };
 
 const flushLog = async (taskId: number): Promise<void> => {
-  const [logDir] = buildLogFilePath({ taskId, runId: 1 });
-  await fs.rm(logDir, { recursive: true }).catch(() => {});
+  const [logDir] = buildLogFilePath({ taskId, runId: 0 });
+  try {
+    await fs.rm(logDir, { recursive: true });
+  } catch (err) {
+    if (!isErrnoException(err) || err.code !== 'ENOENT') {
+      throw err;
+    }
+  }
 };
 
 const fileLogProvider: LogProviderContract = {

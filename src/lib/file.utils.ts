@@ -28,3 +28,9 @@ export const waitStreamFinished = async (
 ): Promise<void> => {
   await streamFinished(streamToWait);
 };
+
+export const isErrnoException = (
+  err: unknown
+): err is NodeJS.ErrnoException => {
+  return typeof err === 'object' && err !== null && 'code' in err;
+};

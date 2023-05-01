@@ -270,7 +270,7 @@ describe('task e2e', () => {
     await fastify.close();
   });
 
-  it('should collect logs and metrics for per task run', async () => {
+  it('should collect logs and metrics per task run', async () => {
     // PREPARE data
     const fastify = await buildServer();
     const { authenticationService, authorizationService, jwtService } = fastify;

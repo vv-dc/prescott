@@ -8,9 +8,10 @@ export async function up(knex: Knex): Promise<void> {
       .notNullable()
       .references('tasks.id')
       .onDelete('cascade');
-    table.string('handle_id', 255).notNullable();
+    table.string('handle_id', 255);
     table.string('status', 64).notNullable();
-    table.datetime('started_at').notNullable();
+    table.datetime('created_at').notNullable();
+    table.datetime('started_at');
     table.datetime('finished_at');
   });
 }

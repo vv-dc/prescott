@@ -6,10 +6,14 @@
     "id": { "type": "integer" },
     "handleId": { "type": "string" },
     "taskId": { "type": "integer" },
-    "status": { "type": "string", "enum": ["running", "failed", "succeed"] },
+    "status": {
+      "type": "string",
+      "enum": ["running", "failed", "succeed", "pending"]
+    },
     "startedAt": { "type": "string", "format": "date-time", "tsType": "Date" },
-    "finishedAt": { "type": "string", "format": "date-time", "tsType": "Date" }
+    "finishedAt": { "type": "string", "format": "date-time", "tsType": "Date" },
+    "createdAt": { "type": "string", "format": "date-time", "tsType": "Date" }
   },
-  "required": ["id", "taskId", "status", "startedAt"],
+  "required": ["id", "taskId", "status", "createdAt"],
   "additionalProperties": false
 }

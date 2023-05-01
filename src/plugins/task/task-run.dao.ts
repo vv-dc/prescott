@@ -26,7 +26,7 @@ export class TaskRunDao {
 
   async update(
     id: number,
-    dto: Omit<TaskRun, 'id' | 'taskId' | 'startedAt'>
+    dto: Partial<Omit<TaskRun, 'id' | 'taskId' | 'createdAt'>>
   ): Promise<void> {
     await this.db('task_runs').update(dto).where({ id });
   }
