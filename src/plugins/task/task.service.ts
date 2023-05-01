@@ -68,11 +68,7 @@ export class TaskService {
       options: { isDelete: false },
     });
 
-    const runHandle: TaskRunHandle = {
-      taskId,
-      handleId: envHandle.id(),
-      taskIdentifier: identifier,
-    };
+    const runHandle: TaskRunHandle = { taskId, handleId: envHandle.id() };
     this.registerEnvHandleListeners(runHandle, envHandle);
 
     await this.runService.start(runHandle);

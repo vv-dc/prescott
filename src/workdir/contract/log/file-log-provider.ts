@@ -40,10 +40,34 @@ const consumeLogGenerator = async (
   await waitStreamFinished(writeStream);
 };
 
-const buildLogMatcher =
-  (dto: LogSearchDto): ((logEntry: LogEntry) => boolean) =>
-  (logEntry) =>
-    true;
+type LogMatcherFn = (logEntry: LogEntry) => boolean;
+const buildLogMatchersList = (dto: LogSearchDto): LogMatcherFn[] => {
+  const { toDate, fromDate, searchTerm } = dto;
+  const matchers: LogMatcherFn[] = [];
+  if (fromDate) {
+    matchers.push((entry) => entry.time >= fromDate.getTime());
+  }
+  if (toDate) {
+    matchers.push((entry) => entry.time <= toDate.getTime());
+  }
+  if (searchTerm) {
+    const regexp = new RegExp(searchTerm);
+    matchers.push((entry) => regexp.test(entry.content));
+  }
+  return matchers;
+};
+
+const buildLogMatcher = (
+  dto: LogSearchDto
+): ((logEntry: LogEntry) => boolean) => {
+  const checkers = buildLogMatchersList(dto);
+  return (logEntry) => {
+    for (const checker of checkers) {
+      if (!checker(logEntry)) return false;
+    }
+    return true;
+  };
+};
 
 const searchLog = async (
   runHandle: TaskRunHandle,

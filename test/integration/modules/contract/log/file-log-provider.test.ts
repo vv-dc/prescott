@@ -1,8 +1,8 @@
-import { LogEntry } from '@modules/contract/model/log-entry';
 import { generateRandomString } from '@lib/random.utils';
-import { generateTaskRunHandle } from '@test/lib/test-data.utils';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
+import { LogEntry } from '@modules/contract/model/log-entry';
 import fileLogProviderBuilder from '@src/workdir/contract/log/file-log-provider';
+import { generateTaskRunHandle } from '@test/lib/test-data.utils';
 
 const buildLogProvider = async (): Promise<LogProviderContract> => {
   const logProvider = await fileLogProviderBuilder.buildContract();
@@ -68,18 +68,51 @@ describe('file-log-generator integration', () => {
       runHandle,
       { pageSize: 10, from: 3 },
       {
-        fromDate: new Date('2023-01-01'),
-        toDate: new Date('2023-01-15'),
+        fromDate: new Date('2023-01-15'),
+        toDate: new Date('2023-01-30'),
       }
     );
     expect(entries).toHaveLength(10);
-    expect(entries).toEqual(generatedLogs.slice(3, 13));
+    expect(entries).toEqual(generatedLogs.slice(17, 27));
     expect(next).toEqual(14);
 
     await logProvider.flushLog(runHandle);
   });
 
   it('should search logs by pattern', async () => {
-    //
+    const logProvider = await buildLogProvider();
+    const generatedLogs: LogEntry[] = [];
+
+    const generator = async function* (): AsyncGenerator<LogEntry> {
+      for (let idx = 0; idx < 30; ++idx) {
+        const prefix = idx % 2 === 0 ? 'even' : 'odd';
+        const logEntry: LogEntry = {
+          stream: 'stdout',
+          content: `${prefix}-${idx}`,
+          time: new Date().getTime(),
+        };
+        generatedLogs.push(logEntry);
+        yield logEntry;
+      }
+    };
+
+    const runHandle = generateTaskRunHandle();
+    await logProvider.consumeLogGenerator(runHandle, generator());
+
+    const { entries, next } = await logProvider.searchLog(
+      runHandle,
+      { pageSize: 4 },
+      { searchTerm: '^even-[1238]+$' }
+    );
+    expect(entries).toHaveLength(4);
+    expect(entries).toEqual([
+      generatedLogs[2],
+      generatedLogs[8],
+      generatedLogs[12],
+      generatedLogs[18],
+    ]);
+    expect(next).toEqual(5);
+
+    await logProvider.flushLog(runHandle);
   });
 });
