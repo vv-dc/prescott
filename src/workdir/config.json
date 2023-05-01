@@ -10,7 +10,7 @@
     },
     "metric": {
       "type": "file",
-      "key": "metric-provider.ts"
+      "key": "metric/file-metric-provider.ts"
     }
   }
 }

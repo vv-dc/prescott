@@ -122,7 +122,7 @@ export class DockerEnvHandle implements EnvHandle {
         yield {
           ram: memory.toFixed(2),
           cpu: cpu.toFixed(2),
-          time: timestamp.toString(),
+          time: timestamp,
         };
         await delay(intervalMs);
       }
@@ -168,7 +168,7 @@ export class DockerEnvHandle implements EnvHandle {
     return {
       ram: dockerSizeToBytes(memUsage.split('/')[0].slice(0, -1)).toFixed(2), // exclude whitespace
       cpu: cpuPercentage.slice(0, -1), // exclude %
-      time: timestamp.toString(),
+      time: timestamp,
     };
   }
 }

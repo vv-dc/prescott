@@ -1,9 +1,8 @@
 export interface TaskRunLogResponse {
-  entries: LogEntry[];
+  entries: {
+    stream: 'stderr' | 'stdout';
+    time: number;
+    content: string;
+  }[];
   next: number;
-}
-export interface LogEntry {
-  stream: 'stderr' | 'stdout';
-  time: number;
-  content: string;
 }

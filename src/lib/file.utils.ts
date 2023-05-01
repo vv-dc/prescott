@@ -29,8 +29,15 @@ export const waitStreamFinished = async (
   await streamFinished(streamToWait);
 };
 
-export const isErrnoException = (
-  err: unknown
-): err is NodeJS.ErrnoException => {
+const isErrnoException = (err: unknown): err is NodeJS.ErrnoException => {
   return typeof err === 'object' && err !== null && 'code' in err;
+};
+export const rmRecursiveSafe = async (dir: string): Promise<void> => {
+  try {
+    await fs.rm(dir, { recursive: true });
+  } catch (err) {
+    if (!isErrnoException(err) || err.code !== 'ENOENT') {
+      throw err;
+    }
+  }
 };

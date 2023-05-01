@@ -10,7 +10,7 @@ const buildLogProvider = async (): Promise<LogProviderContract> => {
   return logProvider;
 };
 
-describe('file-log-generator integration', () => {
+describe('file-log-provider integration', () => {
   it('save and then return logs', async () => {
     const logProvider = await buildLogProvider();
     const LOG_ENTRIES_NUMBER = 100;

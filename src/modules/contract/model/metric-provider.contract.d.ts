@@ -5,16 +5,15 @@ import { Contract } from '@modules/contract/model/contract';
 
 export interface MetricProviderContract extends Contract {
   consumeMetricGenerator(
-    id: TaskRunHandle,
+    runHandle: TaskRunHandle,
     generator: AsyncGenerator<MetricEntry>
   ): Promise<void>;
-  writeMetric(id: TaskRunHandle, entry: MetricEntry): Promise<void>;
-  writeMetricBatch(id: TaskRunHandle, entries: MetricEntry[]): Promise<void>;
   searchMetric(
-    id: TaskRunHandle,
-    paging: EntryPaging,
-    dto: MetricSearchDto
+    runHandle: TaskRunHandle,
+    dto: MetricSearchDto,
+    paging: EntryPaging
   ): Promise<EntryPage<MetricEntry>>;
+  flushMetric(taskId: number): Promise<void>;
 }
 
 export interface MetricSearchDto {

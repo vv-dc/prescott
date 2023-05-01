@@ -73,9 +73,8 @@ describe('contract-validator unit', () => {
     const metricImpl: MetricProviderContract = {
       init: async (opts) => {},
       consumeMetricGenerator: async (id, generator) => {},
-      writeMetric: async (id, entry) => {},
-      writeMetricBatch: async (id, entries) => {},
       searchMetric: async (id, paging, dto) => ({} as EntryPage<MetricEntry>),
+      flushMetric: async (id) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContactImpl('metric', metricImpl);

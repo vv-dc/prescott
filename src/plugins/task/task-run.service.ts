@@ -80,16 +80,14 @@ export class TaskRunService {
     setImmediate(() => this.log.consumeLogGenerator(runHandle, logGenerator));
 
     const metricGenerator = envHandle.metrics();
-    setImmediate(async () => {
-      for await (const metricEntry of metricGenerator) {
-        await this.metric.writeMetric(runHandle, metricEntry);
-      }
-    });
+    setImmediate(() =>
+      this.metric.consumeMetricGenerator(runHandle, metricGenerator)
+    );
   }
 
   async flushAll(taskId: number): Promise<void> {
     await this.log.flushLog(taskId);
-    // TODO: flush metric
+    await this.metric.flushMetric(taskId);
   }
 
   async searchLogs(

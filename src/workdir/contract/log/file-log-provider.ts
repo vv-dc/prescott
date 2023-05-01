@@ -1,12 +1,12 @@
 import * as path from 'node:path';
 import * as readline from 'node:readline';
-import * as fs from 'node:fs/promises';
 import { createWriteStream, createReadStream } from 'node:fs';
 import {
   ensureDirectory,
-  isErrnoException,
+  rmRecursiveSafe,
   waitStreamFinished,
 } from '@lib/file.utils';
+import { buildPaginator, PagingMatcherFn } from '@lib/paging.utils';
 import {
   LogProviderContract,
   LogSearchDto,
@@ -44,10 +44,11 @@ const consumeLogGenerator = async (
   await waitStreamFinished(writeStream);
 };
 
-type LogMatcherFn = (logEntry: LogEntry) => boolean;
-const buildLogMatchersList = (dto: LogSearchDto): LogMatcherFn[] => {
+const buildLogMatchersList = (
+  dto: LogSearchDto
+): PagingMatcherFn<LogEntry>[] => {
   const { toDate, fromDate, searchTerm } = dto;
-  const matchers: LogMatcherFn[] = [];
+  const matchers: PagingMatcherFn<LogEntry>[] = [];
   if (fromDate) {
     matchers.push((entry) => entry.time >= fromDate.getTime());
   }
@@ -78,11 +79,8 @@ const searchLog = async (
   dto: LogSearchDto,
   paging: EntryPaging
 ): Promise<EntryPage<LogEntry>> => {
-  const fromIdx = paging.from ?? 0;
-  const pageSize = Math.min(1000, paging.pageSize ?? 1000);
   const isMatch = buildLogMatcher(dto);
-  let matchedCounter = 0;
-  const matchedEntries: LogEntry[] = [];
+  const paginator = buildPaginator(isMatch, paging, 1_000);
 
   const [, logPath] = buildLogFilePath(runHandle);
   const linesReadable = readline.createInterface({
@@ -91,25 +89,17 @@ const searchLog = async (
   });
 
   for await (const line of linesReadable) {
-    const logEntry = JSON.parse(line);
-    if (!isMatch(logEntry)) continue;
-
-    if (matchedCounter++ >= fromIdx) matchedEntries.push(logEntry);
-    if (matchedEntries.length === pageSize) break;
+    const logEntry: LogEntry = JSON.parse(line);
+    const isDone = paginator.process(logEntry);
+    if (isDone) break;
   }
 
-  return { next: matchedCounter + 1, entries: matchedEntries };
+  return paginator.build();
 };
 
 const flushLog = async (taskId: number): Promise<void> => {
   const [logDir] = buildLogFilePath({ taskId, runId: 0 });
-  try {
-    await fs.rm(logDir, { recursive: true });
-  } catch (err) {
-    if (!isErrnoException(err) || err.code !== 'ENOENT') {
-      throw err;
-    }
-  }
+  await rmRecursiveSafe(logDir);
 };
 
 const fileLogProvider: LogProviderContract = {

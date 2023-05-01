@@ -187,7 +187,7 @@ describe('docker-env-provider integration', () => {
       expect(metric).toMatchObject({
         ram: expect.any(String),
         cpu: expect.any(String),
-        time: expect.any(String),
+        time: expect.any(Number),
       } as MetricEntry);
     }
 
@@ -232,7 +232,7 @@ describe('docker-env-provider integration', () => {
       expect(metric).toMatchObject({
         ram: expect.any(String),
         cpu: expect.any(String),
-        time: expect.any(String),
+        time: expect.any(Number),
       } as MetricEntry);
     }
 
