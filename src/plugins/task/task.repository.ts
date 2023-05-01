@@ -18,7 +18,7 @@ export const deleteTask = (taskId: number): void => {
 
 export const addTask = (config: TaskCronConfig): ScheduledTask => {
   const { taskId, cronString, callback } = config;
-  const task = schedule(cronString, callback);
+  const task = schedule(cronString, callback, { scheduled: false });
   tasks[taskId] = task;
   return task;
 };
@@ -39,7 +39,3 @@ export const startTask = (taskId: number): void => {
 
 export const existsTask = (taskId: number): boolean =>
   Object.prototype.hasOwnProperty.call(tasks, taskId);
-
-// note: it's only for testing purposes
-export const getScheduledTasks = (): ScheduledTasksRepository =>
-  Object.assign({}, tasks);

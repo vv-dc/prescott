@@ -1,0 +1,26 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-run-search-query.json",
+  "title": "TaskRunSearchQuery",
+  "type": "object",
+  "properties": {
+    "search": {
+      "type": "object",
+      "properties": {
+        "fromDate": { "type": "string", "format": "date-time" },
+        "toDate": { "type": "string", "format": "date-time" },
+        "searchTerm": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "paging": {
+      "type": "object",
+      "properties": {
+        "pageSize": { "type": "integer" },
+        "from": { "type": "integer" }
+      },
+      "required": ["size"],
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -19,9 +19,9 @@ const init = async (opts: ContractOpts): Promise<void> => {
 };
 
 const buildLogFilePath = (runHandle: TaskRunHandle): [string, string] => {
-  const { taskId, handleId } = runHandle;
+  const { taskId, runId } = runHandle;
   const logDir = path.join(config.workDir, 'data', 'log', taskId.toString());
-  const logPath = path.join(logDir, `${handleId.normalize()}.json`);
+  const logPath = path.join(logDir, `${runId}.json`);
   return [logDir, logPath];
 };
 
@@ -71,8 +71,8 @@ const buildLogMatcher = (
 
 const searchLog = async (
   runHandle: TaskRunHandle,
-  paging: EntryPaging,
-  dto: LogSearchDto
+  dto: LogSearchDto,
+  paging: EntryPaging
 ): Promise<EntryPage<LogEntry>> => {
   const fromIdx = paging.from ?? 0;
   const pageSize = Math.min(1000, paging.pageSize ?? 1000);
@@ -97,9 +97,9 @@ const searchLog = async (
   return { next: matchedCounter + 1, entries: matchedEntries };
 };
 
-const flushLog = async (runHandle: TaskRunHandle): Promise<void> => {
-  const [logDir] = buildLogFilePath(runHandle);
-  await fs.rm(logDir, { recursive: true });
+const flushLog = async (taskId: number): Promise<void> => {
+  const [logDir] = buildLogFilePath({ taskId, runId: 1 });
+  await fs.rm(logDir, { recursive: true }).catch(() => {});
 };
 
 const fileLogProvider: LogProviderContract = {

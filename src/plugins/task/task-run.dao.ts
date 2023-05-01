@@ -4,11 +4,12 @@ import { PgConnection } from '@model/shared/pg-connection';
 export class TaskRunDao {
   constructor(private db: PgConnection) {}
 
-  create(taskRun: Omit<TaskRun, 'id'>): Promise<TaskRun> {
-    return this.db('task_runs').insert(taskRun);
+  async create(taskRun: Omit<TaskRun, 'id'>): Promise<TaskRun> {
+    const [row] = await this.db('task_runs').insert(taskRun).returning('*');
+    return row;
   }
 
-  findOneById(id: string): Promise<TaskRun | null> {
+  findOneById(id: number): Promise<TaskRun | null> {
     return this.db('task_runs').where({ id }).first();
   }
 

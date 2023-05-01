@@ -11,8 +11,10 @@ import {
 } from '@test/lib/test-data.utils';
 import { delay } from '@lib/time.utils';
 import { LocalTaskConfig } from '@model/domain/local-task-config';
+import { TaskRun } from '@model/domain/task-run';
+import { EntryPage } from '@modules/contract/model/entry-paging';
+import { LogEntry } from '@modules/contract/model/log-entry';
 
-// TODO: improve tests once logs + metrics implemented
 describe('task e2e', () => {
   it('should do CRUD on task', async () => {
     // PREPARE data
@@ -268,8 +270,7 @@ describe('task e2e', () => {
     await fastify.close();
   });
 
-  // TODO: add logs and metrics
-  it.skip('should save task runs', async () => {
+  it('should collect logs and metrics for per task run', async () => {
     // PREPARE data
     const fastify = await buildServer();
     const { authenticationService, authorizationService, jwtService } = fastify;
@@ -288,7 +289,12 @@ describe('task e2e', () => {
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
-          steps: [{ name: 'Nop', script: encodeBase64(`echo 'nop'`) }],
+          steps: [
+            {
+              name: 'Nop',
+              script: encodeBase64(`for i in $(seq 50); do echo 'nop'; done`),
+            },
+          ],
         },
       },
     };
@@ -303,14 +309,38 @@ describe('task e2e', () => {
     expect(createRes.json()).toMatchObject({ taskId: expect.any(Number) });
     const taskId: number = createRes.json().taskId;
 
-    await delay(5_000);
+    await delay(10_000);
     const getRunsRes = await fastify.inject({
       method: 'GET',
       url: `/groups/${groupId}/tasks/${taskId}/runs`,
       headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
     });
     expect(getRunsRes.statusCode).toEqual(200);
-    expect(getRunsRes.json()).toHaveLength(1);
+    const taskRuns = getRunsRes.json<TaskRun[]>();
+    expect(taskRuns).toHaveLength(1);
+    expect(taskRuns[0]).toMatchObject({
+      id: expect.any(Number),
+      handleId: expect.any(String),
+      taskId,
+      status: 'succeed',
+      startedAt: expect.any(String),
+      finishedAt: expect.any(String),
+    } as TaskRun);
+
+    const runId = taskRuns[0].id;
+    const logResponse = await fastify.inject({
+      method: 'GET',
+      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/logs`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(logResponse.statusCode).toEqual(200);
+    const logsPage = logResponse.json<EntryPage<LogEntry>>();
+    expect(logsPage.entries.length).toBeGreaterThanOrEqual(30);
+    expect(logsPage.entries[23]).toMatchObject({
+      stream: 'stdout',
+      content: 'nop',
+      time: expect.any(Number),
+    } as LogEntry);
 
     const deletedRes = await fastify.inject({
       method: 'DELETE',

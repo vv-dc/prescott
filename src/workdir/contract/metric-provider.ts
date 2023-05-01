@@ -33,7 +33,7 @@ const writeMetric = async (
     config.workDir,
     'data',
     'metric',
-    `${id.handleId}.json`
+    `${id.runId}.json`
   );
   await fs.appendFile(logPath, JSON.stringify(entry) + '\n', 'utf-8');
 };

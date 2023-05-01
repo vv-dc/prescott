@@ -15,15 +15,17 @@ const task: FastifyPluginAsync = async (fastify) => {
   const { env, log, metric } = contractMap;
 
   const taskRunDao = new TaskRunDao(pg);
-  const taskRunService = new TaskRunService(taskRunDao);
+  const taskRunService = new TaskRunService(
+    taskRunDao,
+    log as LogProviderContract,
+    metric as MetricProviderContract
+  );
 
   const taskDao = new TaskDao(pg);
   const taskService = new TaskService(
     taskDao,
     taskRunService,
-    env as EnvProviderContract,
-    log as LogProviderContract,
-    metric as MetricProviderContract
+    env as EnvProviderContract
   );
 
   fastify.decorate('taskService', taskService);

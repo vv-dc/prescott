@@ -33,14 +33,14 @@ describe('file-log-generator integration', () => {
 
     const { next, entries } = await logProvider.searchLog(
       runHandle,
-      { pageSize: LOG_ENTRIES_NUMBER },
-      {}
+      {},
+      { pageSize: LOG_ENTRIES_NUMBER }
     );
     expect(entries).toHaveLength(LOG_ENTRIES_NUMBER);
     expect(entries).toEqual(expect.arrayContaining(generatedLogs));
     expect(next).toEqual(LOG_ENTRIES_NUMBER + 1);
 
-    await logProvider.flushLog(runHandle);
+    await logProvider.flushLog(runHandle.taskId);
   });
 
   it('should search logs by date', async () => {
@@ -66,17 +66,17 @@ describe('file-log-generator integration', () => {
 
     const { entries, next } = await logProvider.searchLog(
       runHandle,
-      { pageSize: 10, from: 3 },
       {
         fromDate: new Date('2023-01-15'),
         toDate: new Date('2023-01-30'),
-      }
+      },
+      { pageSize: 10, from: 3 }
     );
     expect(entries).toHaveLength(10);
     expect(entries).toEqual(generatedLogs.slice(17, 27));
     expect(next).toEqual(14);
 
-    await logProvider.flushLog(runHandle);
+    await logProvider.flushLog(runHandle.taskId);
   });
 
   it('should search logs by pattern', async () => {
@@ -101,8 +101,8 @@ describe('file-log-generator integration', () => {
 
     const { entries, next } = await logProvider.searchLog(
       runHandle,
-      { pageSize: 4 },
-      { searchTerm: '^even-[1238]+$' }
+      { searchTerm: '^even-[1238]+$' },
+      { pageSize: 4 }
     );
     expect(entries).toHaveLength(4);
     expect(entries).toEqual([
@@ -113,6 +113,6 @@ describe('file-log-generator integration', () => {
     ]);
     expect(next).toEqual(5);
 
-    await logProvider.flushLog(runHandle);
+    await logProvider.flushLog(runHandle.taskId);
   });
 });

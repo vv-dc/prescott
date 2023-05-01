@@ -8,11 +8,11 @@ export interface LogProviderContract extends Contract {
     runHandle: TaskRunHandle,
     generator: AsyncGenerator<LogEntry>
   ): Promise<void>;
-  flushLog(runHandle: TaskRunHandle): Promise<void>;
+  flushLog(taskId: number): Promise<void>;
   searchLog(
     runHandle: TaskRunHandle,
-    paging: EntryPaging,
-    dto: LogSearchDto
+    dto: LogSearchDto,
+    paging: EntryPaging
   ): Promise<EntryPage<LogEntry>>;
 }
 

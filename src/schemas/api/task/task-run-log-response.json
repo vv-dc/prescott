@@ -1,0 +1,16 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-run-log-response.json",
+  "title": "TaskRunLogResponse",
+  "type": "object",
+  "properties": {
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "schema://prescott.dev/domain/log-entry.json"
+      }
+    },
+    "next": { "type": "integer" }
+  },
+  "required": ["entries", "next"],
+  "additionalProperties": false
+}

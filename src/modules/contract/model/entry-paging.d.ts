@@ -5,5 +5,5 @@ export interface EntryPage<T> {
 
 export interface EntryPaging {
   from?: number;
-  pageSize: number;
+  pageSize?: number;
 }

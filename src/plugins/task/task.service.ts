@@ -1,5 +1,3 @@
-import { setImmediate } from 'node:timers';
-
 import * as taskRepository from '@plugins/task/task.repository';
 import { TaskDao } from '@plugins/task/task.dao';
 import {
@@ -22,19 +20,13 @@ import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
-import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
-import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
-import { EnvHandle } from '@modules/contract/model/env-handle';
 import { TaskRunService } from '@plugins/task/task-run.service';
 
 export class TaskService {
   constructor(
     private dao: TaskDao,
     private runService: TaskRunService,
-    private envProvider: EnvProviderContract,
-    private logProvider: LogProviderContract,
-    private metricProvider: MetricProviderContract
+    private envProvider: EnvProviderContract
   ) {}
 
   private async runTask(
@@ -42,9 +34,9 @@ export class TaskService {
     taskId: number,
     taskConfig: TaskConfigDto
   ): Promise<void> {
+    taskRepository.stopTask(taskId); // to avoid race condition for fast-running tasks
     const runsNumber = await this.runService.countAll(taskId);
     if (runsNumber !== 0 && taskConfig.once) {
-      taskRepository.deleteTask(taskId);
       return;
     }
     try {
@@ -53,6 +45,7 @@ export class TaskService {
       // TODO: process error
       await this.stopTask(taskId);
     }
+    taskRepository.startTask(taskId);
   }
 
   // task is like a clean function, so there is no need to re-build it
@@ -68,10 +61,7 @@ export class TaskService {
       options: { isDelete: false },
     });
 
-    const runHandle: TaskRunHandle = { taskId, handleId: envHandle.id() };
-    this.registerEnvHandleListeners(runHandle, envHandle);
-
-    await this.runService.start(runHandle);
+    const runHandle = await this.runService.start(taskId, envHandle);
     const exitCode: number = await envHandle.wait();
     await this.runService.finish(runHandle, exitCode === 0);
 
@@ -80,22 +70,6 @@ export class TaskService {
       await this.envProvider.deleteEnv({ envId: identifier, isForce: false });
       await this.stopTask(taskId);
     }
-  }
-
-  registerEnvHandleListeners(
-    runHandle: TaskRunHandle,
-    envHandle: EnvHandle
-  ): void {
-    const logGenerator = envHandle.logs();
-    setImmediate(() =>
-      this.logProvider.consumeLogGenerator(runHandle, logGenerator)
-    );
-    const metricGenerator = envHandle.metrics();
-    setImmediate(async () => {
-      for await (const metricEntry of metricGenerator) {
-        await this.metricProvider.writeMetric(runHandle, metricEntry);
-      }
-    });
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -197,6 +171,7 @@ export class TaskService {
 
     await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
     await this.dao.delete(taskId);
+    await this.runService.flushAll(taskId);
   }
 
   private async deleteAllEnvs(identifier: string): Promise<void> {

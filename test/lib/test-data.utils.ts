@@ -57,6 +57,6 @@ export const createTestGroup = async (
 };
 
 export const generateTaskRunHandle = (): TaskRunHandle => ({
-  taskId: randomInt(1, 1_000_000),
-  handleId: generateRandomString('handle'),
+  taskId: randomInt(1, 10_000_000),
+  runId: randomInt(1, 10_000_000),
 });
