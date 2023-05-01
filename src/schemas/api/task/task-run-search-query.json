@@ -18,7 +18,6 @@
         "pageSize": { "type": "integer" },
         "from": { "type": "integer" }
       },
-      "required": ["size"],
       "additionalProperties": false
     }
   },

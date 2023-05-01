@@ -14,6 +14,7 @@ import { LocalTaskConfig } from '@model/domain/local-task-config';
 import { TaskRun } from '@model/domain/task-run';
 import { EntryPage } from '@modules/contract/model/entry-paging';
 import { LogEntry } from '@modules/contract/model/log-entry';
+import { MetricEntry } from '@modules/contract/model/metric-entry';
 
 describe('task e2e', () => {
   it('should do CRUD on task', async () => {
@@ -292,7 +293,9 @@ describe('task e2e', () => {
           steps: [
             {
               name: 'Nop',
-              script: encodeBase64(`for i in $(seq 50); do echo 'nop'; done`),
+              script: encodeBase64(
+                `for i in $(seq 50); do echo "nop-\${i}"; sleep 0.03; done`
+              ),
             },
           ],
         },
@@ -323,24 +326,42 @@ describe('task e2e', () => {
       handleId: expect.any(String),
       taskId,
       status: 'succeed',
+      createdAt: expect.any(String),
       startedAt: expect.any(String),
       finishedAt: expect.any(String),
     } as TaskRun);
-
     const runId = taskRuns[0].id;
+
+    // 1 2 11 12 21 22 31 32 41 42
+    const searchTerm = encodeURIComponent('^nop-[12]+$');
     const logResponse = await fastify.inject({
       method: 'GET',
-      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/logs`,
+      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/logs?search[searchTerm]=${searchTerm}&paging[pageSize]=5`,
       headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
     });
     expect(logResponse.statusCode).toEqual(200);
     const logsPage = logResponse.json<EntryPage<LogEntry>>();
-    expect(logsPage.entries.length).toBeGreaterThanOrEqual(30);
-    expect(logsPage.entries[23]).toMatchObject({
+    expect(logsPage.entries.length).toEqual(5);
+    expect(logsPage.next).toEqual(6);
+    expect(logsPage.entries[0]).toMatchObject({
       stream: 'stdout',
-      content: 'nop',
+      content: 'nop-1',
       time: expect.any(Number),
     } as LogEntry);
+
+    const metricResponse = await fastify.inject({
+      method: 'GET',
+      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/metrics`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(metricResponse.statusCode).toEqual(200);
+    const metricPage = metricResponse.json<EntryPage<MetricEntry>>();
+    expect(metricPage.entries.length).toBeGreaterThanOrEqual(1);
+    expect(metricPage.entries[0]).toMatchObject({
+      ram: expect.any(String),
+      cpu: expect.any(String),
+      time: expect.any(Number),
+    } as MetricEntry);
 
     const deletedRes = await fastify.inject({
       method: 'DELETE',

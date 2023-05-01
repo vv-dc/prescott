@@ -7,11 +7,15 @@ import {
   LogProviderContract,
   LogSearchDto,
 } from '@modules/contract/model/log-provider.contract';
-import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import {
+  MetricProviderContract,
+  MetricSearchDto,
+} from '@modules/contract/model/metric-provider.contract';
 import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
 import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
 import { EntityNotFound } from '@modules/errors/abstract-errors';
+import { MetricEntry } from '@modules/contract/model/metric-entry';
 
 export class TaskRunService {
   private mutex = new InMemoryMutex(1_000, 5);
@@ -97,5 +101,14 @@ export class TaskRunService {
   ): Promise<EntryPage<LogEntry>> {
     await this.getOne(runHandle.runId);
     return this.log.searchLog(runHandle, dto, paging);
+  }
+
+  async searchMetrics(
+    runHandle: TaskRunHandle,
+    dto: MetricSearchDto,
+    paging: EntryPaging
+  ): Promise<EntryPage<MetricEntry>> {
+    await this.getOne(runHandle.runId);
+    return this.metric.searchMetric(runHandle, dto, paging);
   }
 }

@@ -12,6 +12,7 @@ import { TaskRunSearchQuery } from '@model/api/task/task-run-search-query';
 import { TaskRunAllParams } from '@model/api/task/task-run-all-params';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { LogSearchDto } from '@modules/contract/model/log-provider.contract';
+import { MetricSearchDto } from '@modules/contract/model/metric-provider.contract';
 
 export const taskRoutes: FastifyPluginAsync = async (fastify) => {
   const { taskService, taskRunService, authHooks, jwtValidationHook } = fastify;
@@ -181,6 +182,35 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
         paging ?? {}
       );
       reply.code(200).send(logs);
+    },
+  });
+
+  fastify.route<{
+    Params: TaskRunAllParams;
+    Headers: AccessToken;
+    Querystring: TaskRunSearchQuery;
+  }>({
+    method: 'GET',
+    url: '/groups/:groupId/tasks/:taskId/runs/:runId/metrics',
+    schema: {
+      params: fastify.getPrescottSchema('api/task/task-run-all-params'),
+      querystring: fastify.getPrescottSchema('api/task/task-run-search-query'),
+      response: {
+        200: fastify.getPrescottSchema('api/task/task-run-metric-response'),
+      },
+    },
+    preHandler: [authHooks.permissionHook('view_task')],
+    handler: async (request, reply) => {
+      const { taskId, runId } = request.params;
+      const { paging, search } = request.query;
+
+      const runHandle: TaskRunHandle = { taskId, runId };
+      const metrics = await taskRunService.searchMetrics(
+        runHandle,
+        (search ?? {}) as MetricSearchDto,
+        paging ?? {}
+      );
+      reply.code(200).send(metrics);
     },
   });
 };
