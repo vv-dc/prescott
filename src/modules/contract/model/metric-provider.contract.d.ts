@@ -1,6 +1,13 @@
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
-import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
+import {
+  EntryPage,
+  EntryPaging,
+  EntrySearchDto,
+} from '@modules/contract/model/entry-paging';
 import { Contract } from '@modules/contract/model/contract';
 
 export interface MetricProviderContract extends Contract {
@@ -10,14 +17,17 @@ export interface MetricProviderContract extends Contract {
   ): Promise<void>;
   searchMetric(
     runHandle: TaskRunHandle,
-    dto: MetricSearchDto,
+    dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<MetricEntry>>;
+  aggregateMetric(
+    runHandle: TaskRunHandle,
+    dto: MetricAggregateDto
+  ): Promise<MetricsAggregated>;
   flushMetric(taskId: number): Promise<void>;
 }
 
-export interface MetricSearchDto {
-  fromDate?: Date;
-  toDate?: Date;
-  searchTerm?: string; // assume it can be JSON.stringify(obj)
+export interface MetricAggregateDto {
+  search: EntrySearchDto;
+  apply: string;
 }

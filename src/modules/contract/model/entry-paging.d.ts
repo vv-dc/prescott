@@ -7,3 +7,9 @@ export interface EntryPaging {
   from?: number;
   pageSize?: number;
 }
+
+export interface EntrySearchDto {
+  fromDate?: Date;
+  toDate?: Date;
+  searchTerm?: string;
+}

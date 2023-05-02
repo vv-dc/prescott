@@ -7,13 +7,14 @@ import {
   waitStreamFinished,
 } from '@lib/file.utils';
 import { buildPaginator, PagingMatcherFn } from '@lib/paging.utils';
-import {
-  LogProviderContract,
-  LogSearchDto,
-} from '@modules/contract/model/log-provider.contract';
+import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
-import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import {
+  EntryPage,
+  EntryPaging,
+  EntrySearchDto,
+} from '@modules/contract/model/entry-paging';
 import { ContractOpts } from '@modules/contract/model/contract';
 
 const config = { workDir: '' };
@@ -45,7 +46,7 @@ const consumeLogGenerator = async (
 };
 
 const buildLogMatchersList = (
-  dto: LogSearchDto
+  dto: EntrySearchDto
 ): PagingMatcherFn<LogEntry>[] => {
   const { toDate, fromDate, searchTerm } = dto;
   const matchers: PagingMatcherFn<LogEntry>[] = [];
@@ -63,7 +64,7 @@ const buildLogMatchersList = (
 };
 
 const buildLogMatcher = (
-  dto: LogSearchDto
+  dto: EntrySearchDto
 ): ((logEntry: LogEntry) => boolean) => {
   const checkers = buildLogMatchersList(dto);
   return (logEntry) => {
@@ -76,7 +77,7 @@ const buildLogMatcher = (
 
 const searchLog = async (
   runHandle: TaskRunHandle,
-  dto: LogSearchDto,
+  dto: EntrySearchDto,
   paging: EntryPaging
 ): Promise<EntryPage<LogEntry>> => {
   const isMatch = buildLogMatcher(dto);

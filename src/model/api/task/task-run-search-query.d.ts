@@ -1,11 +1,13 @@
 export interface TaskRunSearchQuery {
-  search?: {
-    fromDate?: string;
-    toDate?: string;
-    searchTerm?: string;
-  };
-  paging?: {
-    pageSize?: number;
-    from?: number;
-  };
+  search?: TaskRunSearchDto;
+  paging?: TaskRunPagingDto;
+}
+export interface TaskRunSearchDto {
+  fromDate?: string;
+  toDate?: string;
+  searchTerm?: string;
+}
+export interface TaskRunPagingDto {
+  pageSize?: number;
+  from?: number;
 }

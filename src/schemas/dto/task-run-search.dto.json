@@ -1,0 +1,12 @@
+{
+  "$id": "schema://prescott.dev/dto/task-run-search.dto.json",
+  "title": "TaskRunSearchDto",
+  "type": "object",
+  "properties": {
+    "fromDate": { "type": "string", "format": "date-time" },
+    "toDate": { "type": "string", "format": "date-time" },
+    "searchTerm": { "type": "string" }
+  },
+  "required": [],
+  "additionalProperties": false
+}

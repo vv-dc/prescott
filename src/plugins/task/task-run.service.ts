@@ -3,19 +3,23 @@ import { InMemoryMutex } from '@lib/async.utils';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskRun } from '@model/domain/task-run';
+import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import {
-  LogProviderContract,
-  LogSearchDto,
-} from '@modules/contract/model/log-provider.contract';
-import {
+  MetricAggregateDto,
   MetricProviderContract,
-  MetricSearchDto,
 } from '@modules/contract/model/metric-provider.contract';
 import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
-import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import {
+  EntryPage,
+  EntryPaging,
+  EntrySearchDto,
+} from '@modules/contract/model/entry-paging';
 import { EntityNotFound } from '@modules/errors/abstract-errors';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
 
 export class TaskRunService {
   private mutex = new InMemoryMutex(1_000, 5);
@@ -96,7 +100,7 @@ export class TaskRunService {
 
   async searchLogs(
     runHandle: TaskRunHandle,
-    dto: LogSearchDto,
+    dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<LogEntry>> {
     await this.getOne(runHandle.runId);
@@ -105,10 +109,18 @@ export class TaskRunService {
 
   async searchMetrics(
     runHandle: TaskRunHandle,
-    dto: MetricSearchDto,
+    dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<MetricEntry>> {
     await this.getOne(runHandle.runId);
     return this.metric.searchMetric(runHandle, dto, paging);
+  }
+
+  async aggregateMetrics(
+    runHandle: TaskRunHandle,
+    dto: MetricAggregateDto
+  ): Promise<MetricsAggregated> {
+    await this.getOne(runHandle.runId);
+    return this.metric.aggregateMetric(runHandle, dto);
   }
 }

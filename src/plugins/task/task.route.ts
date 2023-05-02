@@ -11,8 +11,15 @@ import { AccessToken } from '@model/api/authentication/access-token';
 import { TaskRunSearchQuery } from '@model/api/task/task-run-search-query';
 import { TaskRunAllParams } from '@model/api/task/task-run-all-params';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
-import { LogSearchDto } from '@modules/contract/model/log-provider.contract';
-import { MetricSearchDto } from '@modules/contract/model/metric-provider.contract';
+import { TaskRunSearchDto } from '@model/dto/task-run-search.dto';
+import { EntrySearchDto } from '@modules/contract/model/entry-paging';
+
+const mapTaskRunSearchDto = (dto: TaskRunSearchDto): EntrySearchDto => {
+  const mappedDto = Object.assign({}, dto) as EntrySearchDto;
+  if (mappedDto.toDate) mappedDto.toDate = new Date(mappedDto.toDate);
+  if (mappedDto.fromDate) mappedDto.fromDate = new Date(mappedDto.fromDate);
+  return mappedDto;
+};
 
 export const taskRoutes: FastifyPluginAsync = async (fastify) => {
   const { taskService, taskRunService, authHooks, jwtValidationHook } = fastify;
@@ -178,7 +185,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const runHandle: TaskRunHandle = { taskId, runId };
       const logs = await taskRunService.searchLogs(
         runHandle,
-        (search ?? {}) as LogSearchDto,
+        mapTaskRunSearchDto(search ?? {}),
         paging ?? {}
       );
       reply.code(200).send(logs);
@@ -207,7 +214,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const runHandle: TaskRunHandle = { taskId, runId };
       const metrics = await taskRunService.searchMetrics(
         runHandle,
-        (search ?? {}) as MetricSearchDto,
+        mapTaskRunSearchDto(search ?? {}),
         paging ?? {}
       );
       reply.code(200).send(metrics);

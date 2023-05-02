@@ -3,10 +3,11 @@
   "title": "MetricValue",
   "type": "object",
   "properties": {
-    "max": { "type": "number", "exclusiveMinimum": 0 },
-    "avg": { "type": "number", "exclusiveMinimum": 0 },
-    "std": { "type": "number" }
+    "max": { "type": "string" },
+    "min": { "type": "string" },
+    "avg": { "type": "string" },
+    "std": { "type": "string" }
   },
-  "required": ["max", "avg", "std"],
-  "additionalProperties": false
+  "required": [],
+  "additionalProperties": { "type": "string" }
 }

@@ -9,7 +9,10 @@ import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 import { EntryPage } from '@modules/contract/model/entry-paging';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
 
 describe('contract-validator unit', () => {
@@ -73,6 +76,7 @@ describe('contract-validator unit', () => {
     const metricImpl: MetricProviderContract = {
       init: async (opts) => {},
       consumeMetricGenerator: async (id, generator) => {},
+      aggregateMetric: async (id, dto) => ({} as MetricsAggregated),
       searchMetric: async (id, paging, dto) => ({} as EntryPage<MetricEntry>),
       flushMetric: async (id) => {},
     };

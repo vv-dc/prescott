@@ -8,13 +8,21 @@ import {
 } from '@lib/file.utils';
 import { buildPaginator, PagingMatcherFn } from '@lib/paging.utils';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
-import { EntryPage, EntryPaging } from '@modules/contract/model/entry-paging';
+import {
+  EntryPage,
+  EntryPaging,
+  EntrySearchDto,
+} from '@modules/contract/model/entry-paging';
 import { ContractOpts } from '@modules/contract/model/contract';
 import {
+  MetricAggregateDto,
   MetricProviderContract,
-  MetricSearchDto,
 } from '@modules/contract/model/metric-provider.contract';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
+import { buildMetricAccumulator } from '@src/workdir/contract/metric/metric-aggregate.utils';
 
 const config = { workDir: '' };
 
@@ -45,7 +53,7 @@ const consumeMetricGenerator = async (
 };
 
 const buildMetricMatchersList = (
-  dto: MetricSearchDto
+  dto: EntrySearchDto
 ): PagingMatcherFn<MetricEntry>[] => {
   const { toDate, fromDate } = dto;
   const matchers: PagingMatcherFn<MetricEntry>[] = [];
@@ -59,7 +67,7 @@ const buildMetricMatchersList = (
 };
 
 const buildMetricMatcher = (
-  dto: MetricSearchDto
+  dto: EntrySearchDto
 ): ((metricEntry: MetricEntry) => boolean) => {
   const checkers = buildMetricMatchersList(dto);
   return (metricEntry) => {
@@ -70,20 +78,25 @@ const buildMetricMatcher = (
   };
 };
 
+const getMetricLinesInterface = (
+  runHandle: TaskRunHandle
+): readline.Interface => {
+  const [, metricPath] = buildMetricFilePath(runHandle);
+  return readline.createInterface({
+    input: createReadStream(metricPath),
+    crlfDelay: Infinity,
+  });
+};
+
 const searchMetric = async (
   runHandle: TaskRunHandle,
-  dto: MetricSearchDto,
+  dto: EntrySearchDto,
   paging: EntryPaging
 ): Promise<EntryPage<MetricEntry>> => {
   const isMatch = buildMetricMatcher(dto);
   const paginator = buildPaginator(isMatch, paging, 1_000);
 
-  const [, logPath] = buildMetricFilePath(runHandle);
-  const linesReadable = readline.createInterface({
-    input: createReadStream(logPath),
-    crlfDelay: Infinity,
-  });
-
+  const linesReadable = getMetricLinesInterface(runHandle);
   for await (const line of linesReadable) {
     const metricEntry: MetricEntry = JSON.parse(line);
     const isDone = paginator.process(metricEntry);
@@ -91,6 +104,24 @@ const searchMetric = async (
   }
 
   return paginator.build();
+};
+
+const aggregateMetric = async (
+  runHandle: TaskRunHandle,
+  dto: MetricAggregateDto
+): Promise<MetricsAggregated> => {
+  const { apply, search } = dto;
+  const accumulator = buildMetricAccumulator(apply.split(','));
+  const isMatch = buildMetricMatcher(search);
+
+  const linesReadable = getMetricLinesInterface(runHandle);
+  for await (const line of linesReadable) {
+    const metric: MetricEntry = JSON.parse(line);
+    if (!isMatch(metric)) continue;
+    accumulator.add(metric);
+  }
+
+  return accumulator.build();
 };
 
 const flushMetric = async (taskId: number): Promise<void> => {
@@ -102,6 +133,7 @@ const fileMetricProvider: MetricProviderContract = {
   init,
   consumeMetricGenerator,
   searchMetric,
+  aggregateMetric,
   flushMetric,
 };
 

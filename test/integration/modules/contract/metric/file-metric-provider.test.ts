@@ -77,4 +77,32 @@ describe('file-metric-provider integration', () => {
 
     await metricProvider.flushMetric(runHandle.taskId);
   });
+
+  // TODO: fixme
+  it('should aggregate metrics', async () => {
+    const metricProvider = await buildMetricProvider();
+
+    const metricGenerator = async function* (): AsyncGenerator<MetricEntry> {
+      for (let idx = 0; idx < 100; ++idx) {
+        const metricEntry: MetricEntry = {
+          time: new Date().getTime(),
+          cpu: (randomInt(1, 1000) / 1000).toFixed(2),
+          ram: randomInt(1_000, 1_000_000).toFixed(2),
+          smth: randomInt(1_000, 1_000_000).toFixed(2),
+        };
+        yield metricEntry;
+      }
+    };
+
+    const runHandle = generateTaskRunHandle();
+    await metricProvider.consumeMetricGenerator(runHandle, metricGenerator());
+
+    const aggregated = await metricProvider.aggregateMetric(runHandle, {
+      search: {},
+      apply: 'smth,ram,cpu',
+    });
+    expect(aggregated).toBeTruthy();
+
+    await metricProvider.flushMetric(runHandle.taskId);
+  });
 });

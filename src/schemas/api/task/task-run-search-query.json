@@ -4,21 +4,10 @@
   "type": "object",
   "properties": {
     "search": {
-      "type": "object",
-      "properties": {
-        "fromDate": { "type": "string", "format": "date-time" },
-        "toDate": { "type": "string", "format": "date-time" },
-        "searchTerm": { "type": "string" }
-      },
-      "additionalProperties": false
+      "$ref": "schema://prescott.dev/dto/task-run-search.dto.json"
     },
     "paging": {
-      "type": "object",
-      "properties": {
-        "pageSize": { "type": "integer" },
-        "from": { "type": "integer" }
-      },
-      "additionalProperties": false
+      "$ref": "schema://prescott.dev/dto/task-run-paging.dto.json"
     }
   },
   "additionalProperties": false

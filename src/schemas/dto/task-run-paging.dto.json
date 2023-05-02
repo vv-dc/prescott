@@ -1,0 +1,11 @@
+{
+  "$id": "schema://prescott.dev/dto/task-run-paging.dto.json",
+  "title": "TaskRunPagingDto",
+  "type": "object",
+  "properties": {
+    "pageSize": { "type": "integer" },
+    "from": { "type": "integer" }
+  },
+  "required": [],
+  "additionalProperties": false
+}
