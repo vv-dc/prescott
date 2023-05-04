@@ -1,5 +1,5 @@
-import { ExecOptions, ChildProcess, exec } from 'child_process';
-import { promisify } from 'util';
+import { ExecOptions, ChildProcess, exec, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
 import { ExecCallback } from '@model/shared/exec-callback.model';
 
 const execAsync = promisify(exec);
@@ -74,6 +74,10 @@ export class CommandBuilder {
   exec(callback?: ExecCallback, options: ExecOptions = {}): ChildProcess {
     const partialExec = exec.bind(null, this.command, options);
     return callback ? partialExec(callback) : partialExec();
+  }
+
+  spawn(): ChildProcess {
+    return spawn(this.command, { shell: true });
   }
 
   async execAsync(

@@ -1,5 +1,7 @@
 export interface LogEntry {
-  type: 'stdout' | 'stderr';
-  date: Date;
+  stream: LogEntryStream;
+  time: number;
   content: string;
 }
+
+export type LogEntryStream = 'stdout' | 'stderr';

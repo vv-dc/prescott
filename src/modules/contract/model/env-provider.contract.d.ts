@@ -16,6 +16,11 @@ export type EnvId = string;
 export interface RunEnvDto {
   envId: EnvId;
   limitations?: Limitations;
+  options: RunEnvOptions;
+}
+
+export interface RunEnvOptions {
+  isDelete: boolean;
 }
 
 export interface CompileEnvDto {

@@ -1,6 +1,4 @@
 import * as path from 'node:path';
-import * as vm from 'node:vm';
-import * as fs from 'node:fs/promises';
 import {
   validateContactImpl,
   validateContractConfig,
@@ -45,7 +43,8 @@ export const buildContract = async (
 ): Promise<Contract> => {
   const { type, key, opts } = configEntry;
   try {
-    const contract = await loadContract(type, key, workDir);
+    const contractWorkdir = path.join(workDir, 'contract');
+    const contract = await loadContract(type, key, contractWorkdir);
     await contract.init({ ...opts, workDir });
     return contract;
   } catch (err) {
@@ -86,11 +85,14 @@ const loadFileContract = async (
   key: string
 ): Promise<Contract> => {
   const keyPath = path.normalize(path.join(workDir, key));
-  const { ext, dir, name } = path.parse(keyPath);
-  if (path.relative(dir, workDir) !== '') {
+
+  const relativePath = path.relative(workDir, keyPath);
+  if (relativePath.startsWith('..') && !path.isAbsolute(relativePath)) {
     const reason = `contract should be located within: ${workDir} directory`;
     throw new Error(`Unable to load contact from file: ${reason}`);
   }
+
+  const { ext, dir, name } = path.parse(keyPath);
   if (!['.js', '.ts'].includes(ext)) {
     const reason = `unsupported extension: ${ext}`;
     throw new Error(`Unable to load contract from file: ${reason}`);

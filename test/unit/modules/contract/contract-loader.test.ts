@@ -64,7 +64,7 @@ describe('contract-loader unit', () => {
         buildContract: async (): Promise<Contract> => mockContract,
       };
       jest.mock(
-        'src/some-random-contract',
+        'src/contract/some-random-contract',
         () => ({
           default: contractModule,
         }),

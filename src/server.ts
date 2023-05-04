@@ -1,17 +1,13 @@
-import Fastify, { FastifyPluginAsync } from 'fastify';
-import { SERVER_CONFIG, config, SCHEMAS_CONFIG } from '@config/config';
-import { app } from './app';
+import { buildServer } from './app';
+import { config, SERVER_CONFIG } from '@config/config';
 
-const { port, host, logger } = config[SERVER_CONFIG];
-const { ajvOptions } = config[SCHEMAS_CONFIG];
+const { host, port } = config[SERVER_CONFIG];
 
-const bootstrap = async (app: FastifyPluginAsync) => {
+const bootstrap = async () => {
   try {
-    const server = Fastify({
-      logger,
-      ajv: { customOptions: ajvOptions },
-    });
-    await server.register(app);
+    const server = await buildServer();
+    await server.taskService.registerFromDatabase();
+
     await server.listen({ port, host });
   } catch (err) {
     console.error(err);
@@ -19,4 +15,4 @@ const bootstrap = async (app: FastifyPluginAsync) => {
   }
 };
 
-bootstrap(app);
+bootstrap();

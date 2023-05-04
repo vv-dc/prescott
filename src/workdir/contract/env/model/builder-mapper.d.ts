@@ -2,5 +2,5 @@ import { CommandBuilder } from '@lib/command-builder';
 
 export type BuilderMapper = (
   builder: CommandBuilder,
-  value?: string | number
+  value: string | number
 ) => void;

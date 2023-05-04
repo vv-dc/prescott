@@ -1,7 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as fastify from 'fastify';
 
-import { DockerService } from '@plugins/docker/docker.service';
 import { TaskService } from '@plugins/task/task.service';
 import { UserService } from '@plugins/user/user.service';
 import { AuthenticationService } from '@plugins/authentication/authentication.service';
@@ -10,16 +9,17 @@ import { JwtValidationHook } from '@plugins/authentication/jwt/model/jwt-validat
 import { AuthHooks } from '@plugins/authorization/model/auth-hooks';
 import { PgConnection } from '@model/shared/pg-connection';
 import { UserPayload } from '@model/domain/user-payload';
-import { ContractMap } from '@modules/contracts/model/contract-config';
+import { JwtService } from '@plugins/authentication/jwt/jwt.service';
+import { ContractMap } from '@modules/contract/model/contract-config';
 
 declare module 'fastify' {
   export interface FastifyInstance {
     pg: PgConnection;
-    dockerService: DockerService;
     taskService: TaskService;
     userService: UserService;
     authenticationService: AuthenticationService;
     authorizationService: AuthorizationService;
+    jwtService: JwtService;
     jwtValidationHook: JwtValidationHook;
     authHooks: AuthHooks;
     getPrescottSchema: (schemaId: string) => unknown;

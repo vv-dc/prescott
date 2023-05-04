@@ -29,6 +29,7 @@ const authentication: FastifyPluginAsync = async (fastify) => {
   fastify.register(authenticationRoutes, { prefix: '/auth' });
 
   fastify.decorate('jwtValidationHook', createValidationHook(jwtService));
+  fastify.decorate('jwtService', jwtService);
 };
 
 export default fp(authentication, {
