@@ -2,11 +2,7 @@
   "$id": "schema://prescott.dev/domain/metrics-aggregated.json",
   "title": "MetricsAggregated",
   "type": "object",
-  "properties": {
-    "ram": { "$ref": "schema://prescott.dev/domain/metric-value.json" },
-    "cpu": { "$ref": "schema://prescott.dev/domain/metric-value.json" }
-  },
-  "required": ["ram", "cpu"],
+  "properties": {},
   "additionalProperties": {
     "$ref": "schema://prescott.dev/domain/metric-value.json"
   }

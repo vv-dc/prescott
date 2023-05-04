@@ -2,12 +2,7 @@
   "$id": "schema://prescott.dev/domain/metric-value.json",
   "title": "MetricValue",
   "type": "object",
-  "properties": {
-    "max": { "type": "string" },
-    "min": { "type": "string" },
-    "avg": { "type": "string" },
-    "std": { "type": "string" }
-  },
+  "properties": {},
   "required": [],
   "additionalProperties": { "type": "string" }
 }

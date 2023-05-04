@@ -20,22 +20,24 @@ export class InMemoryMutex {
   }
 
   private async runImpl<T>(
-    label: string,
+    resource: string,
     fn: () => Promise<T>,
     retryIdx: number
   ): Promise<T> {
     if (retryIdx >= this.retryNumber) {
-      throw new Error(`[${this.retryNumber}] of retries exceeded for ${label}`);
+      throw new Error(
+        `InMemoryMutex: [${this.retryNumber}] retries exceeded for ${resource}`
+      );
     }
-    if (this.lockedResources.has(label)) {
+    if (this.lockedResources.has(resource)) {
       await setTimeout(this.retryTimeout);
-      return await this.runImpl(label, fn, retryIdx + 1);
+      return await this.runImpl(resource, fn, retryIdx + 1);
     }
     try {
-      this.lockedResources.add(label);
+      this.lockedResources.add(resource);
       return await fn();
     } finally {
-      this.lockedResources.delete(label);
+      this.lockedResources.delete(resource);
     }
   }
 }

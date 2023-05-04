@@ -37,6 +37,7 @@ export class TaskService {
     try {
       await this.runTaskImpl(identifier, taskId, taskConfig);
     } catch (err) {
+      // TODO: error handling
       await this.stopTask(taskId);
     }
   }
@@ -52,6 +53,7 @@ export class TaskService {
     const limit = once ? 1 : undefined;
     const runHandle = await this.runService.tryToRegisterRun(taskId, limit);
     if (runHandle === null) {
+      // TODO: error handling
       return;
     }
 

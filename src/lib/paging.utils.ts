@@ -8,7 +8,7 @@ export interface Paginator<T> {
 export type PagingMatcherFn<T> = (entry: T) => boolean;
 
 export const buildPaginator = <T>(
-  isMatch: PagingMatcherFn<T>,
+  isMatchFn: PagingMatcherFn<T>,
   paging: EntryPaging,
   maxPageSize: number
 ): Paginator<T> => {
@@ -19,7 +19,7 @@ export const buildPaginator = <T>(
   const matchedEntries: T[] = [];
 
   const process = (entry: T): boolean => {
-    if (!isMatch(entry)) return false;
+    if (!isMatchFn(entry)) return false;
 
     if (matchedCounter++ >= fromIdx) {
       matchedEntries.push(entry);

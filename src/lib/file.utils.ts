@@ -1,8 +1,8 @@
 import * as fs from 'node:fs/promises';
 import * as util from 'node:util';
 import * as stream from 'node:stream';
-import { lstatSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { lstatSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 export const getDirectoryFilesSync = (directory: string): string[] => {
   const files = [] as string[];
