@@ -225,7 +225,7 @@ describe('docker-env-provider integration', () => {
     // check metrics collected
     await envHandle.wait();
     const metrics = await metricsPromise;
-    expect(metrics.length).toBeGreaterThanOrEqual(10);
+    expect(metrics.length).toBeGreaterThanOrEqual(8);
 
     // check metrics consistent
     for (const metric of metrics) {

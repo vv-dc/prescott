@@ -2,7 +2,10 @@ import { randomInt } from 'node:crypto';
 import fileMetricProviderBuilder from '@src/workdir/contract/metric/file-metric-provider';
 import { generateTaskRunHandle } from '@test/lib/test-data.utils';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
 
 const buildMetricProvider = async (): Promise<MetricProviderContract> => {
   const metricProvider = await fileMetricProviderBuilder.buildContract();
@@ -78,7 +81,6 @@ describe('file-metric-provider integration', () => {
     await metricProvider.flushMetric(runHandle.taskId);
   });
 
-  // TODO: fixme
   it('should aggregate metrics', async () => {
     const metricProvider = await buildMetricProvider();
 
@@ -86,10 +88,13 @@ describe('file-metric-provider integration', () => {
       for (let idx = 0; idx < 100; ++idx) {
         const metricEntry: MetricEntry = {
           time: new Date().getTime(),
-          cpu: (randomInt(1, 1000) / 1000).toFixed(2),
-          ram: randomInt(1_000, 1_000_000).toFixed(2),
-          smth: randomInt(1_000, 1_000_000).toFixed(2),
+          cpu: idx.toFixed(2),
+          ram: (idx + 1).toFixed(2),
+          foo: randomInt(1, 1_000_000), // should not be included
         };
+        if (idx % 2 === 1) {
+          metricEntry.smth = (idx + 2).toFixed(2);
+        }
         yield metricEntry;
       }
     };
@@ -99,9 +104,38 @@ describe('file-metric-provider integration', () => {
 
     const aggregated = await metricProvider.aggregateMetric(runHandle, {
       search: {},
-      apply: 'smth,ram,cpu',
+      apply: 'ram,cpu,smth,smthelse',
     });
-    expect(aggregated).toBeTruthy();
+    expect(aggregated).toStrictEqual({
+      ram: {
+        min: '1.000',
+        max: '100.000',
+        cnt: '100.000',
+        avg: '50.500',
+        std: '28.866',
+      },
+      cpu: {
+        min: '0.000',
+        max: '99.000',
+        cnt: '100.000',
+        avg: '49.500',
+        std: '28.866',
+      },
+      smth: {
+        min: '3.000',
+        max: '101.000',
+        cnt: '50.000',
+        avg: '52.000',
+        std: '28.862',
+      },
+      smthelse: {
+        min: '0.000',
+        max: '0.000',
+        cnt: '0.000',
+        avg: '0.000',
+        std: '0.000',
+      },
+    } as MetricsAggregated);
 
     await metricProvider.flushMetric(runHandle.taskId);
   });

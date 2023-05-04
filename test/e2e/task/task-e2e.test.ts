@@ -14,7 +14,10 @@ import { LocalTaskConfig } from '@model/domain/local-task-config';
 import { TaskRun } from '@model/domain/task-run';
 import { EntryPage } from '@modules/contract/model/entry-paging';
 import { LogEntry } from '@modules/contract/model/log-entry';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
 
 describe('task e2e', () => {
   it('should do CRUD on task', async () => {
@@ -294,7 +297,7 @@ describe('task e2e', () => {
             {
               name: 'Nop',
               script: encodeBase64(
-                `for i in $(seq 50); do echo "nop-\${i}"; sleep 0.03; done`
+                `for i in $(seq 50); do echo "nop-\${i}"; sleep 0.05; done`
               ),
             },
           ],
@@ -332,7 +335,7 @@ describe('task e2e', () => {
     } as TaskRun);
     const runId = taskRuns[0].id;
 
-    // 1 2 11 12 21 22 31 32 41 42
+    // GET logs - 1 2 11 12 21 22 31 32 41 42
     const searchTerm = encodeURIComponent('^nop-[12]+$');
     const logResponse = await fastify.inject({
       method: 'GET',
@@ -349,9 +352,12 @@ describe('task e2e', () => {
       time: expect.any(Number),
     } as LogEntry);
 
+    // GET metrics
     const metricResponse = await fastify.inject({
       method: 'GET',
-      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/metrics`,
+      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/metrics?search[fromDate]=${new Date(
+        '1970-01-01'
+      ).toISOString()}`,
       headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
     });
     expect(metricResponse.statusCode).toEqual(200);
@@ -363,6 +369,41 @@ describe('task e2e', () => {
       time: expect.any(Number),
     } as MetricEntry);
 
+    // GET aggregated metrics
+    const aggregatedMetricResponse = await fastify.inject({
+      method: 'GET',
+      url: `/groups/${groupId}/tasks/${taskId}/runs/${runId}/metrics-aggregated?apply=ram,cpu,smth&search[fromDate]=${new Date(
+        '1970-01-01'
+      ).toISOString()}`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(aggregatedMetricResponse.statusCode).toEqual(200);
+    const aggregated = aggregatedMetricResponse.json<MetricsAggregated>();
+    expect(aggregated).toMatchObject({
+      cpu: {
+        max: expect.any(String),
+        min: expect.any(String),
+        avg: expect.any(String),
+        cnt: expect.any(String),
+        std: expect.any(String),
+      },
+      ram: {
+        max: expect.any(String),
+        min: expect.any(String),
+        avg: expect.any(String),
+        cnt: expect.any(String),
+        std: expect.any(String),
+      },
+      smth: {
+        max: '0.000',
+        min: '0.000',
+        avg: '0.000',
+        cnt: '0.000',
+        std: '0.000',
+      },
+    } as MetricsAggregated);
+
+    // DELETE task
     const deletedRes = await fastify.inject({
       method: 'DELETE',
       url: `/groups/${groupId}/tasks/${taskId}`,

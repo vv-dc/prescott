@@ -6,15 +6,9 @@ export interface MetricEntry {
 }
 
 export interface MetricsAggregated {
-  cpu: MetricValue;
-  ram: MetricValue;
-  [key: string]: MetricValue;
+  [key: string]: MetricValue; // cpu, ram
 }
 
 export interface MetricValue {
-  min?: string;
-  max?: string;
-  cnt?: string;
-  avg?: string;
-  [key: string]: string | undefined;
+  [key: string]: string; // min, max, avg, cnt, std
 }

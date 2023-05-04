@@ -22,7 +22,7 @@ import {
   MetricEntry,
   MetricsAggregated,
 } from '@modules/contract/model/metric-entry';
-import { buildMetricAccumulator } from '@src/workdir/contract/metric/metric-aggregate.utils';
+import { buildMetricEntryAccumulator } from '@src/workdir/contract/metric/metric-aggregate.utils';
 
 const config = { workDir: '' };
 
@@ -111,7 +111,8 @@ const aggregateMetric = async (
   dto: MetricAggregateDto
 ): Promise<MetricsAggregated> => {
   const { apply, search } = dto;
-  const accumulator = buildMetricAccumulator(apply.split(','));
+  const metricAttributes = apply.split(',');
+  const accumulator = buildMetricEntryAccumulator(metricAttributes);
   const isMatch = buildMetricMatcher(search);
 
   const linesReadable = getMetricLinesInterface(runHandle);

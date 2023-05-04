@@ -13,6 +13,7 @@ import { TaskRunAllParams } from '@model/api/task/task-run-all-params';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskRunSearchDto } from '@model/dto/task-run-search.dto';
 import { EntrySearchDto } from '@modules/contract/model/entry-paging';
+import { TaskRunAggregateDto } from '@model/dto/task-run-aggregate.dto';
 
 const mapTaskRunSearchDto = (dto: TaskRunSearchDto): EntrySearchDto => {
   const mappedDto = Object.assign({}, dto) as EntrySearchDto;
@@ -185,7 +186,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const runHandle: TaskRunHandle = { taskId, runId };
       const logs = await taskRunService.searchLogs(
         runHandle,
-        mapTaskRunSearchDto(search ?? {}),
+        search ? mapTaskRunSearchDto(search) : {},
         paging ?? {}
       );
       reply.code(200).send(logs);
@@ -206,7 +207,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
         200: fastify.getPrescottSchema('api/task/task-run-metric-response'),
       },
     },
-    preHandler: [authHooks.permissionHook('view_task')],
+    preHandler: [authHooks.permissionHook('view_metrics')],
     handler: async (request, reply) => {
       const { taskId, runId } = request.params;
       const { paging, search } = request.query;
@@ -214,9 +215,37 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const runHandle: TaskRunHandle = { taskId, runId };
       const metrics = await taskRunService.searchMetrics(
         runHandle,
-        mapTaskRunSearchDto(search ?? {}),
+        search ? mapTaskRunSearchDto(search) : {},
         paging ?? {}
       );
+      reply.code(200).send(metrics);
+    },
+  });
+
+  fastify.route<{
+    Params: TaskRunAllParams;
+    Headers: AccessToken;
+    Querystring: TaskRunAggregateDto;
+  }>({
+    method: 'GET',
+    url: '/groups/:groupId/tasks/:taskId/runs/:runId/metrics-aggregated',
+    schema: {
+      params: fastify.getPrescottSchema('api/task/task-run-all-params'),
+      querystring: fastify.getPrescottSchema('dto/task-run-aggregate.dto'),
+      response: {
+        200: fastify.getPrescottSchema('domain/metrics-aggregated'),
+      },
+    },
+    preHandler: [authHooks.permissionHook('view_metrics')],
+    handler: async (request, reply) => {
+      const { taskId, runId } = request.params;
+      const { search, apply } = request.query;
+
+      const runHandle: TaskRunHandle = { taskId, runId };
+      const metrics = await taskRunService.aggregateMetrics(runHandle, {
+        search: search ? mapTaskRunSearchDto(search) : {},
+        apply,
+      });
       reply.code(200).send(metrics);
     },
   });

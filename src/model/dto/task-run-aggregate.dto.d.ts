@@ -1,5 +1,5 @@
 export interface TaskRunAggregateDto {
-  search: TaskRunSearchDto;
+  search?: TaskRunSearchDto;
   apply: string;
 }
 export interface TaskRunSearchDto {
