@@ -3,13 +3,13 @@ export type MemoryLimit = string;
 
 export interface TaskConfigDto {
   name: string;
-  osInfo: OsInfo;
-  once?: boolean;
+  envInfo: EnvInfo;
+  times?: number;
   config: TaskConfig;
 }
-export interface OsInfo {
+export interface EnvInfo {
   name: string;
-  version?: number | string;
+  version?: string;
 }
 export interface LocalTaskConfig {
   local: {

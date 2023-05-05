@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises';
 import { buildServer } from '@src/app';
 import { generateRandomString } from '@lib/random.utils';
 import { cronEveryNSeconds } from '@lib/cron.utils';
@@ -34,8 +35,7 @@ describe('task e2e', () => {
     // CREATE task
     const taskConfig: TaskConfigDto = {
       name: generateRandomString('task'),
-      osInfo: DOCKER_IMAGES.alpine,
-      once: false,
+      envInfo: DOCKER_IMAGES.alpine,
       config: {
         local: { cronString: cronEveryNSeconds(10) },
         appConfig: {
@@ -145,8 +145,7 @@ describe('task e2e', () => {
     // CREATE task
     const taskConfig: TaskConfigDto = {
       name: generateRandomString('task'),
-      osInfo: DOCKER_IMAGES.alpine,
-      once: false,
+      envInfo: DOCKER_IMAGES.alpine,
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
@@ -214,7 +213,7 @@ describe('task e2e', () => {
     await fastify.close();
   });
 
-  it('should automatically stop task if once=true', async () => {
+  it('should automatically stop task on reached limit of runs', async () => {
     // PREPARE data
     const fastify = await buildServer();
     const { authenticationService, authorizationService, jwtService } = fastify;
@@ -228,8 +227,8 @@ describe('task e2e', () => {
     // CREATE task
     const taskConfig: TaskConfigDto = {
       name: generateRandomString('task'),
-      osInfo: DOCKER_IMAGES.alpine,
-      once: true,
+      envInfo: DOCKER_IMAGES.alpine,
+      times: 3,
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
@@ -247,22 +246,24 @@ describe('task e2e', () => {
     expect(createRes.json()).toMatchObject({ taskId: expect.any(Number) });
     const taskId: number = createRes.json().taskId;
 
-    let isActive = false;
-    for (let idx = 0; idx < 5; ++idx) {
-      await delay(1_000); // wait 5 seconds
-
-      const startedGetRes = await fastify.inject({
-        method: 'GET',
-        url: `/groups/${groupId}/tasks/${taskId}`,
-        headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
-      });
-      expect(startedGetRes.statusCode).toEqual(200);
-
-      isActive ||= Boolean(startedGetRes.json().active);
-      if (isActive) break;
-    }
-
+    await setTimeout(10_000); // wait 10 seconds
+    const startedGetRes = await fastify.inject({
+      method: 'GET',
+      url: `/groups/${groupId}/tasks/${taskId}`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(startedGetRes.statusCode).toEqual(200);
+    const isActive = Boolean(startedGetRes.json().active);
     expect(isActive).toEqual(false);
+
+    const runsResponse = await fastify.inject({
+      method: 'GET',
+      url: `/groups/${groupId}/tasks/${taskId}/runs`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(runsResponse.statusCode).toEqual(200);
+    const runsList = runsResponse.json<TaskRun[]>();
+    expect(runsList).toHaveLength(3);
 
     const deletedRes = await fastify.inject({
       method: 'DELETE',
@@ -288,8 +289,8 @@ describe('task e2e', () => {
     // CREATE task
     const taskConfig: TaskConfigDto = {
       name: generateRandomString('task'),
-      osInfo: DOCKER_IMAGES.alpine,
-      once: true,
+      envInfo: DOCKER_IMAGES.alpine,
+      times: 1,
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {

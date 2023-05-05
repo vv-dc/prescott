@@ -26,7 +26,7 @@ a handy minimalistic interface for tasks creation, scheduling, and monitoring. S
 ```ts
 interface TaskConfig {
   name: string;
-  osInfo: {
+  envInfo: {
     name: string;
     version?: number | string;
   };

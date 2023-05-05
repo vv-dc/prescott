@@ -42,26 +42,31 @@ export class TaskRunService {
     return this.dao.findAllByTaskId(taskId);
   }
 
-  private async isRunAllowed(taskId: number, limit?: number) {
-    if (limit === undefined) return true;
-    const runsCount = await this.dao.countByTaskId(taskId);
-    return runsCount < limit;
-  }
-
-  async tryToRegisterRun(
+  private async isRunAllowed(
     taskId: number,
     limit?: number
-  ): Promise<TaskRunHandle | null> {
+  ): Promise<[boolean, number]> {
+    if (limit === undefined) return [true, Infinity];
+    const runsCount = await this.dao.countByTaskId(taskId);
+    return [runsCount < limit, Math.max(limit - runsCount - 1, 0)];
+  }
+
+  async tryToRegister(
+    taskId: number,
+    limit?: number
+  ): Promise<[TaskRunHandle | null, number]> {
     return this.mutex.run(taskId.toString(), async () => {
-      if (!(await this.isRunAllowed(taskId, limit))) {
-        return null;
+      const [isRunAllowed, runsLeft] = await this.isRunAllowed(taskId, limit);
+      if (!isRunAllowed) {
+        return [null, 0];
       }
       const { id: runId } = await this.dao.create({
         taskId,
         status: 'pending',
         createdAt: new Date(),
       });
-      return { runId, taskId };
+      const runHandle: TaskRunHandle = { runId, taskId };
+      return [runHandle, runsLeft];
     });
   }
 

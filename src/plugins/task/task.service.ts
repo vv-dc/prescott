@@ -16,11 +16,11 @@ import {
   LocalTaskConfig,
   RepositoryTaskConfig,
 } from '@model/dto/task-config.dto';
-import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
 import { TaskRunService } from '@plugins/task/task-run.service';
+import { EnvInfo } from '@model/domain/env-info';
 
 export class TaskService {
   constructor(
@@ -48,10 +48,12 @@ export class TaskService {
     taskId: number,
     taskConfig: TaskConfigDto
   ): Promise<void> {
-    const { once, config } = taskConfig;
+    const { times, config } = taskConfig;
 
-    const limit = once ? 1 : undefined;
-    const runHandle = await this.runService.tryToRegisterRun(taskId, limit);
+    const [runHandle, runsLeft] = await this.runService.tryToRegister(
+      taskId,
+      times
+    );
     if (runHandle === null) {
       // TODO: error handling
       return;
@@ -68,7 +70,7 @@ export class TaskService {
     await this.runService.finish(runHandle, exitCode === 0);
 
     await envHandle.delete({ isForce: false });
-    if (once) {
+    if (runsLeft === 0) {
       await this.envProvider.deleteEnv({ envId: identifier, isForce: false });
       await this.stopTask(taskId);
     }
@@ -121,7 +123,7 @@ export class TaskService {
   private async buildClearTask(
     taskId: number,
     identifier: string,
-    envInfo: OsInfo,
+    envInfo: EnvInfo,
     steps: TaskStep[]
   ): Promise<void> {
     await this.envProvider.compileEnv({
@@ -138,7 +140,7 @@ export class TaskService {
     userId: number,
     taskConfig: TaskConfigDto
   ): Promise<number> {
-    const { name, osInfo, config, once } = taskConfig;
+    const { name, envInfo, config } = taskConfig;
     if ((await this.dao.findByName(name)) !== undefined) {
       throw new EntityConflict('Task with passed name already exists');
     }
@@ -147,7 +149,7 @@ export class TaskService {
       userId,
       groupId,
       name: buildTaskUniqueName(groupId, name),
-      active: !once, // one time task should be disabled immediately
+      active: true,
       config: JSON.stringify(taskConfig),
     });
 
@@ -158,7 +160,7 @@ export class TaskService {
     if (clearTask) {
       const { steps } = config.appConfig;
       // TODO: do it asynchronously
-      await this.buildClearTask(taskId, identifier, osInfo, steps);
+      await this.buildClearTask(taskId, identifier, envInfo, steps);
     }
 
     return taskId;
