@@ -1,5 +1,3 @@
-import { EnvInfo } from '@model/domain/env-info';
-
 export const TIMEOUT_ERROR_CODE = 124;
 
 export const SIGKILL_ERROR_CODE = 9;

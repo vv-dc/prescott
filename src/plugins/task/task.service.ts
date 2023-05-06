@@ -1,11 +1,9 @@
-import * as taskRepository from '@plugins/task/task.repository';
 import { TaskDao } from '@plugins/task/task.dao';
 import {
   buildTaskCmd,
   buildTaskIdentifier,
   buildTaskUniqueName,
 } from '@plugins/task/task.utils';
-import { TaskCronConfig } from '@plugins/task/model/task-cron-config';
 import {
   EntityConflict,
   EntityNotFound,
@@ -21,11 +19,22 @@ import { TaskStep } from '@model/domain/task-step';
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
 import { TaskRunService } from '@plugins/task/task-run.service';
 import { EnvInfo } from '@model/domain/env-info';
+import {
+  ScheduleTaskDto,
+  TaskSchedulerContract,
+} from '@modules/contract/model/task-scheduler.contract';
+import {
+  EnqueueTaskFn,
+  TaskQueueContract,
+} from '@modules/contract/model/task-queue.contract';
 
+// TODO: move task execution to separate service
 export class TaskService {
   constructor(
     private dao: TaskDao,
     private runService: TaskRunService,
+    private scheduler: TaskSchedulerContract,
+    private queue: TaskQueueContract,
     private envProvider: EnvProviderContract
   ) {}
 
@@ -92,18 +101,16 @@ export class TaskService {
     taskConfig: TaskConfigDto
   ): Promise<void> {
     const { config } = taskConfig;
+
     const external = 'repository' in config;
+    const runner = external ? 'runWatch' : 'runTask';
+    const executorFn = () => this[runner](identifier, taskId, taskConfig);
 
-    const taskCronConfig: TaskCronConfig = {
-      taskId,
-      callback: async () => {
-        const runner = external ? 'runWatch' : 'runTask';
-        await this[runner](identifier, taskId, taskConfig);
-      },
-      cronString: external ? cronEveryNMinutes(5) : config.local.cronString,
+    const scheduleConfig: ScheduleTaskDto = {
+      callback: () => this.queue.enqueue(taskId, executorFn),
+      configString: external ? cronEveryNMinutes(5) : config.local.cronString,
     };
-
-    taskRepository.addTask(taskCronConfig);
+    await this.scheduler.schedule(taskId, scheduleConfig);
   }
 
   async registerFromDatabase(): Promise<void> {
@@ -132,7 +139,7 @@ export class TaskService {
       script: buildTaskCmd(identifier, steps),
       isCache: false,
     });
-    taskRepository.startTask(taskId);
+    await this.scheduler.start(taskId);
   }
 
   async createTask(
@@ -167,7 +174,7 @@ export class TaskService {
   }
 
   async deleteTask(taskId: number): Promise<void> {
-    taskRepository.deleteTask(taskId);
+    await this.scheduler.delete(taskId);
     await this.assertTaskExists(taskId);
 
     const identifier = buildTaskIdentifier(taskId);
@@ -198,7 +205,7 @@ export class TaskService {
     await this.assertTaskExists(taskId);
 
     const identifier = buildTaskIdentifier(taskId);
-    taskRepository.stopTask(taskId);
+    await this.scheduler.stop(taskId);
     await this.stopAllEnvs(identifier);
 
     await this.dao.setActive(taskId, false);
@@ -215,12 +222,12 @@ export class TaskService {
     await this.assertTaskExists(taskId);
 
     await this.dao.setActive(taskId, true);
-    if (!taskRepository.existsTask(taskId)) {
+    if (!(await this.scheduler.exists(taskId))) {
       const { config } = (await this.dao.findById(taskId)) as Task;
       const identifier = buildTaskIdentifier(taskId);
       await this.register(identifier, taskId, JSON.parse(config));
     }
-    taskRepository.startTask(taskId);
+    await this.scheduler.start(taskId);
   }
 
   async updateTask(
@@ -231,7 +238,7 @@ export class TaskService {
     await this.assertTaskExists(taskId);
 
     const identifier = buildTaskIdentifier(taskId);
-    taskRepository.deleteTask(taskId);
+    await this.scheduler.delete(taskId);
     await this.deleteAllEnvs(identifier);
 
     const task = (await this.dao.findById(taskId)) as Task;

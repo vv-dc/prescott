@@ -11,6 +11,14 @@
     "metric": {
       "type": "file",
       "key": "metric/file-metric-provider.ts"
+    },
+    "scheduler": {
+      "type": "file",
+      "key": "scheduler/cron-task-scheduler.ts"
+    },
+    "queue": {
+      "type": "file",
+      "key": "queue/in-memory-task-queue.ts"
     }
   }
 }

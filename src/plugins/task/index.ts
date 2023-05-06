@@ -9,10 +9,12 @@ import { LogProviderContract } from '@modules/contract/model/log-provider.contra
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunService } from '@plugins/task/task-run.service';
+import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
+import { TaskQueueContract } from '@modules/contract/model/task-queue.contract';
 
 const task: FastifyPluginAsync = async (fastify) => {
   const { pg, contractMap } = fastify;
-  const { env, log, metric } = contractMap;
+  const { env, log, metric, scheduler, queue } = contractMap;
 
   const taskRunDao = new TaskRunDao(pg);
   const taskRunService = new TaskRunService(
@@ -25,6 +27,8 @@ const task: FastifyPluginAsync = async (fastify) => {
   const taskService = new TaskService(
     taskDao,
     taskRunService,
+    scheduler as TaskSchedulerContract,
+    queue as TaskQueueContract,
     env as EnvProviderContract
   );
 
