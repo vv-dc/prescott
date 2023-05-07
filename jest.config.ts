@@ -13,5 +13,5 @@ export default {
     prefix: '<rootDir>/',
   }),
   coveragePathIgnorePatterns: ['<rootDir>/test/lib'],
-  setupFilesAfterEnv: ['./jest/jest.setup.ts'],
+  setupFilesAfterEnv: ['./jest/jest.setup.ts', './jest/setup-env.ts'],
 };

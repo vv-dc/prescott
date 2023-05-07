@@ -8,9 +8,9 @@ import fastifySwaggerUi from '@fastify/swagger-ui';
 import bootstrap from '@plugins/bootstrap';
 
 import { handleError } from '@modules/fastify/error-handler';
-import { config, SCHEMAS_CONFIG, SERVER_CONFIG } from '@config/config';
+import { config, SCHEMAS_CONFIG } from '@config/config';
+import { getLogger } from '@logger/logger';
 
-const { logger } = config[SERVER_CONFIG];
 const { ajvOptions } = config[SCHEMAS_CONFIG];
 
 export type AutoloadOptions = {
@@ -51,7 +51,7 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
 
 const buildServer = async (): Promise<FastifyInstance> => {
   const server = Fastify({
-    logger,
+    logger: getLogger('api'),
     ajv: { customOptions: ajvOptions },
     querystringParser: (str) => parse(str),
   });
