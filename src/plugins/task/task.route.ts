@@ -110,8 +110,8 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     },
     preHandler: [authHooks.permissionHook('update_task')],
     handler: async (request, reply) => {
-      const { taskId, groupId } = request.params;
-      await taskService.updateTask(groupId, taskId, request.body);
+      const { taskId } = request.params;
+      await taskService.updateTask(taskId, request.body);
       reply.code(204).send();
     },
   });

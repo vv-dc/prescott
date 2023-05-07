@@ -11,10 +11,17 @@ import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunService } from '@plugins/task/task-run.service';
 import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
 import { TaskQueueContract } from '@modules/contract/model/task-queue.contract';
+import { TaskExecutorService } from '@plugins/task/task-executor.service';
 
 const task: FastifyPluginAsync = async (fastify) => {
   const { pg, contractMap } = fastify;
   const { env, log, metric, scheduler, queue } = contractMap;
+
+  const taskExecutorService = new TaskExecutorService(
+    env as EnvProviderContract,
+    scheduler as TaskSchedulerContract,
+    queue as TaskQueueContract
+  );
 
   const taskRunDao = new TaskRunDao(pg);
   const taskRunService = new TaskRunService(
@@ -26,10 +33,8 @@ const task: FastifyPluginAsync = async (fastify) => {
   const taskDao = new TaskDao(pg);
   const taskService = new TaskService(
     taskDao,
-    taskRunService,
-    scheduler as TaskSchedulerContract,
-    queue as TaskQueueContract,
-    env as EnvProviderContract
+    taskExecutorService,
+    taskRunService
   );
 
   fastify.decorate('taskService', taskService);

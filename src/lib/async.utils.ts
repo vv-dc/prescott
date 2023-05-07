@@ -1,4 +1,5 @@
 import { setTimeout } from 'node:timers/promises';
+import { setImmediate } from 'node:timers';
 
 export const asyncGeneratorToArray = async <T>(
   generator: AsyncGenerator<T>
@@ -8,6 +9,11 @@ export const asyncGeneratorToArray = async <T>(
     array.push(item);
   }
   return array;
+};
+
+export const dispatchTask = (fn: () => Promise<unknown>): void => {
+  // TODO: logging
+  setImmediate(() => fn());
 };
 
 export class InMemoryMutex {

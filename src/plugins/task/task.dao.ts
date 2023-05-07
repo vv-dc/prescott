@@ -1,12 +1,21 @@
 import { Knex } from 'knex';
 
 import { Task } from '@model/domain/task';
+import { EntityNotFound } from '@modules/errors/abstract-errors';
 
 export class TaskDao {
   constructor(private db: Knex) {}
 
   async findById(id: number): Promise<Task | undefined> {
     return this.db<Task>('tasks').where({ id }).first();
+  }
+
+  async findByIdThrowable(id: number): Promise<Task> {
+    const task = await this.findById(id);
+    if (task === undefined) {
+      throw new EntityNotFound(`Task not found by id=${id}`);
+    }
+    return task;
   }
 
   async findByName(name: string): Promise<Task | undefined> {

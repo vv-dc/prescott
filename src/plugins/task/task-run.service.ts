@@ -1,5 +1,4 @@
-import { setImmediate } from 'node:timers';
-import { InMemoryMutex } from '@lib/async.utils';
+import { dispatchTask, InMemoryMutex } from '@lib/async.utils';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskRun } from '@model/domain/task-run';
@@ -90,11 +89,12 @@ export class TaskRunService {
 
   registerRunListeners(runHandle: TaskRunHandle, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
-    setImmediate(() => this.log.consumeLogGenerator(runHandle, logGenerator));
-
     const metricGenerator = envHandle.metrics();
-    setImmediate(() =>
-      this.metric.consumeMetricGenerator(runHandle, metricGenerator)
+    dispatchTask(() =>
+      Promise.all([
+        this.log.consumeLogGenerator(runHandle, logGenerator),
+        this.metric.consumeMetricGenerator(runHandle, metricGenerator),
+      ])
     );
   }
 
