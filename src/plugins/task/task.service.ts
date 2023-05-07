@@ -1,6 +1,7 @@
+import { getLogger } from '@logger/logger';
 import { TaskDao } from '@plugins/task/task.dao';
 import { buildTaskUniqueName } from '@plugins/task/task.utils';
-import { EntityConflict } from '@modules/errors/abstract-errors';
+import { BadRequest, EntityConflict } from '@modules/errors/abstract-errors';
 import {
   TaskConfigDto,
   LocalTaskConfig,
@@ -10,23 +11,28 @@ import { Task } from '@model/domain/task';
 import { TaskExecutorService } from '@plugins/task/task-executor.service';
 import { TaskRunService } from '@plugins/task/task-run.service';
 import { ExecuteTaskFn } from '@modules/contract/model/task-queue.contract';
+import { errorToReason } from '@modules/errors/get-error-reason';
 
 export class TaskService {
+  private readonly logger = getLogger('task-service');
+
   constructor(
-    private dao: TaskDao,
-    private executorService: TaskExecutorService,
-    private runService: TaskRunService
+    private readonly dao: TaskDao,
+    private readonly executorService: TaskExecutorService,
+    private readonly runService: TaskRunService
   ) {}
 
   async registerFromDatabase(): Promise<void> {
     const tasks = await this.dao.findAll();
-    for (const task of tasks) {
-      const { id, config, active } = task;
-      if (active) {
-        const taskConfig: TaskConfigDto = JSON.parse(config);
-        await this.register(id, taskConfig);
-      }
+    const activeTasks = tasks.filter((task) => task.active);
+    for (const task of activeTasks) {
+      const { id, config } = task;
+      const taskConfig: TaskConfigDto = JSON.parse(config);
+      await this.register(id, taskConfig);
     }
+    this.logger.info(
+      `registerFromDatabase: registered ${activeTasks.length}/${tasks.length} tasks`
+    );
   }
 
   async register(taskId: number, taskConfig: TaskConfigDto): Promise<void> {
@@ -36,6 +42,7 @@ export class TaskService {
       taskConfig,
       executorFn
     );
+    this.logger.info(`register[taskId=${taskId}]: name=${taskConfig.name}`);
   }
 
   private buildExecutorFn(taskId: number): ExecuteTaskFn {
@@ -54,6 +61,8 @@ export class TaskService {
     try {
       await this.runTaskImpl(taskId, taskConfig);
     } catch (err) {
+      const reason = errorToReason(err);
+      this.logger.warn(`runTask[taskId=${taskId}]: failed - ${reason}`);
       await this.stopTask(taskId);
     }
   }
@@ -69,6 +78,7 @@ export class TaskService {
       times
     );
     if (runHandle === null) {
+      await this.executorService.unscheduleExecutable(taskId);
       return;
     }
 
@@ -78,9 +88,12 @@ export class TaskService {
     await this.runService.finish(runHandle, exitCode === 0);
 
     await envHandle.delete({ isForce: false });
+    this.logger.info(`runTask[taskId]: completed - exitCode=${exitCode}`);
+
     if (runsLeft === 0) {
       await this.stopTask(taskId);
-      await this.executorService.deleteExecutable(taskId);
+      await this.executorService.deleteExecutableEnv(taskId);
+      this.logger.info(`runTask[taskId=${taskId}]: stop - no runs left`);
     }
   }
 
@@ -97,7 +110,7 @@ export class TaskService {
   ): Promise<number> {
     const { name } = taskConfig;
     if ((await this.dao.findByName(name)) !== undefined) {
-      throw new EntityConflict('Task with passed name already exists');
+      throw new EntityConflict(`Task with name=${name} already exists`);
     }
 
     const taskId = await this.dao.create({
@@ -107,8 +120,9 @@ export class TaskService {
       active: true,
       config: JSON.stringify(taskConfig),
     });
-
     await this.register(taskId, taskConfig);
+
+    this.logger.info(`createTask[taskId=${taskId}]: created`);
     return taskId;
   }
 
@@ -117,22 +131,30 @@ export class TaskService {
     await this.executorService.deleteExecutable(taskId);
     await this.runService.flushAll(taskId);
     await this.dao.delete(taskId);
+    this.logger.info(`deleteTask[taskId=${taskId}]: deleted`);
   }
 
   async stopTask(taskId: number): Promise<void> {
-    await this.dao.findByIdThrowable(taskId);
+    const task = await this.dao.findByIdThrowable(taskId);
+    if (!task.active) {
+      this.logger.warn(`stopTask[taskId=${taskId}]: task is NOT active`);
+      throw new BadRequest(`Task is not active: taskId=${taskId}`);
+    }
     await this.executorService.stopExecutable(taskId);
     await this.dao.setActive(taskId, false);
+    this.logger.info(`stopTask[taskId=${taskId}]: set active=false`);
   }
 
   async startTask(taskId: number): Promise<void> {
     const task = await this.dao.findByIdThrowable(taskId);
     if (task.active) {
-      throw new EntityConflict(`Task is already active: id=${taskId}`);
+      this.logger.warn(`startTask[taskId=${taskId}]: task is active`);
+      throw new BadRequest(`Task is already active: taskId=${taskId}`);
     }
     const taskConfig = JSON.parse(task.config);
     await this.register(taskId, taskConfig);
     await this.dao.setActive(taskId, true);
+    this.logger.info(`startTask[${taskId}]: set active=true`);
   }
 
   async updateTask(
@@ -146,6 +168,7 @@ export class TaskService {
     const executorFn = this.buildExecutorFn(taskId);
     await this.executorService.updateExecutable(taskId, newConfig, executorFn);
     await this.dao.update(taskId, JSON.stringify(newConfig));
+    this.logger.info(`updateTask[taskId=${taskId}]: updated`);
   }
 
   async getTask(taskId: number): Promise<Task | { config: TaskConfigDto }> {

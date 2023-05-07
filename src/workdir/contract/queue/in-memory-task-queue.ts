@@ -21,8 +21,7 @@ const enqueue = async (
   taskId: number,
   executorFn: ExecuteTaskFn
 ): Promise<void> => {
-  const decoratedExecutor = decorateExecutorFn(taskId, executorFn);
-  queue.push(decoratedExecutor);
+  queue.push(executorFn);
   executeNext(); // should not await it
 };
 
@@ -41,24 +40,6 @@ const executeNext = async (): Promise<void> => {
     --running;
     executeNext();
   }
-};
-
-const decorateExecutorFn = (
-  taskId: number,
-  executorFn: ExecuteTaskFn
-): ExecuteTaskFn => {
-  return async () => {
-    try {
-      const startTime = Date.now();
-      await executorFn();
-      const elapsedMs = Date.now() - startTime;
-      logger.info(`Done[taskId=${taskId}]: took ${elapsedMs}ms`);
-    } catch (err) {
-      const reason = err instanceof Error ? err.message : 'Unknown error';
-      logger.warn(`Failed[taskId=${taskId}]: ${reason}`);
-      throw err;
-    }
-  };
 };
 
 const taskQueue: TaskQueueContract = {

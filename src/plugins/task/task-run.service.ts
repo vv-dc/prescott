@@ -1,3 +1,4 @@
+import { getLogger } from '@logger/logger';
 import { dispatchTask, InMemoryMutex } from '@lib/async.utils';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
@@ -21,6 +22,7 @@ import {
 } from '@modules/contract/model/metric-entry';
 
 export class TaskRunService {
+  private logger = getLogger('task-run-service');
   private mutex = new InMemoryMutex(1_000, 5);
 
   constructor(
@@ -29,10 +31,11 @@ export class TaskRunService {
     private metric: MetricProviderContract
   ) {}
 
-  async getOne(runId: number): Promise<TaskRun> {
+  async getOneThrowable(runId: number): Promise<TaskRun> {
     const runNullable = await this.dao.findOneById(runId);
     if (runNullable === null) {
-      throw new EntityNotFound('TaskRun is not found');
+      this.logger.warn(`getOneThrowable[runId=${runId}]: not found`);
+      throw new EntityNotFound(`TaskRun is not found: runId=${runId}`);
     }
     return runNullable;
   }
@@ -57,14 +60,17 @@ export class TaskRunService {
     return this.mutex.run(taskId.toString(), async () => {
       const [isRunAllowed, runsLeft] = await this.isRunAllowed(taskId, limit);
       if (!isRunAllowed) {
+        this.logger.warn(`tryToRegister[taskId=${taskId}]: run is not allowed`);
         return [null, 0];
       }
+
       const { id: runId } = await this.dao.create({
         taskId,
         status: 'pending',
         createdAt: new Date(),
       });
       const runHandle: TaskRunHandle = { runId, taskId };
+      this.logger.info(`tryToRegister[taskId=${taskId}]: runsLeft=${runsLeft}`);
       return [runHandle, runsLeft];
     });
   }
@@ -77,6 +83,7 @@ export class TaskRunService {
       startedAt: new Date(),
     });
     this.registerRunListeners(runHandle, envHandle);
+    this.logger.info(`start[runId=${runId}]: handleId=${envHandle.id()}`);
   }
 
   async finish(runHandle: TaskRunHandle, isSuccess: boolean): Promise<void> {
@@ -85,6 +92,7 @@ export class TaskRunService {
       status: isSuccess ? 'succeed' : 'failed',
       finishedAt: new Date(),
     });
+    this.logger.info(`finish[runId=${runId}]: success=${isSuccess}`);
   }
 
   registerRunListeners(runHandle: TaskRunHandle, envHandle: EnvHandle): void {
@@ -108,7 +116,7 @@ export class TaskRunService {
     dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<LogEntry>> {
-    await this.getOne(runHandle.runId);
+    await this.getOneThrowable(runHandle.runId);
     return this.log.searchLog(runHandle, dto, paging);
   }
 
@@ -117,7 +125,7 @@ export class TaskRunService {
     dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<MetricEntry>> {
-    await this.getOne(runHandle.runId);
+    await this.getOneThrowable(runHandle.runId);
     return this.metric.searchMetric(runHandle, dto, paging);
   }
 
@@ -125,7 +133,7 @@ export class TaskRunService {
     runHandle: TaskRunHandle,
     dto: MetricAggregateDto
   ): Promise<MetricsAggregated> {
-    await this.getOne(runHandle.runId);
+    await this.getOneThrowable(runHandle.runId);
     return this.metric.aggregateMetric(runHandle, dto);
   }
 }

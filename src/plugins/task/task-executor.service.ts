@@ -13,8 +13,11 @@ import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LocalTaskConfig } from '@model/domain/local-task-config';
 import { RepositoryTaskConfig } from '@model/domain/repository-task-config';
 import { dispatchTask } from '@lib/async.utils';
+import { getLogger } from '@logger/logger';
 
 export class TaskExecutorService {
+  private readonly logger = getLogger('task-executor-service');
+
   constructor(
     private readonly env: EnvProviderContract,
     private readonly scheduler: TaskSchedulerContract,
@@ -44,6 +47,7 @@ export class TaskExecutorService {
         await this.buildClearTask(identifier, envInfo, config.appConfig.steps);
       }
       await this.scheduler.start(taskId);
+      this.logger.info(`registerExecutable[taskId=${taskId}]: scheduled`);
     });
   }
 
@@ -65,11 +69,25 @@ export class TaskExecutorService {
     config: LocalTaskConfig | RepositoryTaskConfig
   ): Promise<EnvHandle> {
     const identifier = buildTaskIdentifier(taskId);
-    return this.env.runEnv({
+    const envHandle = await this.env.runEnv({
       envId: identifier,
       limitations: config.appConfig?.limitations,
       options: { isDelete: false },
     });
+    this.logger.info(
+      `runExecutable[taskId=${taskId}]: handleId=${envHandle.id()}`
+    );
+    return envHandle;
+  }
+
+  async unscheduleExecutable(taskId: number): Promise<void> {
+    await this.scheduler.stop(taskId);
+    this.logger.info(`unscheduleExecutable[taskId=${taskId}]: disabled`);
+  }
+
+  async deleteExecutableEnv(taskId: number): Promise<void> {
+    const identifier = buildTaskIdentifier(taskId);
+    await this.env.deleteEnv({ envId: identifier, isForce: false });
   }
 
   async deleteExecutable(taskId: number): Promise<void> {

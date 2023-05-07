@@ -4,6 +4,7 @@ import {
   AccessDenied,
   EntityNotFound,
   UnauthorizedUser,
+  BadRequest,
 } from '@modules/errors/abstract-errors';
 import {
   HttpError,
@@ -11,6 +12,7 @@ import {
   HttpForbidden,
   HttpNotFound,
   HttpUnauthorized,
+  HttpBadRequest,
 } from '@modules/errors/http-errors';
 
 const errorMap: ErrorMap = {
@@ -18,6 +20,7 @@ const errorMap: ErrorMap = {
   [AccessDenied.name]: HttpForbidden,
   [EntityNotFound.name]: HttpNotFound,
   [UnauthorizedUser.name]: HttpUnauthorized,
+  [BadRequest.name]: HttpBadRequest,
 };
 
 export const mapError = (error: Error): HttpError => {

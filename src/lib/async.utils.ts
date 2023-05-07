@@ -1,5 +1,8 @@
 import { setTimeout } from 'node:timers/promises';
-import { setImmediate } from 'node:timers';
+import { getLogger } from '@logger/logger';
+import { errorToReason } from '@modules/errors/get-error-reason';
+
+const logger = getLogger('async-utils');
 
 export const asyncGeneratorToArray = async <T>(
   generator: AsyncGenerator<T>
@@ -12,8 +15,11 @@ export const asyncGeneratorToArray = async <T>(
 };
 
 export const dispatchTask = (fn: () => Promise<unknown>): void => {
-  // TODO: logging
-  setImmediate(() => fn());
+  fn().catch((err) => {
+    const reason = errorToReason(err);
+    const fnName = fn.name || 'anonymous';
+    logger.error(`dispatchTask: failed for ${fnName}- ${reason}`);
+  });
 };
 
 export class InMemoryMutex {
