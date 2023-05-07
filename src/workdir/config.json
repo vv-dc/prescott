@@ -18,7 +18,10 @@
     },
     "queue": {
       "type": "file",
-      "key": "queue/in-memory-task-queue.ts"
+      "key": "queue/in-memory-task-queue.ts",
+      "opts": {
+        "maxConcurrency": 3
+      }
     }
   }
 }

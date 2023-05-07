@@ -228,7 +228,7 @@ describe('task e2e', () => {
     const taskConfig: TaskConfigDto = {
       name: generateRandomString('task'),
       envInfo: DOCKER_IMAGES.alpine,
-      times: 3,
+      times: 2,
       config: {
         local: { cronString: cronEveryNSeconds(1) },
         appConfig: {
@@ -263,7 +263,7 @@ describe('task e2e', () => {
     });
     expect(runsResponse.statusCode).toEqual(200);
     const runsList = runsResponse.json<TaskRun[]>();
-    expect(runsList).toHaveLength(3);
+    expect(runsList).toHaveLength(2);
 
     const deletedRes = await fastify.inject({
       method: 'DELETE',

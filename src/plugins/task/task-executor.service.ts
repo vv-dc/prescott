@@ -1,6 +1,6 @@
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
 import {
-  EnqueueTaskFn,
+  ExecuteTaskFn,
   TaskQueueContract,
 } from '@modules/contract/model/task-queue.contract';
 import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
@@ -24,7 +24,7 @@ export class TaskExecutorService {
   async registerExecutable(
     taskId: number,
     taskConfig: TaskConfigDto,
-    executorFn: EnqueueTaskFn
+    executorFn: ExecuteTaskFn
   ): Promise<void> {
     const isScheduled = await this.scheduler.exists(taskId);
     if (isScheduled) return;
@@ -104,7 +104,7 @@ export class TaskExecutorService {
   async updateExecutable(
     taskId: number,
     newConfig: TaskConfigDto,
-    executorFn: EnqueueTaskFn
+    executorFn: ExecuteTaskFn
   ): Promise<void> {
     await this.deleteExecutable(taskId);
     await this.registerExecutable(taskId, newConfig, executorFn);

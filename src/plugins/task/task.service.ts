@@ -9,7 +9,7 @@ import {
 import { Task } from '@model/domain/task';
 import { TaskExecutorService } from '@plugins/task/task-executor.service';
 import { TaskRunService } from '@plugins/task/task-run.service';
-import { EnqueueTaskFn } from '@modules/contract/model/task-queue.contract';
+import { ExecuteTaskFn } from '@modules/contract/model/task-queue.contract';
 
 export class TaskService {
   constructor(
@@ -30,7 +30,7 @@ export class TaskService {
   }
 
   async register(taskId: number, taskConfig: TaskConfigDto): Promise<void> {
-    const executorFn: EnqueueTaskFn = this.buildExecutorFn(taskId);
+    const executorFn: ExecuteTaskFn = this.buildExecutorFn(taskId);
     await this.executorService.registerExecutable(
       taskId,
       taskConfig,
@@ -38,7 +38,7 @@ export class TaskService {
     );
   }
 
-  private buildExecutorFn(taskId: number): EnqueueTaskFn {
+  private buildExecutorFn(taskId: number): ExecuteTaskFn {
     return async (): Promise<void> => {
       const task = await this.dao.findByIdThrowable(taskId); // to handle updates
       const taskConfig = JSON.parse(task.config);
