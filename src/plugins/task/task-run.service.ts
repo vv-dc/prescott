@@ -50,7 +50,7 @@ export class TaskRunService {
   ): Promise<[boolean, number]> {
     if (limit === undefined) return [true, Infinity];
     const runsCount = await this.dao.countByTaskId(taskId);
-    return [runsCount < limit, Math.max(limit - runsCount - 1, 0)];
+    return [runsCount < limit, runsCount];
   }
 
   async tryToRegister(
@@ -58,20 +58,20 @@ export class TaskRunService {
     limit?: number
   ): Promise<[TaskRunHandle | null, number]> {
     return this.mutex.run(taskId.toString(), async () => {
-      const [isRunAllowed, runsLeft] = await this.isRunAllowed(taskId, limit);
+      const [isRunAllowed, runsCount] = await this.isRunAllowed(taskId, limit);
       if (!isRunAllowed) {
         this.logger.warn(`tryToRegister[taskId=${taskId}]: run is not allowed`);
         return [null, 0];
       }
-
       const { id: runId } = await this.dao.create({
         taskId,
         status: 'pending',
         createdAt: new Date(),
       });
-      const runHandle: TaskRunHandle = { runId, taskId };
-      this.logger.info(`tryToRegister[taskId=${taskId}]: runsLeft=${runsLeft}`);
-      return [runHandle, runsLeft];
+      const runIndex = runsCount + 1;
+      this.logger.info(`tryToRegister[taskId=${taskId}]: runIndex=${runIndex}`);
+      const runHandle: TaskRunHandle = { taskId, runId };
+      return [runHandle, runIndex];
     });
   }
 

@@ -20,7 +20,7 @@
       "type": "file",
       "key": "queue/in-memory-task-queue.ts",
       "opts": {
-        "maxConcurrency": 3
+        "maxConcurrency": 5
       }
     }
   }

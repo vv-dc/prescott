@@ -37,7 +37,7 @@ describe('task e2e', () => {
       name: generateRandomString('task'),
       envInfo: DOCKER_IMAGES.alpine,
       config: {
-        local: { cronString: cronEveryNSeconds(10) },
+        local: { scheduleConfig: cronEveryNSeconds(10) },
         appConfig: {
           steps: [
             {
@@ -78,7 +78,7 @@ describe('task e2e', () => {
 
     // UPDATE task
     const newConfig: LocalTaskConfig = {
-      local: { cronString: cronEveryNSeconds(10) },
+      local: { scheduleConfig: cronEveryNSeconds(10) },
       appConfig: {
         steps: [
           {
@@ -147,7 +147,7 @@ describe('task e2e', () => {
       name: generateRandomString('task'),
       envInfo: DOCKER_IMAGES.alpine,
       config: {
-        local: { cronString: cronEveryNSeconds(1) },
+        local: { scheduleConfig: cronEveryNSeconds(1) },
         appConfig: {
           steps: [
             {
@@ -230,7 +230,7 @@ describe('task e2e', () => {
       envInfo: DOCKER_IMAGES.alpine,
       times: 2,
       config: {
-        local: { cronString: cronEveryNSeconds(1) },
+        local: { scheduleConfig: cronEveryNSeconds(1) },
         appConfig: {
           steps: [{ name: 'Nop', script: encodeBase64(`echo 'nop'`) }],
         },
@@ -292,7 +292,7 @@ describe('task e2e', () => {
       envInfo: DOCKER_IMAGES.alpine,
       times: 1,
       config: {
-        local: { cronString: cronEveryNSeconds(1) },
+        local: { scheduleConfig: cronEveryNSeconds(1) },
         appConfig: {
           steps: [
             {

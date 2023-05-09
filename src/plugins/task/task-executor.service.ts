@@ -1,19 +1,15 @@
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
-import {
-  ExecuteTaskFn,
-  TaskQueueContract,
-} from '@modules/contract/model/task-queue.contract';
+import { TaskQueueContract } from '@modules/contract/model/task-queue.contract';
 import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
 import { TaskConfigDto } from '@model/dto/task-config.dto';
-import { cronEveryNMinutes } from '@lib/cron.utils';
 import { EnvInfo } from '@model/domain/env-info';
 import { TaskStep } from '@model/domain/task-step';
 import { buildTaskCmd, buildTaskIdentifier } from '@plugins/task/task.utils';
 import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LocalTaskConfig } from '@model/domain/local-task-config';
-import { RepositoryTaskConfig } from '@model/domain/repository-task-config';
 import { dispatchTask } from '@lib/async.utils';
 import { getLogger } from '@logger/logger';
+import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
 
 export class TaskExecutorService {
   private readonly logger = getLogger('task-executor-service');
@@ -27,7 +23,7 @@ export class TaskExecutorService {
   async registerExecutable(
     taskId: number,
     taskConfig: TaskConfigDto,
-    executorFn: ExecuteTaskFn
+    callbackFn: TaskCallbackFn
   ): Promise<void> {
     const isScheduled = await this.scheduler.exists(taskId);
     if (isScheduled) return;
@@ -35,17 +31,19 @@ export class TaskExecutorService {
     const { config, envInfo } = taskConfig;
     const identifier = buildTaskIdentifier(taskId);
 
-    const isExternal = 'repository' in config;
     await this.scheduler.schedule(taskId, {
-      callback: () => this.queue.enqueue(taskId, executorFn),
-      configString: isExternal ? cronEveryNMinutes(5) : config.local.cronString,
+      callback: async () => {
+        const executorFnNullable = await callbackFn(taskId);
+        if (executorFnNullable !== null) {
+          await this.queue.enqueue(taskId, executorFnNullable);
+        }
+      },
+      scheduleConfig: config.local.scheduleConfig,
     });
 
     // no need to wait for the end of build as task scheduled to run not immediately
     dispatchTask(async () => {
-      if (!isExternal) {
-        await this.buildClearTask(identifier, envInfo, config.appConfig.steps);
-      }
+      await this.buildClearTask(identifier, envInfo, config.appConfig.steps);
       await this.scheduler.start(taskId);
       this.logger.info(`registerExecutable[taskId=${taskId}]: scheduled`);
     });
@@ -56,6 +54,7 @@ export class TaskExecutorService {
     envInfo: EnvInfo,
     steps: TaskStep[]
   ): Promise<void> {
+    // TODO: add logging and error handling for builds
     await this.env.compileEnv({
       alias: identifier,
       envInfo,
@@ -66,7 +65,7 @@ export class TaskExecutorService {
 
   async runExecutable(
     taskId: number,
-    config: LocalTaskConfig | RepositoryTaskConfig
+    config: LocalTaskConfig
   ): Promise<EnvHandle> {
     const identifier = buildTaskIdentifier(taskId);
     const envHandle = await this.env.runEnv({
@@ -122,9 +121,9 @@ export class TaskExecutorService {
   async updateExecutable(
     taskId: number,
     newConfig: TaskConfigDto,
-    executorFn: ExecuteTaskFn
+    callbackFn: TaskCallbackFn
   ): Promise<void> {
     await this.deleteExecutable(taskId);
-    await this.registerExecutable(taskId, newConfig, executorFn);
+    await this.registerExecutable(taskId, newConfig, callbackFn);
   }
 }

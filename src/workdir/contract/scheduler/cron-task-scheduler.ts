@@ -16,8 +16,8 @@ const scheduleTask = async (
   taskId: number,
   config: ScheduleTaskDto
 ): Promise<void> => {
-  const { configString, callback } = config;
-  tasks[taskId] = schedule(configString, callback, { scheduled: false });
+  const { scheduleConfig, callback } = config;
+  tasks[taskId] = schedule(scheduleConfig, callback, { scheduled: false });
 };
 
 const stop = async (taskId: number): Promise<void> => {

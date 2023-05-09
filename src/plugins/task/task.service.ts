@@ -1,17 +1,14 @@
 import { getLogger } from '@logger/logger';
+import { BadRequest, EntityConflict } from '@modules/errors/abstract-errors';
+import { errorToReason } from '@modules/errors/get-error-reason';
 import { TaskDao } from '@plugins/task/task.dao';
 import { buildTaskUniqueName } from '@plugins/task/task.utils';
-import { BadRequest, EntityConflict } from '@modules/errors/abstract-errors';
-import {
-  TaskConfigDto,
-  LocalTaskConfig,
-  RepositoryTaskConfig,
-} from '@model/dto/task-config.dto';
-import { Task } from '@model/domain/task';
 import { TaskExecutorService } from '@plugins/task/task-executor.service';
 import { TaskRunService } from '@plugins/task/task-run.service';
-import { ExecuteTaskFn } from '@modules/contract/model/task-queue.contract';
-import { errorToReason } from '@modules/errors/get-error-reason';
+import { Task } from '@model/domain/task';
+import { TaskConfigDto, LocalTaskConfig } from '@model/dto/task-config.dto';
+import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
+import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
 
 export class TaskService {
   private readonly logger = getLogger('task-service');
@@ -36,31 +33,44 @@ export class TaskService {
   }
 
   async register(taskId: number, taskConfig: TaskConfigDto): Promise<void> {
-    const executorFn: ExecuteTaskFn = this.buildExecutorFn(taskId);
+    const callbackFn = this.buildTaskCallbackFn();
     await this.executorService.registerExecutable(
       taskId,
       taskConfig,
-      executorFn
+      callbackFn
     );
     this.logger.info(`register[taskId=${taskId}]: name=${taskConfig.name}`);
   }
 
-  private buildExecutorFn(taskId: number): ExecuteTaskFn {
-    return async (): Promise<void> => {
-      const task = await this.dao.findByIdThrowable(taskId); // to handle updates
-      const taskConfig = JSON.parse(task.config);
-      const runner = 'repository' in taskConfig.config ? 'runWatch' : 'runTask';
-      await this[runner](taskId, JSON.parse(task.config));
+  private buildTaskCallbackFn(): TaskCallbackFn {
+    return async (taskId) => {
+      const task = await this.dao.findById(taskId); // to handle updates/deletions
+      if (task === undefined) {
+        this.logger.warn(`executorFn[taskId=${taskId}]: SKIP - doesn't exist`);
+        return null;
+      }
+      const config: TaskConfigDto = JSON.parse(task.config);
+      const [runHandle, runIndex] = await this.runService.tryToRegister(
+        taskId,
+        config.times
+      );
+      if (runHandle === null) {
+        await this.executorService.unscheduleExecutable(taskId);
+        return null;
+      }
+      return () => this.runTask(runHandle, runIndex, config);
     };
   }
 
   private async runTask(
-    taskId: number,
+    runHandle: TaskRunHandle,
+    runIndex: number,
     taskConfig: TaskConfigDto
   ): Promise<void> {
     try {
-      await this.runTaskImpl(taskId, taskConfig);
+      await this.runTaskImpl(runHandle, runIndex, taskConfig);
     } catch (err) {
+      const { taskId } = runHandle;
       const reason = errorToReason(err);
       this.logger.warn(`runTask[taskId=${taskId}]: failed - ${reason}`);
       await this.stopTask(taskId);
@@ -69,18 +79,12 @@ export class TaskService {
 
   // task is like a clean function, so there is no need to re-build it
   private async runTaskImpl(
-    taskId: number,
+    runHandle: TaskRunHandle,
+    runIndex: number,
     taskConfig: TaskConfigDto
   ): Promise<void> {
+    const { taskId } = runHandle;
     const { times, config } = taskConfig;
-    const [runHandle, runsLeft] = await this.runService.tryToRegister(
-      taskId,
-      times
-    );
-    if (runHandle === null) {
-      await this.executorService.unscheduleExecutable(taskId);
-      return;
-    }
 
     const envHandle = await this.executorService.runExecutable(taskId, config);
     await this.runService.start(runHandle, envHandle);
@@ -90,18 +94,12 @@ export class TaskService {
     await envHandle.delete({ isForce: false });
     this.logger.info(`runTask[taskId]: completed - exitCode=${exitCode}`);
 
-    if (runsLeft === 0) {
+    if (runIndex === times) {
       await this.stopTask(taskId);
       await this.executorService.deleteExecutableEnv(taskId);
       this.logger.info(`runTask[taskId=${taskId}]: stop - no runs left`);
     }
   }
-
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  async runWatch(taskId: number, config: TaskConfigDto): Promise<void> {
-    // TODO: try to clone, build and then run
-  }
-  // eslint-enable @typescript-eslint/no-unused-vars
 
   async createTask(
     groupId: number,
@@ -157,16 +155,13 @@ export class TaskService {
     this.logger.info(`startTask[${taskId}]: set active=true`);
   }
 
-  async updateTask(
-    taskId: number,
-    taskConfig: LocalTaskConfig | RepositoryTaskConfig
-  ): Promise<void> {
+  async updateTask(taskId: number, taskConfig: LocalTaskConfig): Promise<void> {
     const task = await this.dao.findByIdThrowable(taskId);
     const oldConfig = JSON.parse(task.config);
     const newConfig: TaskConfigDto = { ...oldConfig, config: taskConfig };
 
-    const executorFn = this.buildExecutorFn(taskId);
-    await this.executorService.updateExecutable(taskId, newConfig, executorFn);
+    const callbackFn = this.buildTaskCallbackFn();
+    await this.executorService.updateExecutable(taskId, newConfig, callbackFn);
     await this.dao.update(taskId, JSON.stringify(newConfig));
     this.logger.info(`updateTask[taskId=${taskId}]: updated`);
   }

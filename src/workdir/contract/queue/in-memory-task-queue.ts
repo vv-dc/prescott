@@ -4,6 +4,7 @@ import {
   TaskQueueContract,
 } from '@modules/contract/model/task-queue.contract';
 import { ContractOpts } from '@modules/contract/model/contract';
+import { errorToReason } from '@modules/errors/get-error-reason';
 
 const config = { maxConcurrency: Infinity };
 const logger = getLogger('in-memory-task-queue');
@@ -21,7 +22,8 @@ const enqueue = async (
   taskId: number,
   executorFn: ExecuteTaskFn
 ): Promise<void> => {
-  queue.push(executorFn);
+  const decoratedExecutorFn = decorateExecutorFn(taskId, executorFn);
+  queue.push(decoratedExecutorFn);
   executeNext(); // should not await it
 };
 
@@ -40,6 +42,20 @@ const executeNext = async (): Promise<void> => {
     --running;
     executeNext();
   }
+};
+
+const decorateExecutorFn = (
+  taskId: number,
+  executorFn: ExecuteTaskFn
+): ExecuteTaskFn => {
+  return async () => {
+    try {
+      await executorFn();
+    } catch (err) {
+      const reason = errorToReason(err);
+      logger.warn(`executeNext[taskId=${taskId}]: failed - ${reason}`);
+    }
+  };
 };
 
 const taskQueue: TaskQueueContract = {

@@ -2,8 +2,5 @@
   "$id": "schema://prescott.dev/domain/task-config.json",
   "title": "TaskConfig",
   "type": "object",
-  "oneOf": [
-    { "$ref": "schema://prescott.dev/domain/local-task-config.json" },
-    { "$ref": "schema://prescott.dev/domain/repository-task-config.json" }
-  ]
+  "oneOf": [{ "$ref": "schema://prescott.dev/domain/local-task-config.json" }]
 }

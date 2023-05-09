@@ -1,11 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 
 import { TaskCreateParams } from '@model/api/task/task-create-params';
-import {
-  LocalTaskConfig,
-  RepositoryTaskConfig,
-  TaskConfigDto,
-} from '@model/dto/task-config.dto';
+import { LocalTaskConfig, TaskConfigDto } from '@model/dto/task-config.dto';
 import { TaskAllParams } from '@model/api/task/task-all-params';
 import { AccessToken } from '@model/api/authentication/access-token';
 import { TaskRunSearchQuery } from '@model/api/task/task-run-search-query';
@@ -99,7 +95,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.route<{
     Params: TaskAllParams;
-    Body: LocalTaskConfig | RepositoryTaskConfig;
+    Body: LocalTaskConfig;
     Headers: AccessToken;
   }>({
     method: 'PUT',

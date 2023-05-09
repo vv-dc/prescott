@@ -9,6 +9,6 @@ export interface TaskSchedulerContract extends Contract {
 }
 
 export interface ScheduleTaskDto {
-  configString: string;
+  scheduleConfig: string;
   callback: () => Promise<void>;
 }

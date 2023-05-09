@@ -30,7 +30,7 @@ const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
     type: 'file',
     key: 'task-queue.ts',
     opts: {
-      maxConcurrency: 3,
+      maxConcurrency: 5,
     },
   },
 };
