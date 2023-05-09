@@ -7,13 +7,13 @@
     "handleId": { "type": "string" },
     "taskId": { "type": "integer" },
     "status": {
-      "type": "string",
-      "enum": ["running", "failed", "succeed", "pending"]
+      "$ref": "schema://prescott.dev/domain/task-run-status.json"
     },
+    "rank": { "type": "integer", "exclusiveMinimum": 0 },
     "startedAt": { "type": "string", "format": "date-time", "tsType": "Date" },
-    "finishedAt": { "type": "string", "format": "date-time", "tsType": "Date" },
-    "createdAt": { "type": "string", "format": "date-time", "tsType": "Date" }
+    "createdAt": { "type": "string", "format": "date-time", "tsType": "Date" },
+    "finishedAt": { "type": "string", "format": "date-time", "tsType": "Date" }
   },
-  "required": ["id", "taskId", "status", "createdAt"],
+  "required": ["id", "taskId", "status", "rank", "createdAt"],
   "additionalProperties": false
 }

@@ -2,12 +2,13 @@ import pidUsage = require('pidusage');
 import { Readable } from 'node:stream';
 
 import { CommandBuilder } from '@lib/command-builder';
-import { delay } from '@lib/time.utils';
+import { delay, millisecondsToSeconds } from '@lib/time.utils';
 import {
   execDockerCommandWithCheck,
   dockerSizeToBytes,
   getContainerPid,
   removeEscapeCharacters,
+  inspectDockerContainer,
 } from '@src/workdir/contract/env/docker.utils';
 import {
   DeleteEnvHandleDto,
@@ -17,6 +18,7 @@ import {
 } from '@modules/contract/model/env-handle';
 import { LogEntry, LogEntryStream } from '@modules/contract/model/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric-entry';
+import { getLogger } from '@logger/logger';
 
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';
@@ -34,7 +36,7 @@ export class DockerEnvHandle implements EnvHandle {
   async stop(dto: StopEnvHandleDto): Promise<void> {
     const { timeout } = dto;
     const command = new CommandBuilder().init('docker stop');
-    if (timeout) command.param('time', timeout);
+    if (timeout) command.param('time', millisecondsToSeconds(timeout));
 
     await execDockerCommandWithCheck(
       this.container,
@@ -65,11 +67,18 @@ export class DockerEnvHandle implements EnvHandle {
 
   async wait(): Promise<number> {
     const command = new CommandBuilder().init('docker wait');
-    const { stdout } = await execDockerCommandWithCheck(
-      this.container,
-      command.with(this.container)
-    );
-    return parseInt(stdout.slice(0, -1), 10); // skip last \n
+    try {
+      const { stdout } = await execDockerCommandWithCheck(
+        this.container,
+        command.with(this.container)
+      );
+      return parseInt(stdout.slice(0, -1), 10); // skip last \n
+    } catch (err) {
+      const [exitCode] = await inspectDockerContainer(this.container, [
+        'exitCode',
+      ]);
+      return parseInt(exitCode, 10);
+    }
   }
 
   async *logs(): AsyncGenerator<LogEntry> {

@@ -28,15 +28,18 @@ const enqueue = async (
 };
 
 const executeNext = async (): Promise<void> => {
-  logger.debug(
-    `executeNext: buffer=${queue.length}, load=${running}/${config.maxConcurrency}`
-  );
   if (running >= config.maxConcurrency || queue.length === 0) {
+    logger.debug(
+      `executeNext[skip]: buffer=${queue.length}, load=${running}/${config.maxConcurrency}`
+    );
     return;
   }
   const nextTask = queue.shift() as ExecuteTaskFn;
   ++running;
   try {
+    logger.debug(
+      `executeNext[run]: buffer=${queue.length}, load=${running}/${config.maxConcurrency}`
+    );
     await nextTask();
   } finally {
     --running;

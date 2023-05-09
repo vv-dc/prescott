@@ -23,7 +23,7 @@ const errorMap: ErrorMap = {
   [BadRequest.name]: HttpBadRequest,
 };
 
-export const mapError = (error: Error): HttpError => {
+export const mapError = (error: Error): HttpError | Error => {
   const { name, message } = error;
-  return name in errorMap ? new errorMap[name](message) : (error as HttpError);
+  return name in errorMap ? new errorMap[name](message) : error;
 };

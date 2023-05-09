@@ -1,9 +1,17 @@
+export type TaskRunStatus =
+  | 'running'
+  | 'failed'
+  | 'succeed'
+  | 'pending'
+  | 'stopped';
+
 export interface TaskRun {
   id: number;
   handleId?: string;
   taskId: number;
-  status: 'running' | 'failed' | 'succeed' | 'pending';
+  status: TaskRunStatus;
+  rank: number;
   startedAt?: Date;
-  finishedAt?: Date;
   createdAt: Date;
+  finishedAt?: Date;
 }

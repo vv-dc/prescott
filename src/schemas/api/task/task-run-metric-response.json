@@ -20,6 +20,6 @@
     },
     "next": { "type": "integer" }
   },
-  "required": ["entries", "next"],
+  "required": ["entries"],
   "additionalProperties": false
 }

@@ -126,7 +126,7 @@ const aggregateMetric = async (
 };
 
 const flushMetric = async (taskId: number): Promise<void> => {
-  const [metricDir] = buildMetricFilePath({ taskId, runId: 0 });
+  const [metricDir] = buildMetricFilePath({ taskId, runId: 0, runRank: 0 });
   await rmRecursiveSafe(metricDir);
 };
 

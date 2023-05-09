@@ -5,5 +5,5 @@ export interface TaskRunMetricResponse {
     time: number;
     [k: string]: string | number;
   }[];
-  next: number;
+  next?: number;
 }

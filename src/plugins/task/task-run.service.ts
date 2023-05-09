@@ -15,11 +15,12 @@ import {
   EntryPaging,
   EntrySearchDto,
 } from '@modules/contract/model/entry-paging';
-import { EntityNotFound } from '@modules/errors/abstract-errors';
+import { BadRequest, EntityNotFound } from '@modules/errors/abstract-errors';
 import {
   MetricEntry,
   MetricsAggregated,
 } from '@modules/contract/model/metric-entry';
+import { TaskRunStatus } from '@model/domain/task-run-status';
 
 export class TaskRunService {
   private logger = getLogger('task-run-service');
@@ -33,15 +34,35 @@ export class TaskRunService {
 
   async getOneThrowable(runId: number): Promise<TaskRun> {
     const runNullable = await this.dao.findOneById(runId);
-    if (runNullable === null) {
+    if (runNullable === undefined) {
       this.logger.warn(`getOneThrowable[runId=${runId}]: not found`);
       throw new EntityNotFound(`TaskRun is not found: runId=${runId}`);
     }
     return runNullable;
   }
 
+  async getOneThrowableByTaskId(
+    taskId: number,
+    runId: number
+  ): Promise<TaskRun> {
+    const taskRun = await this.getOneThrowable(runId);
+    if (taskRun.taskId !== taskId) {
+      this.logger.warn(
+        `getOneThrowableByTaskId[runId=${runId}]: does not belong to taskId=${taskId}`
+      );
+      throw new BadRequest(
+        `TaskRun[id=${runId}] does not belong to taskId=${taskId}`
+      );
+    }
+    return taskRun;
+  }
+
   getAll(taskId: number): Promise<TaskRun[]> {
     return this.dao.findAllByTaskId(taskId);
+  }
+
+  getAllByStatus(taskId: number, status: TaskRunStatus): Promise<TaskRun[]> {
+    return this.dao.findAllByTaskIdAndStatus(taskId, status);
   }
 
   private async isRunAllowed(
@@ -53,25 +74,24 @@ export class TaskRunService {
     return [runsCount < limit, runsCount];
   }
 
-  async tryToRegister(
-    taskId: number,
-    limit?: number
-  ): Promise<[TaskRunHandle | null, number]> {
+  async tryToRegister(taskId: number, limit?: number): Promise<TaskRun | null> {
     return this.mutex.run(taskId.toString(), async () => {
       const [isRunAllowed, runsCount] = await this.isRunAllowed(taskId, limit);
       if (!isRunAllowed) {
         this.logger.warn(`tryToRegister[taskId=${taskId}]: run is not allowed`);
-        return [null, 0];
+        return null;
       }
-      const { id: runId } = await this.dao.create({
+      const runRank = runsCount + 1;
+      const taskRun = await this.dao.create({
         taskId,
+        rank: runRank,
         status: 'pending',
         createdAt: new Date(),
       });
-      const runIndex = runsCount + 1;
-      this.logger.info(`tryToRegister[taskId=${taskId}]: runIndex=${runIndex}`);
-      const runHandle: TaskRunHandle = { taskId, runId };
-      return [runHandle, runIndex];
+      this.logger.info(
+        `tryToRegister[taskId=${taskId}]: runId=${taskRun.id}, runRank=${runRank}`
+      );
+      return taskRun;
     });
   }
 
@@ -95,6 +115,14 @@ export class TaskRunService {
     this.logger.info(`finish[runId=${runId}]: success=${isSuccess}`);
   }
 
+  async stopAll(taskId: number): Promise<void> {
+    const count = await this.dao.updateAllByTaskIdAndStatus(taskId, 'pending', {
+      status: 'stopped',
+      finishedAt: new Date(),
+    });
+    this.logger.info(`stopAll[taskId=${taskId}]: done for ${count} runs`);
+  }
+
   registerRunListeners(runHandle: TaskRunHandle, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
     const metricGenerator = envHandle.metrics();
@@ -112,28 +140,34 @@ export class TaskRunService {
   }
 
   async searchLogs(
-    runHandle: TaskRunHandle,
+    taskId: number,
+    runId: number,
     dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<LogEntry>> {
-    await this.getOneThrowable(runHandle.runId);
+    const taskRun = await this.getOneThrowableByTaskId(taskId, runId);
+    const runHandle: TaskRunHandle = { taskId, runId, runRank: taskRun.rank };
     return this.log.searchLog(runHandle, dto, paging);
   }
 
   async searchMetrics(
-    runHandle: TaskRunHandle,
+    taskId: number,
+    runId: number,
     dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<MetricEntry>> {
-    await this.getOneThrowable(runHandle.runId);
+    const taskRun = await this.getOneThrowableByTaskId(taskId, runId);
+    const runHandle: TaskRunHandle = { taskId, runId, runRank: taskRun.rank };
     return this.metric.searchMetric(runHandle, dto, paging);
   }
 
   async aggregateMetrics(
-    runHandle: TaskRunHandle,
+    taskId: number,
+    runId: number,
     dto: MetricAggregateDto
   ): Promise<MetricsAggregated> {
-    await this.getOneThrowable(runHandle.runId);
+    const taskRun = await this.getOneThrowableByTaskId(taskId, runId);
+    const runHandle: TaskRunHandle = { taskId, runId, runRank: taskRun.rank };
     return this.metric.aggregateMetric(runHandle, dto);
   }
 }

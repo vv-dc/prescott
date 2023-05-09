@@ -18,6 +18,7 @@ export type AutoloadOptions = {
 } & Partial<AutoloadPluginOptions>;
 
 const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
+  fastify.setErrorHandler(handleError);
   await fastify.register(bootstrap); // set up everything
   await fastify.register(fastifySwagger, {
     swagger: {
@@ -42,8 +43,6 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
     options: opts,
     maxDepth: 1,
   });
-
-  fastify.setErrorHandler(handleError);
   fastify.addHook('onClose', async () => {
     await fastify.pg.destroy();
   });

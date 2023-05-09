@@ -6,7 +6,6 @@ import { TaskAllParams } from '@model/api/task/task-all-params';
 import { AccessToken } from '@model/api/authentication/access-token';
 import { TaskRunSearchQuery } from '@model/api/task/task-run-search-query';
 import { TaskRunAllParams } from '@model/api/task/task-run-all-params';
-import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskRunSearchDto } from '@model/dto/task-run-search.dto';
 import { EntrySearchDto } from '@modules/contract/model/entry-paging';
 import { TaskRunAggregateDto } from '@model/dto/task-run-aggregate.dto';
@@ -179,9 +178,9 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const { taskId, runId } = request.params;
       const { paging, search } = request.query;
 
-      const runHandle: TaskRunHandle = { taskId, runId };
       const logs = await taskRunService.searchLogs(
-        runHandle,
+        taskId,
+        runId,
         search ? mapTaskRunSearchDto(search) : {},
         paging ?? {}
       );
@@ -208,9 +207,9 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const { taskId, runId } = request.params;
       const { paging, search } = request.query;
 
-      const runHandle: TaskRunHandle = { taskId, runId };
       const metrics = await taskRunService.searchMetrics(
-        runHandle,
+        taskId,
+        runId,
         search ? mapTaskRunSearchDto(search) : {},
         paging ?? {}
       );
@@ -237,8 +236,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
       const { taskId, runId } = request.params;
       const { search, apply } = request.query;
 
-      const runHandle: TaskRunHandle = { taskId, runId };
-      const metrics = await taskRunService.aggregateMetrics(runHandle, {
+      const metrics = await taskRunService.aggregateMetrics(taskId, runId, {
         search: search ? mapTaskRunSearchDto(search) : {},
         apply,
       });

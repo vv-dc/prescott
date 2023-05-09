@@ -1,5 +1,8 @@
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
-import { TaskQueueContract } from '@modules/contract/model/task-queue.contract';
+import {
+  ExecuteTaskFn,
+  TaskQueueContract,
+} from '@modules/contract/model/task-queue.contract';
 import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
 import { TaskConfigDto } from '@model/dto/task-config.dto';
 import { EnvInfo } from '@model/domain/env-info';
@@ -20,7 +23,7 @@ export class TaskExecutorService {
     private readonly queue: TaskQueueContract
   ) {}
 
-  async registerExecutable(
+  async scheduleExecutable(
     taskId: number,
     taskConfig: TaskConfigDto,
     callbackFn: TaskCallbackFn
@@ -35,7 +38,7 @@ export class TaskExecutorService {
       callback: async () => {
         const executorFnNullable = await callbackFn(taskId);
         if (executorFnNullable !== null) {
-          await this.queue.enqueue(taskId, executorFnNullable);
+          await this.enqueueExecutable(taskId, executorFnNullable);
         }
       },
       scheduleConfig: config.local.scheduleConfig,
@@ -45,8 +48,12 @@ export class TaskExecutorService {
     dispatchTask(async () => {
       await this.buildClearTask(identifier, envInfo, config.appConfig.steps);
       await this.scheduler.start(taskId);
-      this.logger.info(`registerExecutable[taskId=${taskId}]: scheduled`);
+      this.logger.info(`scheduleExecutable[taskId=${taskId}]: scheduled`);
     });
+  }
+
+  async enqueueExecutable(taskId: number, executorFn: ExecuteTaskFn) {
+    await this.queue.enqueue(taskId, executorFn);
   }
 
   private async buildClearTask(
@@ -92,30 +99,27 @@ export class TaskExecutorService {
   async deleteExecutable(taskId: number): Promise<void> {
     const identifier = buildTaskIdentifier(taskId);
     await this.scheduler.delete(taskId);
-    await this.deleteAllChildren(identifier);
     await this.env.deleteEnv({ envId: identifier, isForce: true });
-  }
-
-  private async deleteAllChildren(envId: string): Promise<void> {
-    const handleIds = await this.env.getEnvChildren(envId);
-    for (const handleId of handleIds) {
-      const envHandle = await this.env.getEnvHandle(handleId);
-      await envHandle.delete({ isForce: true });
-    }
   }
 
   async stopExecutable(taskId: number): Promise<void> {
     const identifier = buildTaskIdentifier(taskId);
     await this.scheduler.stop(taskId);
     await this.stopAllChildren(identifier);
+    this.logger.info(`stopExecutable[taskId=${taskId}]: stop all children`);
   }
 
   private async stopAllChildren(envId: string): Promise<void> {
     const handleIds = await this.env.getEnvChildren(envId);
-    for (const handleId of handleIds) {
+    this.logger.info(
+      `stopAllChildren[envId=${envId}]: found ${handleIds.length} children`
+    );
+    const promises = handleIds.map(async (handleId) => {
       const envHandle = await this.env.getEnvHandle(handleId);
-      await envHandle.stop({});
-    }
+      await envHandle.stop({ timeout: 5_000 }); // TODO: make it configurable
+      this.logger.info(`stopAllChildren[handleId=${handleId}]: done`);
+    });
+    await Promise.allSettled(promises);
   }
 
   async updateExecutable(
@@ -124,6 +128,6 @@ export class TaskExecutorService {
     callbackFn: TaskCallbackFn
   ): Promise<void> {
     await this.deleteExecutable(taskId);
-    await this.registerExecutable(taskId, newConfig, callbackFn);
+    await this.scheduleExecutable(taskId, newConfig, callbackFn);
   }
 }

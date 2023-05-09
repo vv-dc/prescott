@@ -112,6 +112,14 @@ describe('task e2e', () => {
       active: true,
     } as Task & { config: TaskConfigDto });
 
+    // STOP task
+    const stopRes = await fastify.inject({
+      method: 'POST',
+      url: `/groups/${groupId}/tasks/${taskId}/stop`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(stopRes.statusCode).toEqual(204);
+
     // DELETE task
     const deleteRes = await fastify.inject({
       method: 'DELETE',
@@ -201,6 +209,14 @@ describe('task e2e', () => {
     });
     expect(startedGetRes.statusCode).toEqual(200);
     expect(startedGetRes.json()).toMatchObject({ active: true } as Task);
+
+    // STOP task
+    const stopBeforeDeleteRes = await fastify.inject({
+      method: 'POST',
+      url: `/groups/${groupId}/tasks/${taskId}/stop`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+    });
+    expect(stopBeforeDeleteRes.statusCode).toEqual(204);
 
     // DELETE task
     const deletedRes = await fastify.inject({

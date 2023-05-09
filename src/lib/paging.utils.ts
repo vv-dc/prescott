@@ -28,7 +28,7 @@ export const buildPaginator = <T>(
   };
 
   const build = (): EntryPage<T> => ({
-    next: matchedCounter + 1,
+    next: matchedEntries.length === pageSize ? matchedCounter + 1 : undefined,
     entries: matchedEntries,
   });
 

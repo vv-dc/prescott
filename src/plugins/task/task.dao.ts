@@ -23,7 +23,14 @@ export class TaskDao {
   }
 
   async findAll(): Promise<Task[]> {
-    return this.db<Task>('tasks').select('*');
+    return this.db<Task>('tasks').select('*').orderBy('id');
+  }
+
+  async findAllByActive(isActive: boolean): Promise<Task[]> {
+    return this.db('tasks')
+      .select('*')
+      .where({ active: isActive })
+      .orderBy('id');
   }
 
   async create(task: Omit<Task, 'id'>): Promise<number> {

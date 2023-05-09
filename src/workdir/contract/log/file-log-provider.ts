@@ -99,7 +99,7 @@ const searchLog = async (
 };
 
 const flushLog = async (taskId: number): Promise<void> => {
-  const [logDir] = buildLogFilePath({ taskId, runId: 0 });
+  const [logDir] = buildLogFilePath({ taskId, runId: 0, runRank: 0 });
   await rmRecursiveSafe(logDir);
 };
 
