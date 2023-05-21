@@ -7,20 +7,29 @@ import { taskRoutes } from '@plugins/task/task.route';
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import { TaskRunDao } from '@plugins/task/task-run.dao';
+import { TaskRunService } from '@plugins/task/task-run.service';
 
 const task: FastifyPluginAsync = async (fastify) => {
   const { pg, contractMap } = fastify;
   const { env, log, metric } = contractMap;
 
-  const taskDao = new TaskDao(pg);
-  const taskService = new TaskService(
-    taskDao,
-    env as EnvProviderContract,
+  const taskRunDao = new TaskRunDao(pg);
+  const taskRunService = new TaskRunService(
+    taskRunDao,
     log as LogProviderContract,
     metric as MetricProviderContract
   );
 
+  const taskDao = new TaskDao(pg);
+  const taskService = new TaskService(
+    taskDao,
+    taskRunService,
+    env as EnvProviderContract
+  );
+
   fastify.decorate('taskService', taskService);
+  fastify.decorate('taskRunService', taskRunService);
   fastify.register(taskRoutes);
 };
 

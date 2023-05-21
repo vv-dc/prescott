@@ -1,0 +1,14 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-run-search-query.json",
+  "title": "TaskRunSearchQuery",
+  "type": "object",
+  "properties": {
+    "search": {
+      "$ref": "schema://prescott.dev/dto/task-run-search.dto.json"
+    },
+    "paging": {
+      "$ref": "schema://prescott.dev/dto/task-run-paging.dto.json"
+    }
+  },
+  "additionalProperties": false
+}

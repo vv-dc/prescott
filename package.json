@@ -31,6 +31,7 @@
     "@types/node": "^18.15.10",
     "@types/node-cron": "^3.0.7",
     "@types/pidusage": "^2.0.2",
+    "@types/qs": "^6.9.7",
     "@types/uuid": "^9.0.1",
     "@typescript-eslint/eslint-plugin": "^5.56.0",
     "@typescript-eslint/parser": "^5.56.0",
@@ -62,6 +63,7 @@
     "knex": "^2.4.2",
     "node-cron": "^3.0.2",
     "pg": "^8.10.0",
-    "pidusage": "^3.0.2"
+    "pidusage": "^3.0.2",
+    "qs": "^6.11.1"
   }
 }

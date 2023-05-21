@@ -1,0 +1,12 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-run-all-params.json",
+  "title": "TaskRunAllParams",
+  "type": "object",
+  "properties": {
+    "groupId": { "type": "integer" },
+    "taskId": { "type": "integer" },
+    "runId": { "type": "integer" }
+  },
+  "required": ["groupId", "taskId", "runId"],
+  "additionalProperties": false
+}

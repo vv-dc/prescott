@@ -1,0 +1,23 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-run-log-response.json",
+  "title": "TaskRunLogResponse",
+  "type": "object",
+  "properties": {
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "stream": { "type": "string", "enum": ["stderr", "stdout"] },
+          "time": { "type": "integer" },
+          "content": { "type": "string" }
+        },
+        "required": ["stream", "time", "content"],
+        "additionalProperties": false
+      }
+    },
+    "next": { "type": "integer" }
+  },
+  "required": ["entries", "next"],
+  "additionalProperties": false
+}

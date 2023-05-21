@@ -9,13 +9,16 @@ const metricProvider: MetricProviderContract = {
     metricParam = opts.metricParam as number;
     metricWorkDir = opts.workDir;
   },
-  writeMetricBatch: async (id, entries) => {},
-  writeMetric: async (id, entry) => {},
   consumeMetricGenerator: async (id, generator) => {},
   searchMetric: async (id, paging, dto) => ({
     next: 42,
     entries: [],
   }),
+  aggregateMetric: async (runHandle, dto) => ({
+    ram: { max: '1' },
+    cpu: { avg: '42' },
+  }),
+  flushMetric: async (id) => {},
 };
 /* eslint-enable @typescript-eslint/no-unused-vars */
 

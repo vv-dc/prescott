@@ -1,0 +1,13 @@
+{
+  "$id": "schema://prescott.dev/dto/task-run-aggregate.dto.json",
+  "title": "TaskRunAggregateDto",
+  "type": "object",
+  "properties": {
+    "search": {
+      "$ref": "schema://prescott.dev/dto/task-run-search.dto.json"
+    },
+    "apply": { "type": "string" }
+  },
+  "required": ["apply"],
+  "additionalProperties": false
+}

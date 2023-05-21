@@ -6,11 +6,11 @@
     },
     "log": {
       "type": "file",
-      "key": "log-provider.ts"
+      "key": "log/file-log-provider.ts"
     },
     "metric": {
       "type": "file",
-      "key": "metric-provider.ts"
+      "key": "metric/file-metric-provider.ts"
     }
   }
 }

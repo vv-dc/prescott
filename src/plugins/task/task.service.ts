@@ -1,5 +1,3 @@
-import { setImmediate } from 'node:timers';
-
 import * as taskRepository from '@plugins/task/task.repository';
 import { TaskDao } from '@plugins/task/task.dao';
 import {
@@ -22,61 +20,58 @@ import { OsInfo } from '@model/domain/os-info';
 import { Task } from '@model/domain/task';
 import { TaskStep } from '@model/domain/task-step';
 import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
-import { TaskRunId } from '@modules/contract/model/task-run-id';
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
-import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
-import { EnvHandle } from '@modules/contract/model/env-handle';
+import { TaskRunService } from '@plugins/task/task-run.service';
 
 export class TaskService {
   constructor(
     private dao: TaskDao,
-    private envProvider: EnvProviderContract,
-    private logProvider: LogProviderContract,
-    private metricProvider: MetricProviderContract
+    private runService: TaskRunService,
+    private envProvider: EnvProviderContract
   ) {}
 
-  // task is like a clean function, so there is no need to re-build it
   private async runTask(
     identifier: string,
     taskId: number,
     taskConfig: TaskConfigDto
-  ): Promise<TaskRunId> {
+  ): Promise<void> {
+    try {
+      await this.runTaskImpl(identifier, taskId, taskConfig);
+    } catch (err) {
+      // TODO: error handling
+      await this.stopTask(taskId);
+    }
+  }
+
+  // task is like a clean function, so there is no need to re-build it
+  private async runTaskImpl(
+    identifier: string,
+    taskId: number,
+    taskConfig: TaskConfigDto
+  ): Promise<void> {
     const { once, config } = taskConfig;
+
+    const limit = once ? 1 : undefined;
+    const runHandle = await this.runService.tryToRegisterRun(taskId, limit);
+    if (runHandle === null) {
+      // TODO: error handling
+      return;
+    }
 
     const envHandle = await this.envProvider.runEnv({
       envId: identifier,
       limitations: config.appConfig?.limitations,
-      options: {
-        isDelete: false,
-      },
+      options: { isDelete: false },
     });
 
-    const runId: TaskRunId = { runId: envHandle.id(), taskId: identifier };
-    this.registerEnvHandleListeners(runId, envHandle);
-    await envHandle.wait();
+    await this.runService.start(runHandle, envHandle);
+    const exitCode: number = await envHandle.wait();
+    await this.runService.finish(runHandle, exitCode === 0);
 
     await envHandle.delete({ isForce: false });
     if (once) {
       await this.envProvider.deleteEnv({ envId: identifier, isForce: false });
       await this.stopTask(taskId);
     }
-
-    return runId;
-  }
-
-  registerEnvHandleListeners(id: TaskRunId, envHandle: EnvHandle): void {
-    const logGenerator = envHandle.logs();
-    const metricGenerator = envHandle.metrics();
-    setImmediate(async () => {
-      for await (const logEntry of logGenerator) {
-        await this.logProvider.writeLog(id, logEntry);
-      }
-    });
-    setImmediate(async () => {
-      for await (const metricEntry of metricGenerator) {
-        await this.metricProvider.writeMetric(id, metricEntry);
-      }
-    });
   }
 
   /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -121,7 +116,7 @@ export class TaskService {
     }
   }
 
-  // we do not want to make user wait until build
+  // we do not want to make user wait until build,
   // so we just create task, but start it only after build
   private async buildClearTask(
     taskId: number,
@@ -178,6 +173,7 @@ export class TaskService {
 
     await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
     await this.dao.delete(taskId);
+    await this.runService.flushAll(taskId);
   }
 
   private async deleteAllEnvs(identifier: string): Promise<void> {

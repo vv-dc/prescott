@@ -1,0 +1,8 @@
+{
+  "$id": "schema://prescott.dev/api/task/task-get-runs.json",
+  "title": "TaskGetRuns",
+  "type": "array",
+  "items": {
+    "$ref": "schema://prescott.dev/domain/task-run.json"
+  }
+}

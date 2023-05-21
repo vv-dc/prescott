@@ -9,7 +9,10 @@ import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 import { EntryPage } from '@modules/contract/model/entry-paging';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  MetricEntry,
+  MetricsAggregated,
+} from '@modules/contract/model/metric-entry';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
 
 describe('contract-validator unit', () => {
@@ -49,12 +52,11 @@ describe('contract-validator unit', () => {
     const logImpl: LogProviderContract = {
       init: async (opts) => {},
       consumeLogGenerator: async (id, generator) => {},
-      writeLog: async (id, entry) => {},
-      writeLogBatch: async (id, entries) => {},
       searchLog: async (id, paging, dto) => ({
         next: 42,
         entries: [],
       }),
+      flushLog: async (id) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContactImpl('log', logImpl);
@@ -74,9 +76,9 @@ describe('contract-validator unit', () => {
     const metricImpl: MetricProviderContract = {
       init: async (opts) => {},
       consumeMetricGenerator: async (id, generator) => {},
-      writeMetric: async (id, entry) => {},
-      writeMetricBatch: async (id, entries) => {},
+      aggregateMetric: async (id, dto) => ({} as MetricsAggregated),
       searchMetric: async (id, paging, dto) => ({} as EntryPage<MetricEntry>),
+      flushMetric: async (id) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContactImpl('metric', metricImpl);

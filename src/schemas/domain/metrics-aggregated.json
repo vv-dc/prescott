@@ -1,0 +1,9 @@
+{
+  "$id": "schema://prescott.dev/domain/metrics-aggregated.json",
+  "title": "MetricsAggregated",
+  "type": "object",
+  "properties": {},
+  "additionalProperties": {
+    "$ref": "schema://prescott.dev/domain/metric-value.json"
+  }
+}

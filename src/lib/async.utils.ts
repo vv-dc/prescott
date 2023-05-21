@@ -1,3 +1,5 @@
+import { setTimeout } from 'node:timers/promises';
+
 export const asyncGeneratorToArray = async <T>(
   generator: AsyncGenerator<T>
 ): Promise<T[]> => {
@@ -7,3 +9,35 @@ export const asyncGeneratorToArray = async <T>(
   }
   return array;
 };
+
+export class InMemoryMutex {
+  private lockedResources = new Set<string>();
+
+  constructor(private retryTimeout: number, private retryNumber: number) {}
+
+  async run<T>(label: string, fn: () => Promise<T>): Promise<T> {
+    return this.runImpl(label, fn, 0);
+  }
+
+  private async runImpl<T>(
+    resource: string,
+    fn: () => Promise<T>,
+    retryIdx: number
+  ): Promise<T> {
+    if (retryIdx >= this.retryNumber) {
+      throw new Error(
+        `InMemoryMutex: [${this.retryNumber}] retries exceeded for ${resource}`
+      );
+    }
+    if (this.lockedResources.has(resource)) {
+      await setTimeout(this.retryTimeout);
+      return await this.runImpl(resource, fn, retryIdx + 1);
+    }
+    try {
+      this.lockedResources.add(resource);
+      return await fn();
+    } finally {
+      this.lockedResources.delete(resource);
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import Fastify, { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import fp from 'fastify-plugin';
+import { parse } from 'qs';
 import fastifyAutoload, { AutoloadPluginOptions } from '@fastify/autoload';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
@@ -52,6 +53,7 @@ const buildServer = async (): Promise<FastifyInstance> => {
   const server = Fastify({
     logger,
     ajv: { customOptions: ajvOptions },
+    querystringParser: (str) => parse(str),
   });
   await server.register(fp(app));
   return server;
