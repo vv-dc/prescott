@@ -61,7 +61,6 @@ export class TaskExecutorService {
     envInfo: EnvInfo,
     steps: TaskStep[]
   ): Promise<void> {
-    // TODO: add logging and error handling for builds
     await this.env.compileEnv({
       alias: identifier,
       envInfo,

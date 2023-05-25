@@ -18,7 +18,6 @@ import {
 } from '@modules/contract/model/env-handle';
 import { LogEntry, LogEntryStream } from '@modules/contract/model/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric-entry';
-import { getLogger } from '@logger/logger';
 
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';

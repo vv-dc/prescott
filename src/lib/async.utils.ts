@@ -18,7 +18,7 @@ export const dispatchTask = (fn: () => Promise<unknown>): void => {
   fn().catch((err) => {
     const reason = errorToReason(err);
     const fnName = fn.name || 'anonymous';
-    logger.error(`dispatchTask: failed for ${fnName}- ${reason}`);
+    logger.error(`dispatchTask: failed for ${fnName} - ${reason}`);
   });
 };
 
