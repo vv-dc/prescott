@@ -1,0 +1,29 @@
+{
+  "name": "Send emails",
+  "times": 1,
+  "envInfo": {
+    "name": "node",
+    "version": "18-alpine3.16"
+  },
+  "config": {
+    "local": {
+      "scheduleConfig": "*/10 * * * * *"
+    },
+    "appConfig": {
+      "steps": [
+        {
+          "name": "Set up project",
+          "script": "yarn init -y"
+        },
+        {
+          "name": "Install dependencies",
+          "script": "yarn add nodemailer"
+        },
+        {
+          "name": "Run script",
+          "script": "node -e <content of script.js>"
+        }
+      ]
+    }
+  }
+}
