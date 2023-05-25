@@ -11,6 +11,6 @@ export const DOCKER_IMAGES = {
   },
   alpine: {
     name: 'alpine',
-    version: 3.15,
+    version: '3.15',
   },
 };

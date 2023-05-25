@@ -17,4 +17,6 @@ export const contractConfigSchema = Joi.object<ContractConfigFile>({
   env: contractConfigEntrySchema,
   log: contractConfigEntrySchema,
   metric: contractConfigEntrySchema,
+  scheduler: contractConfigEntrySchema,
+  queue: contractConfigEntrySchema,
 });

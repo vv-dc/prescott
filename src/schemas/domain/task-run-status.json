@@ -1,0 +1,6 @@
+{
+  "$id": "schema://prescott.dev/domain/task-run-status.json",
+  "title": "TaskRunStatus",
+  "type": "string",
+  "enum": ["running", "failed", "succeed", "pending", "stopped"]
+}

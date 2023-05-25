@@ -11,6 +11,10 @@ import {
   ContractSourceType,
 } from '@modules/contract/model/contract-config';
 import { Contract, ContractModule } from '@modules/contract/model/contract';
+import { getLogger } from '@logger/logger';
+import { errorToReason } from '@modules/errors/get-error-reason';
+
+const logger = getLogger('config-loader');
 
 export const buildContractMap = async (
   config: ContractConfigFile,
@@ -34,6 +38,7 @@ export const buildContractMap = async (
     contractMap[type] = impl;
   }
 
+  logger.info(`Loaded root config from workDir=${workDir}`);
   return contractMap;
 };
 
@@ -48,7 +53,7 @@ export const buildContract = async (
     await contract.init({ ...opts, workDir });
     return contract;
   } catch (err) {
-    const reason = err instanceof Error ? err.message : 'Unknown error';
+    const reason = errorToReason(err);
     throw new Error(
       `Unable to build contract for ${JSON.stringify(configEntry)}: ${reason}`
     );

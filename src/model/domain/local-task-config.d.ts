@@ -2,7 +2,7 @@ export type MemoryLimit = string;
 
 export interface LocalTaskConfig {
   local: {
-    cronString: string;
+    scheduleConfig: string;
   };
   appConfig: BaseTaskConfig;
 }

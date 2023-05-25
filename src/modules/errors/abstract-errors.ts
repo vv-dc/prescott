@@ -28,3 +28,9 @@ export class UnauthorizedUser extends AbstractError {
     super(message);
   }
 }
+
+export class BadRequest extends AbstractError {
+  constructor(message: string) {
+    super(message);
+  }
+}

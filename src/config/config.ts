@@ -2,12 +2,12 @@ import 'dotenv/config';
 import * as process from 'node:process';
 import * as path from 'node:path';
 import { argon2id } from 'argon2';
+import { LevelWithSilent } from 'pino';
 
 import { PgConfig } from '@config/model/pg.config';
 import { ServerConfig } from '@config/model/server.config';
 import { SchemasConfig } from '@config/model/schemas.config';
 import { PasswordConfig } from '@config/model/password.config';
-import { JwtConfig } from '@config/model/jwt.config';
 import { AuthConfig } from '@config/model/auth.config';
 import { PrescottConfig } from '@config/model/prescott.config';
 
@@ -26,19 +26,19 @@ export const config: {
 } = {
   [PRESCOTT_CONFIG]: {
     workDir: process.env.PRESCOTT_WORKDIR || path.join(__dirname, '../workdir'),
+    logLevel: (process.env.PRESCOTT_LOG_LEVEL as LevelWithSilent) || 'debug',
   },
   [SERVER_CONFIG]: {
-    port: process.env.PORT ?? 8080,
+    port: parseInt(process.env.PORT || '', 10) ?? 8080,
     host: process.env.HOST ?? '0.0.0.0',
-    logger: true,
-  } as ServerConfig,
+  },
   [PG_CONFIG]: {
     host: process.env.PGHOST ?? '0.0.0.0',
-    port: process.env.PGPORT ?? 5432,
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    database: process.env.PGDB,
-  } as PgConfig,
+    port: parseInt(process.env.PGPORT || '', 10) ?? 5432,
+    user: process.env.PGUSER as string,
+    password: process.env.PGPASSWORD as string,
+    database: process.env.PGDB as string,
+  },
   [SCHEMAS_CONFIG]: {
     schemasPath: path.join(__dirname, '../', 'schemas/'),
     schemasIdPrefix: 'schema://prescott.dev/',
@@ -54,10 +54,10 @@ export const config: {
       memoryCost: 15360,
     } as PasswordConfig,
     jwtConfig: {
-      secret: process.env.JWT_SECRET,
+      secret: process.env.JWT_SECRET as string,
       accessExpiresIn: 900, // in seconds
       refreshExpiresIn: 5.184e9,
-    } as JwtConfig,
+    },
     maxSessions: 5,
   },
 };

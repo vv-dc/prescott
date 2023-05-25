@@ -18,6 +18,7 @@
       "@src/*": ["./src/*"],
       "@lib/*": ["./src/lib/*"],
       "@config/*": ["./src/config/*"],
+      "@logger/*": ["./src/logger/*"],
       "@plugins/*": ["./src/plugins/*"],
       "@model/*": ["./src/model/*"],
       "@modules/*": ["./src/modules/*"],

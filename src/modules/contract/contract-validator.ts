@@ -8,11 +8,15 @@ import { envProviderSchema } from '@modules/contract/schema/env-provider.schema'
 import { logProviderSchema } from '@modules/contract/schema/log-provider.schema';
 import { metricProviderSchema } from '@modules/contract/schema/metric-provider.schema';
 import { contractConfigSchema } from '@modules/contract/schema/contract-config.schema';
+import { taskSchedulerSchema } from '@modules/contract/schema/task-scheduler.schema';
+import { taskQueueSchema } from '@modules/contract/schema/task-queue.schema';
 
 const contractSchema: Record<ContractType, Schema> = {
   env: envProviderSchema,
   log: logProviderSchema,
   metric: metricProviderSchema,
+  scheduler: taskSchedulerSchema,
+  queue: taskQueueSchema,
 };
 
 export const validateContactImpl = (

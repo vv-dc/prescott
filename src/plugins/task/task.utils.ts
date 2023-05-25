@@ -8,8 +8,8 @@ export const buildTaskCmd = (separator: string, steps: TaskStep[]): string => {
   for (const step of steps) {
     const { script, ignoreFailure } = step;
     const scriptParsed = decodeBase64(script);
-    const method = ignoreFailure === true ? 'then' : 'chain';
-    command.then(scriptParsed)[method]('echo').with(separator);
+    const method = ignoreFailure ? 'then' : 'chain';
+    command[method](scriptParsed);
   }
 
   return command.build();

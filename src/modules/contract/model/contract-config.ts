@@ -2,7 +2,13 @@ import { Contract, ContractOpts } from '@modules/contract/model/contract';
 
 export type ContractConfigFile = Record<ContractType, ContractConfigFileEntry>;
 
-export const CONTRACT_CONFIG_TYPES = ['env', 'log', 'metric'] as const;
+export const CONTRACT_CONFIG_TYPES = [
+  'env',
+  'log',
+  'metric',
+  'scheduler',
+  'queue',
+] as const;
 export type ContractType = (typeof CONTRACT_CONFIG_TYPES)[number];
 
 export interface ContractConfigFileEntry {

@@ -7,8 +7,6 @@ const { workDir } = config[PRESCOTT_CONFIG];
 
 const boostrap: FastifyPluginAsync = async (fastify) => {
   const rootConfig = await getRootConfig(workDir);
-  fastify.log.info(`Root config loaded from ${workDir}`);
-
   fastify.decorate('contractMap', rootConfig.contractMap);
 };
 

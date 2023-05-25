@@ -1,5 +1,5 @@
 import { Limitations } from '@model/domain/limitations';
-import { OsInfo } from '@model/domain/os-info';
+import { EnvInfo } from '@model/domain/env-info';
 import { EnvHandle } from '@modules/contract/model/env-handle';
 import { Contract } from '@modules/contract/model/contract';
 
@@ -25,7 +25,7 @@ export interface RunEnvOptions {
 
 export interface CompileEnvDto {
   alias: string;
-  envInfo: OsInfo;
+  envInfo: EnvInfo;
   script: string;
   isCache: boolean;
 }

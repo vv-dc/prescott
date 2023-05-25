@@ -22,6 +22,17 @@ const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
     type: 'file',
     key: 'metric-provider.ts',
   },
+  scheduler: {
+    type: 'file',
+    key: 'task-scheduler.ts',
+  },
+  queue: {
+    type: 'file',
+    key: 'task-queue.ts',
+    opts: {
+      maxConcurrency: 5,
+    },
+  },
 };
 
 export const getRootConfig = async (workDir: string): Promise<RootConfig> => {

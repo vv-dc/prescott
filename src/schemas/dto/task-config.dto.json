@@ -4,14 +4,14 @@
   "type": "object",
   "properties": {
     "name": { "type": "string" },
-    "osInfo": {
-      "$ref": "schema://prescott.dev/domain/os-info.json"
+    "envInfo": {
+      "$ref": "schema://prescott.dev/domain/env-info.json"
     },
-    "once": { "type": "boolean", "default": false },
+    "times": { "type": "number", "minimum": 1 },
     "config": {
       "$ref": "schema://prescott.dev/domain/task-config.json"
     }
   },
-  "required": ["name", "osInfo", "config"],
+  "required": ["name", "envInfo", "config"],
   "additionalProperties": false
 }

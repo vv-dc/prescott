@@ -1,13 +1,13 @@
 {
-  "$id": "schema://prescott.dev/domain/os-info.json",
-  "title": "OsInfo",
+  "$id": "schema://prescott.dev/domain/env-info.json",
+  "title": "EnvInfo",
   "type": "object",
   "properties": {
     "name": {
       "type": "string"
     },
     "version": {
-      "type": ["number", "string"]
+      "type": "string"
     }
   },
   "required": ["name"],

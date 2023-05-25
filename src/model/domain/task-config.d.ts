@@ -1,9 +1,9 @@
-export type TaskConfig = LocalTaskConfig | RepositoryTaskConfig;
+export type TaskConfig = LocalTaskConfig;
 export type MemoryLimit = string;
 
 export interface LocalTaskConfig {
   local: {
-    cronString: string;
+    scheduleConfig: string;
   };
   appConfig: BaseTaskConfig;
 }
@@ -21,11 +21,4 @@ export interface Limitations {
   rom?: MemoryLimit;
   ttl?: number;
   cpus?: number;
-}
-export interface RepositoryTaskConfig {
-  repository: {
-    url: string;
-    branch: string;
-  };
-  appConfig: BaseTaskConfig;
 }

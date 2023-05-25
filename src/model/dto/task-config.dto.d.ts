@@ -1,19 +1,19 @@
-export type TaskConfig = LocalTaskConfig | RepositoryTaskConfig;
+export type TaskConfig = LocalTaskConfig;
 export type MemoryLimit = string;
 
 export interface TaskConfigDto {
   name: string;
-  osInfo: OsInfo;
-  once?: boolean;
+  envInfo: EnvInfo;
+  times?: number;
   config: TaskConfig;
 }
-export interface OsInfo {
+export interface EnvInfo {
   name: string;
-  version?: number | string;
+  version?: string;
 }
 export interface LocalTaskConfig {
   local: {
-    cronString: string;
+    scheduleConfig: string;
   };
   appConfig: BaseTaskConfig;
 }
@@ -31,11 +31,4 @@ export interface Limitations {
   rom?: MemoryLimit;
   ttl?: number;
   cpus?: number;
-}
-export interface RepositoryTaskConfig {
-  repository: {
-    url: string;
-    branch: string;
-  };
-  appConfig: BaseTaskConfig;
 }

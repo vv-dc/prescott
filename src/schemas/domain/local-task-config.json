@@ -6,9 +6,9 @@
     "local": {
       "type": "object",
       "properties": {
-        "cronString": { "type": "string" }
+        "scheduleConfig": { "type": "string" }
       },
-      "required": ["cronString"],
+      "required": ["scheduleConfig"],
       "additionalProperties": false
     },
     "appConfig": {

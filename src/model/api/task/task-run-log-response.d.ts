@@ -4,5 +4,5 @@ export interface TaskRunLogResponse {
     time: number;
     content: string;
   }[];
-  next: number;
+  next?: number;
 }

@@ -1,5 +1,5 @@
-import { setImmediate } from 'node:timers';
-import { InMemoryMutex } from '@lib/async.utils';
+import { getLogger } from '@logger/logger';
+import { dispatchTask, InMemoryMutex } from '@lib/async.utils';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskRun } from '@model/domain/task-run';
@@ -15,13 +15,15 @@ import {
   EntryPaging,
   EntrySearchDto,
 } from '@modules/contract/model/entry-paging';
-import { EntityNotFound } from '@modules/errors/abstract-errors';
+import { BadRequest, EntityNotFound } from '@modules/errors/abstract-errors';
 import {
   MetricEntry,
   MetricsAggregated,
 } from '@modules/contract/model/metric-entry';
+import { TaskRunStatus } from '@model/domain/task-run-status';
 
 export class TaskRunService {
+  private logger = getLogger('task-run-service');
   private mutex = new InMemoryMutex(1_000, 5);
 
   constructor(
@@ -30,38 +32,66 @@ export class TaskRunService {
     private metric: MetricProviderContract
   ) {}
 
-  async getOne(runId: number): Promise<TaskRun> {
+  async getOneThrowable(runId: number): Promise<TaskRun> {
     const runNullable = await this.dao.findOneById(runId);
-    if (runNullable === null) {
-      throw new EntityNotFound('TaskRun is not found');
+    if (runNullable === undefined) {
+      this.logger.warn(`getOneThrowable[runId=${runId}]: not found`);
+      throw new EntityNotFound(`TaskRun is not found: runId=${runId}`);
     }
     return runNullable;
+  }
+
+  async getOneThrowableByTaskId(
+    taskId: number,
+    runId: number
+  ): Promise<TaskRun> {
+    const taskRun = await this.getOneThrowable(runId);
+    if (taskRun.taskId !== taskId) {
+      this.logger.warn(
+        `getOneThrowableByTaskId[runId=${runId}]: does not belong to taskId=${taskId}`
+      );
+      throw new BadRequest(
+        `TaskRun[id=${runId}] does not belong to taskId=${taskId}`
+      );
+    }
+    return taskRun;
   }
 
   getAll(taskId: number): Promise<TaskRun[]> {
     return this.dao.findAllByTaskId(taskId);
   }
 
-  private async isRunAllowed(taskId: number, limit?: number) {
-    if (limit === undefined) return true;
-    const runsCount = await this.dao.countByTaskId(taskId);
-    return runsCount < limit;
+  getAllByStatus(taskId: number, status: TaskRunStatus): Promise<TaskRun[]> {
+    return this.dao.findAllByTaskIdAndStatus(taskId, status);
   }
 
-  async tryToRegisterRun(
+  private async isRunAllowed(
     taskId: number,
     limit?: number
-  ): Promise<TaskRunHandle | null> {
+  ): Promise<[boolean, number]> {
+    if (limit === undefined) return [true, Infinity];
+    const runsCount = await this.dao.countByTaskId(taskId);
+    return [runsCount < limit, runsCount];
+  }
+
+  async tryToRegister(taskId: number, limit?: number): Promise<TaskRun | null> {
     return this.mutex.run(taskId.toString(), async () => {
-      if (!(await this.isRunAllowed(taskId, limit))) {
+      const [isRunAllowed, runsCount] = await this.isRunAllowed(taskId, limit);
+      if (!isRunAllowed) {
+        this.logger.warn(`tryToRegister[taskId=${taskId}]: run is not allowed`);
         return null;
       }
-      const { id: runId } = await this.dao.create({
+      const runRank = runsCount + 1;
+      const taskRun = await this.dao.create({
         taskId,
+        rank: runRank,
         status: 'pending',
         createdAt: new Date(),
       });
-      return { runId, taskId };
+      this.logger.info(
+        `tryToRegister[taskId=${taskId}]: runId=${taskRun.id}, runRank=${runRank}`
+      );
+      return taskRun;
     });
   }
 
@@ -73,6 +103,7 @@ export class TaskRunService {
       startedAt: new Date(),
     });
     this.registerRunListeners(runHandle, envHandle);
+    this.logger.info(`start[runId=${runId}]: handleId=${envHandle.id()}`);
   }
 
   async finish(runHandle: TaskRunHandle, isSuccess: boolean): Promise<void> {
@@ -81,15 +112,25 @@ export class TaskRunService {
       status: isSuccess ? 'succeed' : 'failed',
       finishedAt: new Date(),
     });
+    this.logger.info(`finish[runId=${runId}]: success=${isSuccess}`);
+  }
+
+  async stopAll(taskId: number): Promise<void> {
+    const count = await this.dao.updateAllByTaskIdAndStatus(taskId, 'pending', {
+      status: 'stopped',
+      finishedAt: new Date(),
+    });
+    this.logger.info(`stopAll[taskId=${taskId}]: done for ${count} runs`);
   }
 
   registerRunListeners(runHandle: TaskRunHandle, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
-    setImmediate(() => this.log.consumeLogGenerator(runHandle, logGenerator));
-
     const metricGenerator = envHandle.metrics();
-    setImmediate(() =>
-      this.metric.consumeMetricGenerator(runHandle, metricGenerator)
+    dispatchTask(() =>
+      Promise.all([
+        this.log.consumeLogGenerator(runHandle, logGenerator),
+        this.metric.consumeMetricGenerator(runHandle, metricGenerator),
+      ])
     );
   }
 
@@ -99,28 +140,34 @@ export class TaskRunService {
   }
 
   async searchLogs(
-    runHandle: TaskRunHandle,
+    taskId: number,
+    runId: number,
     dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<LogEntry>> {
-    await this.getOne(runHandle.runId);
+    const taskRun = await this.getOneThrowableByTaskId(taskId, runId);
+    const runHandle: TaskRunHandle = { taskId, runId, runRank: taskRun.rank };
     return this.log.searchLog(runHandle, dto, paging);
   }
 
   async searchMetrics(
-    runHandle: TaskRunHandle,
+    taskId: number,
+    runId: number,
     dto: EntrySearchDto,
     paging: EntryPaging
   ): Promise<EntryPage<MetricEntry>> {
-    await this.getOne(runHandle.runId);
+    const taskRun = await this.getOneThrowableByTaskId(taskId, runId);
+    const runHandle: TaskRunHandle = { taskId, runId, runRank: taskRun.rank };
     return this.metric.searchMetric(runHandle, dto, paging);
   }
 
   async aggregateMetrics(
-    runHandle: TaskRunHandle,
+    taskId: number,
+    runId: number,
     dto: MetricAggregateDto
   ): Promise<MetricsAggregated> {
-    await this.getOne(runHandle.runId);
+    const taskRun = await this.getOneThrowableByTaskId(taskId, runId);
+    const runHandle: TaskRunHandle = { taskId, runId, runRank: taskRun.rank };
     return this.metric.aggregateMetric(runHandle, dto);
   }
 }

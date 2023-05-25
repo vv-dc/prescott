@@ -1,136 +1,141 @@
-import * as taskRepository from '@plugins/task/task.repository';
+import { getLogger } from '@logger/logger';
+import { BadRequest, EntityConflict } from '@modules/errors/abstract-errors';
+import { errorToReason } from '@modules/errors/get-error-reason';
 import { TaskDao } from '@plugins/task/task.dao';
-import {
-  buildTaskCmd,
-  buildTaskIdentifier,
-  buildTaskUniqueName,
-} from '@plugins/task/task.utils';
-import { TaskCronConfig } from '@plugins/task/model/task-cron-config';
-import {
-  EntityConflict,
-  EntityNotFound,
-} from '@modules/errors/abstract-errors';
-import { cronEveryNMinutes } from '@lib/cron.utils';
-import {
-  TaskConfigDto,
-  LocalTaskConfig,
-  RepositoryTaskConfig,
-} from '@model/dto/task-config.dto';
-import { OsInfo } from '@model/domain/os-info';
-import { Task } from '@model/domain/task';
-import { TaskStep } from '@model/domain/task-step';
-import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
+import { buildTaskUniqueName } from '@plugins/task/task.utils';
+import { TaskExecutorService } from '@plugins/task/task-executor.service';
 import { TaskRunService } from '@plugins/task/task-run.service';
+import { Task } from '@model/domain/task';
+import { TaskConfigDto, LocalTaskConfig } from '@model/dto/task-config.dto';
+import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
+import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
+import { ExecuteTaskFn } from '@modules/contract/model/task-queue.contract';
 
 export class TaskService {
+  private readonly logger = getLogger('task-service');
+
   constructor(
-    private dao: TaskDao,
-    private runService: TaskRunService,
-    private envProvider: EnvProviderContract
+    private readonly dao: TaskDao,
+    private readonly executorService: TaskExecutorService,
+    private readonly runService: TaskRunService
   ) {}
 
-  private async runTask(
-    identifier: string,
-    taskId: number,
-    taskConfig: TaskConfigDto
-  ): Promise<void> {
+  async registerFromDatabase(): Promise<void> {
+    const tasks = await this.dao.findAllByActive(true);
+    for (const task of tasks) {
+      const { id: taskId, config } = task;
+      await this.enqueuePendingRuns(task);
+
+      const taskConfig: TaskConfigDto = JSON.parse(config);
+      await this.register(taskId, taskConfig);
+    }
+    this.logger.info(`registerFromDatabase: registered ${tasks.length} tasks`);
+  }
+
+  private async enqueuePendingRuns(task: Task): Promise<void> {
+    const { id: taskId } = task;
+    const pendingRuns = await this.runService.getAllByStatus(taskId, 'pending');
+
+    for (const taskRun of pendingRuns) {
+      const { id: runId, rank: runRank } = taskRun;
+      const runHandle: TaskRunHandle = { taskId, runId, runRank };
+      const executorFn = this.buildExecutorFn(runHandle);
+      await this.executorService.enqueueExecutable(taskId, executorFn);
+    }
+
+    this.logger.info(
+      `enqueuePendingRuns[taskId=${taskId}]: ${pendingRuns.length} runs`
+    );
+  }
+
+  async register(taskId: number, taskConfig: TaskConfigDto): Promise<void> {
+    const callbackFn = this.buildTaskCallbackFn();
+    await this.executorService.scheduleExecutable(
+      taskId,
+      taskConfig,
+      callbackFn
+    );
+    this.logger.info(`register[taskId=${taskId}]: name=${taskConfig.name}`);
+  }
+
+  private buildTaskCallbackFn(): TaskCallbackFn {
+    return async (taskId) => {
+      const [isActive, task] = await this.isTaskActive(taskId);
+      if (!isActive) {
+        this.logger.warn(`callbackFn[taskId=${taskId}]: skip - is not allowed`);
+        return null;
+      }
+      const config: TaskConfigDto = JSON.parse((task as Task).config);
+      const taskRun = await this.runService.tryToRegister(taskId, config.times);
+      if (taskRun === null) {
+        await this.executorService.unscheduleExecutable(taskId);
+        return null;
+      }
+      const runHandle: TaskRunHandle = {
+        taskId,
+        runId: taskRun.id,
+        runRank: taskRun.rank,
+      };
+      return this.buildExecutorFn(runHandle);
+    };
+  }
+
+  private buildExecutorFn(runHandle: TaskRunHandle): ExecuteTaskFn {
+    return () => this.runTask(runHandle);
+  }
+
+  private async runTask(runHandle: TaskRunHandle): Promise<void> {
     try {
-      await this.runTaskImpl(identifier, taskId, taskConfig);
+      await this.runTaskImpl(runHandle);
     } catch (err) {
-      // TODO: error handling
+      const { taskId, runId } = runHandle;
+      const reason = errorToReason(err);
+      this.logger.warn(
+        `runTask[taskId=${taskId}, runId=${runId}]: failed - ${reason}`
+      );
       await this.stopTask(taskId);
     }
   }
 
   // task is like a clean function, so there is no need to re-build it
-  private async runTaskImpl(
-    identifier: string,
-    taskId: number,
-    taskConfig: TaskConfigDto
-  ): Promise<void> {
-    const { once, config } = taskConfig;
-
-    const limit = once ? 1 : undefined;
-    const runHandle = await this.runService.tryToRegisterRun(taskId, limit);
-    if (runHandle === null) {
-      // TODO: error handling
+  private async runTaskImpl(runHandle: TaskRunHandle): Promise<void> {
+    const { taskId } = runHandle;
+    const [isRunAllowed, task] = await this.isTaskActive(taskId);
+    if (!isRunAllowed) {
+      this.logger.warn(`runTask[taskId=${taskId}]: skip - is not allowed`);
       return;
     }
 
-    const envHandle = await this.envProvider.runEnv({
-      envId: identifier,
-      limitations: config.appConfig?.limitations,
-      options: { isDelete: false },
-    });
+    const taskConfig: TaskConfigDto = JSON.parse((task as Task).config);
+    const { config, times } = taskConfig;
 
+    const envHandle = await this.executorService.runExecutable(taskId, config);
     await this.runService.start(runHandle, envHandle);
     const exitCode: number = await envHandle.wait();
     await this.runService.finish(runHandle, exitCode === 0);
 
     await envHandle.delete({ isForce: false });
-    if (once) {
-      await this.envProvider.deleteEnv({ envId: identifier, isForce: false });
-      await this.stopTask(taskId);
+    this.logger.info(`runTask[taskId=${taskId}]: exitCode=${exitCode}`);
+
+    if (times !== undefined && runHandle.runRank >= times) {
+      await this.executorService.stopExecutable(taskId);
+      await this.executorService.deleteExecutableEnv(taskId);
+      await this.dao.setActive(taskId, false);
+      this.logger.info(`runTask[taskId=${taskId}]: stop - no runs left`);
     }
   }
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  async runWatch(
-    identifier: string,
-    taskId: number,
-    config: TaskConfigDto
-  ): Promise<void> {
-    // TODO: try to clone, build and then run
-  }
-  // eslint-enable @typescript-eslint/no-unused-vars
-
-  private async register(
-    identifier: string,
-    taskId: number,
-    taskConfig: TaskConfigDto
-  ): Promise<void> {
-    const { config } = taskConfig;
-    const external = 'repository' in config;
-
-    const taskCronConfig: TaskCronConfig = {
-      taskId,
-      callback: async () => {
-        const runner = external ? 'runWatch' : 'runTask';
-        await this[runner](identifier, taskId, taskConfig);
-      },
-      cronString: external ? cronEveryNMinutes(5) : config.local.cronString,
-    };
-
-    taskRepository.addTask(taskCronConfig);
-  }
-
-  async registerFromDatabase(): Promise<void> {
-    const tasks = await this.dao.findAll();
-    for (const task of tasks) {
-      const { id, config, active } = task as Required<Task>;
-      if (active) {
-        const taskConfig: TaskConfigDto = JSON.parse(config);
-        const identifier = buildTaskIdentifier(id);
-        await this.register(identifier, id, taskConfig);
-      }
+  private async isTaskActive(taskId: number): Promise<[boolean, Task | null]> {
+    const task = await this.dao.findById(taskId);
+    if (task === undefined) {
+      this.logger.warn(`isTaskActive[taskId=${taskId}]: does not exist`);
+      return [false, null];
     }
-  }
-
-  // we do not want to make user wait until build,
-  // so we just create task, but start it only after build
-  private async buildClearTask(
-    taskId: number,
-    identifier: string,
-    envInfo: OsInfo,
-    steps: TaskStep[]
-  ): Promise<void> {
-    await this.envProvider.compileEnv({
-      alias: identifier,
-      envInfo,
-      script: buildTaskCmd(identifier, steps),
-      isCache: false,
-    });
-    taskRepository.startTask(taskId);
+    if (!task.active) {
+      this.logger.warn(`isTaskActive[taskId=${taskId}]: is NOT active`);
+      return [false, task];
+    }
+    return [true, task];
   }
 
   async createTask(
@@ -138,113 +143,73 @@ export class TaskService {
     userId: number,
     taskConfig: TaskConfigDto
   ): Promise<number> {
-    const { name, osInfo, config, once } = taskConfig;
-    if ((await this.dao.findByName(name)) !== undefined) {
-      throw new EntityConflict('Task with passed name already exists');
+    const uniqueName = buildTaskUniqueName(groupId, taskConfig.name);
+    if ((await this.dao.findByName(uniqueName)) !== undefined) {
+      throw new EntityConflict(`Task with name=${uniqueName} already exists`);
     }
 
     const taskId = await this.dao.create({
       userId,
       groupId,
-      name: buildTaskUniqueName(groupId, name),
-      active: !once, // one time task should be disabled immediately
+      name: uniqueName,
+      active: true,
       config: JSON.stringify(taskConfig),
     });
+    await this.register(taskId, taskConfig);
 
-    const identifier = buildTaskIdentifier(taskId);
-    await this.register(identifier, taskId, taskConfig); // cron job created, but not started
-    const clearTask = !('repository' in config);
-
-    if (clearTask) {
-      const { steps } = config.appConfig;
-      // TODO: do it asynchronously
-      await this.buildClearTask(taskId, identifier, osInfo, steps);
-    }
-
+    this.logger.info(`createTask[taskId=${taskId}]: created`);
     return taskId;
   }
 
   async deleteTask(taskId: number): Promise<void> {
-    taskRepository.deleteTask(taskId);
-    await this.assertTaskExists(taskId);
-
-    const identifier = buildTaskIdentifier(taskId);
-    await this.deleteAllEnvs(identifier);
-
-    await this.envProvider.deleteEnv({ envId: identifier, isForce: true });
-    await this.dao.delete(taskId);
+    const task = await this.dao.findByIdThrowable(taskId);
+    if (task.active) {
+      this.logger.warn(`deleteTask[taskId=${taskId}]: task is active`);
+      throw new BadRequest(`Cannot delete active task: taskId=${taskId}`);
+    }
+    await this.executorService.deleteExecutable(taskId);
     await this.runService.flushAll(taskId);
-  }
-
-  private async deleteAllEnvs(identifier: string): Promise<void> {
-    const handleIds = await this.envProvider.getEnvChildren(identifier);
-    for (const handleId of handleIds) {
-      const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.delete({ isForce: true });
-    }
-  }
-
-  private async stopAllEnvs(identifier: string): Promise<void> {
-    const handleIds = await this.envProvider.getEnvChildren(identifier);
-    for (const handleId of handleIds) {
-      const envHandle = await this.envProvider.getEnvHandle(handleId);
-      await envHandle.stop({}).catch(() => {});
-    }
+    await this.dao.delete(taskId);
+    this.logger.info(`deleteTask[taskId=${taskId}]: deleted`);
   }
 
   async stopTask(taskId: number): Promise<void> {
-    await this.assertTaskExists(taskId);
-
-    const identifier = buildTaskIdentifier(taskId);
-    taskRepository.stopTask(taskId);
-    await this.stopAllEnvs(identifier);
-
-    await this.dao.setActive(taskId, false);
-  }
-
-  private async assertTaskExists(taskId: number): Promise<void> {
-    const task = await this.dao.findById(taskId);
-    if (task === undefined) {
-      throw new EntityNotFound('Task does not exist');
+    const task = await this.dao.findByIdThrowable(taskId);
+    if (!task.active) {
+      this.logger.warn(`stopTask[taskId=${taskId}]: task is NOT active`);
+      throw new BadRequest(`Cannot stop NOT active task: taskId=${taskId}`);
     }
+    await this.dao.setActive(taskId, false);
+    await this.executorService.stopExecutable(taskId);
+    await this.runService.stopAll(taskId);
+    this.logger.info(`stopTask[taskId=${taskId}]: set active=false`);
   }
 
   async startTask(taskId: number): Promise<void> {
-    await this.assertTaskExists(taskId);
-
-    await this.dao.setActive(taskId, true);
-    if (!taskRepository.existsTask(taskId)) {
-      const { config } = (await this.dao.findById(taskId)) as Task;
-      const identifier = buildTaskIdentifier(taskId);
-      await this.register(identifier, taskId, JSON.parse(config));
+    const task = await this.dao.findByIdThrowable(taskId);
+    if (task.active) {
+      this.logger.warn(`startTask[taskId=${taskId}]: task is active`);
+      throw new BadRequest(`Cannot start active task: taskId=${taskId}`);
     }
-    taskRepository.startTask(taskId);
+    const taskConfig = JSON.parse(task.config);
+    await this.register(taskId, taskConfig);
+    await this.dao.setActive(taskId, true);
+    this.logger.info(`startTask[${taskId}]: set active=true`);
   }
 
-  async updateTask(
-    groupId: number,
-    taskId: number,
-    taskConfig: LocalTaskConfig | RepositoryTaskConfig
-  ): Promise<void> {
-    await this.assertTaskExists(taskId);
+  async updateTask(taskId: number, taskConfig: LocalTaskConfig): Promise<void> {
+    const task = await this.dao.findByIdThrowable(taskId);
+    const oldConfig = JSON.parse(task.config);
+    const newConfig: TaskConfigDto = { ...oldConfig, config: taskConfig };
 
-    const identifier = buildTaskIdentifier(taskId);
-    taskRepository.deleteTask(taskId);
-    await this.deleteAllEnvs(identifier);
-
-    const task = (await this.dao.findById(taskId)) as Task;
-    const oldTaskConfig = JSON.parse(task.config);
-    const newTaskConfig = { ...oldTaskConfig, config: taskConfig };
-
-    await this.dao.update(taskId, JSON.stringify(newTaskConfig));
-    await this.register(identifier, taskId, newTaskConfig);
+    const callbackFn = this.buildTaskCallbackFn();
+    await this.executorService.updateExecutable(taskId, newConfig, callbackFn);
+    await this.dao.update(taskId, JSON.stringify(newConfig));
+    this.logger.info(`updateTask[taskId=${taskId}]: updated`);
   }
 
   async getTask(taskId: number): Promise<Task | { config: TaskConfigDto }> {
-    const task = await this.dao.findById(taskId);
-    if (task == undefined) {
-      throw new EntityNotFound('Task does not exist');
-    }
+    const task = await this.dao.findByIdThrowable(taskId);
     const configDto: TaskConfigDto = JSON.parse(task.config);
     return { ...task, name: configDto.name, config: configDto };
   }

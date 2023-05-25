@@ -102,6 +102,16 @@ describe('contract-validator unit', () => {
         key: 'some-metric-contract-impl',
         opts: { metricParam: generateRandomString('metric') },
       },
+      scheduler: {
+        type: 'npm',
+        key: 'some-scheduler-contract-impl',
+        opts: { schedulerParam: generateRandomString('scheduler') },
+      },
+      queue: {
+        type: 'npm',
+        key: 'some-queue-contract-impl',
+        opts: { queueParam: generateRandomString('queue') },
+      },
     };
     const error = validateContractConfig(config);
     expect(error).toBeNull();

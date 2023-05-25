@@ -22,6 +22,7 @@
     "migrate:up": "knex migrate:up",
     "migrate:down": "knex migrate:down",
     "migrate:down-all": "knex migrate:rollback --all",
+    "migrate:re": "yarn migrate:down-all && yarn migrate:latest",
     "compile-schemas": "ts-node -r tsconfig-paths/register scripts/compile-schemas.ts  && yarn eslint src/model --ext .ts --fix"
   },
   "devDependencies": {
@@ -64,6 +65,7 @@
     "node-cron": "^3.0.2",
     "pg": "^8.10.0",
     "pidusage": "^3.0.2",
+    "pino": "^8.12.1",
     "qs": "^6.11.1"
   }
 }
