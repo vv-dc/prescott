@@ -115,7 +115,7 @@ export class TaskExecutorService {
     );
     const promises = handleIds.map(async (handleId) => {
       const envHandle = await this.env.getEnvHandle(handleId);
-      await envHandle.stop({ timeout: 5_000 }); // TODO: make it configurable
+      await envHandle.stop({ timeout: 5_000 });
       this.logger.info(`stopAllChildren[handleId=${handleId}]: done`);
     });
     await Promise.allSettled(promises);

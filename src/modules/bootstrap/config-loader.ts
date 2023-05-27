@@ -8,7 +8,6 @@ import {
 } from '@modules/bootstrap/model/root-config';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
 
-// TODO: move default implementations to npm packages
 const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
   env: {
     type: 'file',

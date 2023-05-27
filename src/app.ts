@@ -13,9 +13,7 @@ import { getLogger } from '@logger/logger';
 
 const { ajvOptions } = config[SCHEMAS_CONFIG];
 
-export type AutoloadOptions = {
-  // additional options
-} & Partial<AutoloadPluginOptions>;
+export type AutoloadOptions = Partial<AutoloadPluginOptions>;
 
 const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
   fastify.setErrorHandler(handleError);

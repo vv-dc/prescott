@@ -40,7 +40,7 @@ export const buildDockerImage = (
 
 export const removeEscapeCharacters = (str: string) =>
   // eslint-disable-next-line no-control-regex
-  str.replace(/\x1b\[[0-9]?[J,H]/g, '');
+  str.replace(/\x1b\[\d?[J,H]/g, '');
 
 export const dockerSizeToBytes = (sizeString: string): number => {
   const sizes = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
