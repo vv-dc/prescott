@@ -1,13 +1,16 @@
 import { Knex } from 'knex';
-import { config, PG_CONFIG } from './src/config/config';
+import { config, DATABASE_CONFIG } from './src/config/config';
+
+const { connection, client } = config[DATABASE_CONFIG];
 
 const knexConfig: Knex.Config = {
-  client: 'pg',
-  connection: config[PG_CONFIG],
+  client,
+  connection,
   pool: {
     min: 2,
     max: 10,
   },
+  useNullAsDefault: false,
   migrations: {
     tableName: 'knex_migrations',
     directory: './migrations',

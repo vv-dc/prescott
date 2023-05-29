@@ -42,7 +42,7 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
     maxDepth: 1,
   });
   fastify.addHook('onClose', async () => {
-    await fastify.pg.destroy();
+    await fastify.db.destroy();
   });
 };
 

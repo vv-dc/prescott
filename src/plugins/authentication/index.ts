@@ -16,7 +16,7 @@ const authentication: FastifyPluginAsync = async (fastify) => {
   const jwtService = new JwtService(jwtConfig);
   const passwordService = new PasswordService(passwordConfig);
 
-  const refreshSessionDao = new RefreshSessionDao(fastify.pg);
+  const refreshSessionDao = new RefreshSessionDao(fastify.db);
   const refreshSessionService = new RefreshSessionService(refreshSessionDao);
 
   const authenticationService = new AuthenticationService(
@@ -37,5 +37,5 @@ export default fp(authentication, {
   decorators: {
     fastify: ['userService'],
   },
-  dependencies: ['pg', 'schema', 'user'],
+  dependencies: ['db', 'schema', 'user'],
 });

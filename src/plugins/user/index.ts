@@ -5,7 +5,7 @@ import { UserDao } from '@plugins/user/user.dao';
 import { UserService } from '@plugins/user/user.service';
 
 const user: FastifyPluginAsync = async (fastify) => {
-  const userDao = new UserDao(fastify.pg);
+  const userDao = new UserDao(fastify.db);
   const userService = new UserService(userDao);
   fastify.decorate('userService', userService);
 };
@@ -13,7 +13,7 @@ const user: FastifyPluginAsync = async (fastify) => {
 export default fp(user, {
   name: 'user',
   decorators: {
-    fastify: ['pg'],
+    fastify: ['db'],
   },
-  dependencies: ['pg'],
+  dependencies: ['db'],
 });

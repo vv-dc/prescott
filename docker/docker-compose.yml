@@ -5,9 +5,9 @@ services:
     image: postgres:alpine
     container_name: prescott-develop-pg
     environment:
-      POSTGRES_USER: ${PGUSER}
-      POSTGRES_PASSWORD: ${PGPASSWORD}
-      POSTGRES_DB: ${PGDB}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: prescott
     ports:
       - "5432:5432"
     volumes:
