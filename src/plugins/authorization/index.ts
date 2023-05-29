@@ -12,15 +12,15 @@ import { PermissionDao } from '@plugins/authorization/permission/permission.dao'
 import { PermissionService } from '@plugins/authorization/permission/permission.service';
 
 const authorization: FastifyPluginAsync = async (fastify) => {
-  const { pg, userService } = fastify;
+  const { db, userService } = fastify;
 
-  const groupDao = new GroupDao(pg);
+  const groupDao = new GroupDao(db);
   const groupService = new GroupService(groupDao);
 
-  const roleDao = new RoleDao(pg);
+  const roleDao = new RoleDao(db);
   const roleService = new RoleService(roleDao, groupService);
 
-  const permissionDao = new PermissionDao(pg);
+  const permissionDao = new PermissionDao(db);
   const permissionService = new PermissionService(permissionDao);
 
   const authHooks = makeAuthHooks(groupService, permissionService, roleService);
@@ -40,5 +40,5 @@ export default fp(authorization, {
   decorators: {
     fastify: ['userService', 'jwtValidationHook'],
   },
-  dependencies: ['pg', 'schema', 'user', 'authentication'],
+  dependencies: ['db', 'schema', 'user', 'authentication'],
 });

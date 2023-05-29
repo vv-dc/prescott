@@ -1,16 +1,16 @@
 import { Role } from '@plugins/authorization/role/model/role';
-import { PgConnection } from '@model/shared/pg-connection';
+import { DbConnection } from '@model/shared/db-connection';
 import { UserRole } from '@model/domain/user-role';
 
 export class RoleDao {
-  constructor(private pg: PgConnection) {}
+  constructor(private db: DbConnection) {}
 
   async findByName(name: string): Promise<Role | undefined> {
-    return this.pg<Role>('roles').where({ name }).first();
+    return this.db<Role>('roles').where({ name }).first();
   }
 
   async findByUserAndGroup(groupId: number, userId: number): Promise<string[]> {
-    return this.pg('user_roles')
+    return this.db('user_roles')
       .join('user_groups', 'user_roles.user_group_id', 'user_groups.id')
       .join('roles', 'user_roles.role_id', 'roles.id')
       .where({
@@ -21,11 +21,11 @@ export class RoleDao {
   }
 
   async add(userGroupId: number, roleId: number): Promise<void> {
-    await this.pg<UserRole>('user_roles').insert({ userGroupId, roleId });
+    await this.db<UserRole>('user_roles').insert({ userGroupId, roleId });
   }
 
   async remove(userGroupId: number, roleId: number): Promise<void> {
-    await this.pg<UserRole>('user_roles')
+    await this.db<UserRole>('user_roles')
       .where({ userGroupId, roleId })
       .delete();
   }

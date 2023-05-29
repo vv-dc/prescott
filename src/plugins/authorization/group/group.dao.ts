@@ -1,51 +1,51 @@
 import { Group } from '@plugins/authorization/group/model/group';
 import { UserGroup } from '@plugins/authorization/group/model/user-group';
-import { PgConnection } from '@model/shared/pg-connection';
+import { DbConnection } from '@model/shared/db-connection';
 
 export class GroupDao {
-  constructor(private pg: PgConnection) {}
+  constructor(private db: DbConnection) {}
 
   async findByName(name: string): Promise<Group | undefined> {
-    return this.pg<Group>('groups').where({ name }).first();
+    return this.db<Group>('groups').where({ name }).first();
   }
 
   async findById(id: number): Promise<Group | undefined> {
-    return this.pg<Group>('groups').where({ id }).first();
+    return this.db<Group>('groups').where({ id }).first();
   }
 
   async findUserGroup(
     groupId: number,
     userId: number
   ): Promise<UserGroup | undefined> {
-    return this.pg<UserGroup>('user_groups').where({ groupId, userId }).first();
+    return this.db<UserGroup>('user_groups').where({ groupId, userId }).first();
   }
 
   async checkUserInGroup(groupId: number, userId: number): Promise<boolean> {
-    const { present } = await this.pg.first<{ present: boolean }>(
-      this.pg.raw(
+    const { present } = await this.db.first<{ present: boolean }>(
+      this.db.raw(
         'exists ? as present',
-        this.pg('user_groups').select('id').where({ groupId, userId }).limit(1)
+        this.db('user_groups').select('id').where({ groupId, userId }).limit(1)
       )
     );
     return present;
   }
 
   async addUser(groupId: number, userId: number): Promise<void> {
-    await this.pg('user_groups').insert({ groupId, userId });
+    await this.db('user_groups').insert({ groupId, userId });
   }
 
   async deleteUser(groupId: number, userId: number): Promise<void> {
-    await this.pg('user_groups').where({ groupId, userId }).delete();
+    await this.db('user_groups').where({ groupId, userId }).delete();
   }
 
   async create(name: string, ownerId: number): Promise<number> {
-    const [{ id: groupId }] = await this.pg<Group>('groups')
+    const [{ id: groupId }] = await this.db<Group>('groups')
       .insert({ name, ownerId })
       .returning<[{ id: number }]>('id');
     return groupId;
   }
 
   async deleteById(id: number): Promise<void> {
-    await this.pg<Group>('groups').where({ id }).delete();
+    await this.db<Group>('groups').where({ id }).delete();
   }
 }

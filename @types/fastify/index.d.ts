@@ -8,14 +8,14 @@ import { AuthenticationService } from '@plugins/authentication/authentication.se
 import { AuthorizationService } from '@plugins/authorization/authorization.service';
 import { JwtValidationHook } from '@plugins/authentication/jwt/model/jwt-validation-hook';
 import { AuthHooks } from '@plugins/authorization/model/auth-hooks';
-import { PgConnection } from '@model/shared/pg-connection';
+import { DbConnection } from '@model/shared/db-connection';
 import { UserPayload } from '@model/domain/user-payload';
 import { JwtService } from '@plugins/authentication/jwt/jwt.service';
 import { ContractMap } from '@modules/contract/model/contract-config';
 
 declare module 'fastify' {
   export interface FastifyInstance {
-    pg: PgConnection;
+    db: DbConnection;
     taskService: TaskService;
     taskRunService: TaskRunService;
     userService: UserService;

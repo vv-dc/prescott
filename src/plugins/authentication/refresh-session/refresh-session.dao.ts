@@ -1,26 +1,36 @@
 import { RefreshSession } from '@plugins/authentication/refresh-session/model/refresh-session';
-import { PgConnection } from '@model/shared/pg-connection';
+import { DbConnection } from '@model/shared/db-connection';
+import { parseDate } from '@lib/date.utils';
 
 export class RefreshSessionDao {
-  constructor(private pg: PgConnection) {}
+  constructor(private db: DbConnection) {}
+
+  private mapRefreshSession(session: RefreshSession): RefreshSession {
+    return {
+      ...session,
+      createdAt: parseDate(session.createdAt),
+    };
+  }
 
   async findByIp(
     userId: number,
     ip: string
   ): Promise<RefreshSession | undefined> {
-    return this.pg<RefreshSession>('refresh_sessions')
+    const session = await this.db<RefreshSession>('refresh_sessions')
       .where({ userId, ip })
       .first();
+    return session && this.mapRefreshSession(session);
   }
 
   async findByUser(userId: number): Promise<RefreshSession[]> {
-    return this.pg<RefreshSession>('refresh_sessions')
+    const sessions = await this.db<RefreshSession>('refresh_sessions')
       .select('*')
       .where({ userId });
+    return sessions.map((session) => this.mapRefreshSession(session));
   }
 
   async deleteByUser(userId: number): Promise<void> {
-    await this.pg<RefreshSession>('refresh_sessions')
+    await this.db<RefreshSession>('refresh_sessions')
       .where({ userId })
       .delete();
   }
@@ -28,14 +38,16 @@ export class RefreshSessionDao {
   async deleteByTokenAndGet(
     refreshToken: string
   ): Promise<RefreshSession | undefined> {
-    const sessions = await this.pg<RefreshSession>('refresh_sessions')
+    const session = await this.db<RefreshSession>('refresh_sessions')
       .where({ refreshToken })
-      .delete()
-      .returning('*');
-    return sessions[0];
+      .first();
+    if (session !== undefined) {
+      await this.db('refresh_sessions').where({ id: session.id }).delete();
+    }
+    return session && this.mapRefreshSession(session);
   }
 
   async add(session: RefreshSession): Promise<void> {
-    await this.pg<RefreshSession>('refresh_sessions').insert(session);
+    await this.db<RefreshSession>('refresh_sessions').insert(session);
   }
 }

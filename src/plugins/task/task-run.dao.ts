@@ -1,29 +1,45 @@
 import { TaskRun } from '@model/domain/task-run';
-import { PgConnection } from '@model/shared/pg-connection';
+import { DbConnection } from '@model/shared/db-connection';
 import { TaskRunStatus } from '@model/domain/task-run-status';
+import { parseDate } from '@lib/date.utils';
 
 type UpdateTaskRunDto = Partial<Omit<TaskRun, 'id' | 'taskId' | 'createdAt'>>;
 
 export class TaskRunDao {
-  constructor(private db: PgConnection) {}
+  constructor(private db: DbConnection) {}
+
+  private mapTaskRun(taskRun: TaskRun): TaskRun {
+    const { createdAt, startedAt, finishedAt, ...rest } = taskRun;
+    return {
+      ...rest,
+      createdAt: parseDate(createdAt),
+      startedAt: startedAt ? parseDate(startedAt) : undefined,
+      finishedAt: finishedAt ? parseDate(finishedAt) : undefined,
+    };
+  }
 
   async create(taskRun: Omit<TaskRun, 'id'>): Promise<TaskRun> {
     const [row] = await this.db('task_runs').insert(taskRun).returning('*');
-    return row;
+    return this.mapTaskRun(row);
   }
 
-  findOneById(id: number): Promise<TaskRun | undefined> {
-    return this.db('task_runs').where({ id }).first();
+  async findOneById(id: number): Promise<TaskRun | undefined> {
+    const taskRun = await this.db('task_runs').where({ id }).first();
+    return taskRun && this.mapTaskRun(taskRun);
   }
 
-  findAllByTaskId(taskId: number): Promise<TaskRun[]> {
-    return this.db('task_runs').select('*').where({ taskId }).orderBy('rank');
+  async findAllByTaskId(taskId: number): Promise<TaskRun[]> {
+    const taskRuns = await this.db('task_runs')
+      .select('*')
+      .where({ taskId })
+      .orderBy('rank');
+    return taskRuns.map((taskRun) => this.mapTaskRun(taskRun));
   }
 
   async countByTaskId(taskId: number): Promise<number> {
     const [{ count }] = await this.db('task_runs')
       .where({ taskId })
-      .count<{ count: string }[]>('id');
+      .count<{ count: string }[]>('id as count');
     return parseInt(count, 10);
   }
 
@@ -43,13 +59,14 @@ export class TaskRunDao {
     return rows.length;
   }
 
-  findAllByTaskIdAndStatus(
+  async findAllByTaskIdAndStatus(
     taskId: number,
     status: TaskRunStatus
   ): Promise<TaskRun[]> {
-    return this.db('task_runs')
+    const taskRuns = await this.db('task_runs')
       .select('*')
       .where({ taskId, status })
       .orderBy('rank');
+    return taskRuns.map((taskRun) => this.mapTaskRun(taskRun));
   }
 }

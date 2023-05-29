@@ -6,8 +6,16 @@ import { EntityNotFound } from '@modules/errors/abstract-errors';
 export class TaskDao {
   constructor(private db: Knex) {}
 
+  private mapTask(task: Task): Task {
+    return {
+      ...task,
+      active: Boolean(task.active),
+    };
+  }
+
   async findById(id: number): Promise<Task | undefined> {
-    return this.db<Task>('tasks').where({ id }).first();
+    const task = await this.db<Task>('tasks').where({ id }).first();
+    return task && this.mapTask(task);
   }
 
   async findByIdThrowable(id: number): Promise<Task> {
@@ -15,22 +23,20 @@ export class TaskDao {
     if (task === undefined) {
       throw new EntityNotFound(`Task not found by id=${id}`);
     }
-    return task;
+    return this.mapTask(task);
   }
 
   async findByName(name: string): Promise<Task | undefined> {
-    return this.db<Task>('tasks').where({ name }).first();
-  }
-
-  async findAll(): Promise<Task[]> {
-    return this.db<Task>('tasks').select('*').orderBy('id');
+    const task = await this.db<Task>('tasks').where({ name }).first();
+    return task && this.mapTask(task);
   }
 
   async findAllByActive(isActive: boolean): Promise<Task[]> {
-    return this.db('tasks')
+    const tasks = await this.db('tasks')
       .select('*')
       .where({ active: isActive })
       .orderBy('id');
+    return tasks.map((task) => this.mapTask(task));
   }
 
   async create(task: Omit<Task, 'id'>): Promise<number> {
