@@ -1,0 +1,14 @@
+{
+  "$id": "schema://prescott.dev/domain/user-dto.json",
+  "title": "UserDto",
+  "type": "object",
+  "properties": {
+    "login": { "type": "string" },
+    "fullName": { "type": "string" },
+    "email": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time", "tsType": "Date" },
+    "updatedAt": { "type": "string", "format": "date-time", "tsType": "Date" }
+  },
+  "required": ["login", "fullName", "email", "createdAt", "updatedAt"],
+  "additionalProperties": false
+}

@@ -1,5 +1,5 @@
 import { GroupDao } from '@plugins/authorization/group/group.dao';
-import { Group } from '@plugins/authorization/group/model/group';
+import { Group } from '@model/domain/group';
 import { UserGroup } from '@plugins/authorization/group/model/user-group';
 
 export class GroupService {
@@ -11,6 +11,10 @@ export class GroupService {
 
   async findById(groupId: number): Promise<Group | undefined> {
     return this.dao.findById(groupId);
+  }
+
+  async findAllByUserId(userId: number): Promise<Group[]> {
+    return this.dao.findAllByUserId(userId);
   }
 
   async findUserGroup(

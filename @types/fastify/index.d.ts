@@ -12,6 +12,7 @@ import { DbConnection } from '@model/shared/db-connection';
 import { UserPayload } from '@model/domain/user-payload';
 import { JwtService } from '@plugins/authentication/jwt/jwt.service';
 import { ContractMap } from '@modules/contract/model/contract-config';
+import { GroupService } from '@plugins/authorization/group/group.service';
 
 declare module 'fastify' {
   export interface FastifyInstance {
@@ -19,6 +20,7 @@ declare module 'fastify' {
     taskService: TaskService;
     taskRunService: TaskRunService;
     userService: UserService;
+    groupService: GroupService;
     authenticationService: AuthenticationService;
     authorizationService: AuthorizationService;
     jwtService: JwtService;

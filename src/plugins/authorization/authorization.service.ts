@@ -1,7 +1,7 @@
 import { GroupService } from '@plugins/authorization/group/group.service';
 import { RoleService } from '@plugins/authorization/role/role.service';
 import { UserService } from '@plugins/user/user.service';
-import { Group } from '@plugins/authorization/group/model/group';
+import { Group } from '@model/domain/group';
 import { Role } from '@plugins/authorization/role/model/role';
 import {
   AccessDenied,

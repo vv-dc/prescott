@@ -1,0 +1,10 @@
+{
+  "$id": "schema://prescott.dev/api/user/user-id-params.json",
+  "title": "UserIdParams",
+  "type": "object",
+  "properties": {
+    "userId": { "type": "integer" }
+  },
+  "required": ["userId"],
+  "additionalProperties": false
+}

@@ -5,6 +5,7 @@ import { parse } from 'qs';
 import fastifyAutoload, { AutoloadPluginOptions } from '@fastify/autoload';
 import fastifySwagger from '@fastify/swagger';
 import fastifySwaggerUi from '@fastify/swagger-ui';
+import fastifyCors from '@fastify/cors';
 import bootstrap from '@plugins/bootstrap';
 
 import { handleError } from '@modules/fastify/error-handler';
@@ -41,6 +42,12 @@ const app: FastifyPluginAsync<AutoloadOptions> = async (fastify, opts) => {
     options: opts,
     maxDepth: 1,
   });
+  await fastify.register(fastifyAutoload, {
+    dir: join(__dirname, 'routes'),
+    options: opts,
+    maxDepth: 1,
+  });
+  await fastify.register(fastifyCors);
   fastify.addHook('onClose', async () => {
     await fastify.db.destroy();
   });

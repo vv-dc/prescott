@@ -1,4 +1,4 @@
-import { Group } from '@plugins/authorization/group/model/group';
+import { Group } from '@model/domain/group';
 import { UserGroup } from '@plugins/authorization/group/model/user-group';
 import { DbConnection } from '@model/shared/db-connection';
 
@@ -18,6 +18,14 @@ export class GroupDao {
     userId: number
   ): Promise<UserGroup | undefined> {
     return this.db<UserGroup>('user_groups').where({ groupId, userId }).first();
+  }
+
+  async findAllByUserId(userId: number): Promise<Group[]> {
+    return this.db<Group>('user_groups as ug')
+      .join('users as u', 'u.id', 'ug.user_id')
+      .join('groups as g', 'g.id', 'ug.group_id')
+      .where('ug.user_id', userId)
+      .select('g.*');
   }
 
   async checkUserInGroup(groupId: number, userId: number): Promise<boolean> {

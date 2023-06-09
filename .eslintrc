@@ -17,6 +17,7 @@
   ],
   "ignorePatterns": [
     "build",
+    "tmp",
     "coverage",
     "node_modules",
     "src/workdir/data"
