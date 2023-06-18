@@ -1,5 +1,5 @@
 {
-  "$id": "schema://prescott.dev/domain/user-dto.json",
+  "$id": "schema://prescott.dev/dto/user.dto.json",
   "title": "UserDto",
   "type": "object",
   "properties": {

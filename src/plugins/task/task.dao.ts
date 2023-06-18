@@ -2,6 +2,7 @@ import { Knex } from 'knex';
 
 import { Task } from '@model/domain/task';
 import { EntityNotFound } from '@modules/errors/abstract-errors';
+import { TaskBriefDto } from '@model/dto/task-brief.dto';
 
 export class TaskDao {
   constructor(private db: Knex) {}
@@ -37,6 +38,16 @@ export class TaskDao {
       .where({ active: isActive })
       .orderBy('id');
     return tasks.map((task) => this.mapTask(task));
+  }
+
+  async findAllByGroupBrief(groupId: number): Promise<TaskBriefDto[]> {
+    const tasks = await this.db('tasks')
+      .select(['id', 'groupId', 'userId', 'name', 'active'])
+      .where({ groupId })
+      .orderBy('id');
+    return tasks
+      .map((task) => ({ ...task, name: task.name.split('_')[1] }))
+      .map((task) => this.mapTask(task) as TaskBriefDto);
   }
 
   async create(task: Omit<Task, 'id'>): Promise<number> {

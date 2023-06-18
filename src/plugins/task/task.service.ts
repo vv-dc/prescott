@@ -10,6 +10,7 @@ import { TaskConfigDto, LocalTaskConfig } from '@model/dto/task-config.dto';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
 import { ExecuteTaskFn } from '@modules/contract/model/task-queue.contract';
+import { TaskBriefDto } from '@model/dto/task-brief.dto';
 
 export class TaskService {
   private readonly logger = getLogger('task-service');
@@ -63,6 +64,7 @@ export class TaskService {
       const [isActive, task] = await this.isTaskActive(taskId);
       if (!isActive) {
         this.logger.warn(`callbackFn[taskId=${taskId}]: skip - is not allowed`);
+        await this.executorService.unscheduleExecutable(taskId);
         return null;
       }
       const config: TaskConfigDto = JSON.parse((task as Task).config);
@@ -212,5 +214,9 @@ export class TaskService {
     const task = await this.dao.findByIdThrowable(taskId);
     const configDto: TaskConfigDto = JSON.parse(task.config);
     return { ...task, name: configDto.name, config: configDto };
+  }
+
+  getAllByGroupIdBrief(groupId: number): Promise<TaskBriefDto[]> {
+    return this.dao.findAllByGroupBrief(groupId);
   }
 }

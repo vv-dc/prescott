@@ -12,13 +12,12 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
     method: 'GET',
     schema: {
       response: {
-        200: fastify.getPrescottSchema('domain/user-dto'),
+        200: fastify.getPrescottSchema('dto/user.dto'),
       },
     },
     handler: async (request, reply) => {
       const { userId } = request.payload;
       const user = await userService.findByIdThrowable(userId);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, password, ...rest } = user;
       reply.code(200).send(rest);
     },

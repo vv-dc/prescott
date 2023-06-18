@@ -1,0 +1,14 @@
+{
+  "$id": "schema://prescott.dev/dto/task-brief.dto.json",
+  "title": "TaskBriefDto",
+  "type": "object",
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "string" },
+    "userId": { "type": "integer" },
+    "groupId": { "type": "integer" },
+    "active": { "type": "boolean" }
+  },
+  "required": ["id", "name", "userId", "groupId", "active"],
+  "additionalProperties": false
+}

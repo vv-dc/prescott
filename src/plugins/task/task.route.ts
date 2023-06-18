@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 
-import { TaskCreateParams } from '@model/api/task/task-create-params';
+import { TaskGroupParams } from '@model/api/task/task-group-params';
 import { LocalTaskConfig, TaskConfigDto } from '@model/dto/task-config.dto';
 import { TaskAllParams } from '@model/api/task/task-all-params';
 import { AccessToken } from '@model/api/authentication/access-token';
@@ -23,14 +23,14 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.addHook('preValidation', jwtValidationHook);
 
   fastify.route<{
-    Params: TaskCreateParams;
+    Params: TaskGroupParams;
     Body: TaskConfigDto;
     Headers: AccessToken;
   }>({
     method: 'POST',
     url: '/groups/:groupId/tasks',
     schema: {
-      params: fastify.getPrescottSchema('api/task/task-create-params'),
+      params: fastify.getPrescottSchema('api/task/task-group-params'),
       body: fastify.getPrescottSchema('dto/task-config.dto'),
       response: {
         200: fastify.getPrescottSchema('api/task/task-id-response'),
@@ -159,6 +159,23 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
     },
   });
 
+  fastify.route<{ Params: TaskRunAllParams; Headers: AccessToken }>({
+    method: 'GET',
+    url: '/groups/:groupId/tasks/:taskId/runs/:runId',
+    schema: {
+      params: fastify.getPrescottSchema('api/task/task-run-all-params'),
+      response: {
+        200: fastify.getPrescottSchema('domain/task-run'),
+      },
+    },
+    preHandler: [authHooks.permissionHook('view_task')],
+    handler: async (request, reply) => {
+      const { taskId, runId } = request.params;
+      const run = await taskRunService.getOneThrowableByTaskId(taskId, runId);
+      reply.code(200).send(run);
+    },
+  });
+
   fastify.route<{
     Params: TaskRunAllParams;
     Headers: AccessToken;
@@ -173,7 +190,7 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
         200: fastify.getPrescottSchema('api/task/task-run-log-response'),
       },
     },
-    preHandler: [authHooks.permissionHook('view_task')],
+    preHandler: [authHooks.permissionHook('view_metrics')],
     handler: async (request, reply) => {
       const { taskId, runId } = request.params;
       const { paging, search } = request.query;
@@ -241,6 +258,30 @@ export const taskRoutes: FastifyPluginAsync = async (fastify) => {
         apply,
       });
       reply.code(200).send(metrics);
+    },
+  });
+
+  fastify.route<{
+    Params: TaskGroupParams;
+    Headers: AccessToken;
+    Querystring: TaskRunAggregateDto;
+  }>({
+    method: 'GET',
+    url: '/groups/:groupId/tasks/brief',
+    schema: {
+      params: fastify.getPrescottSchema('api/task/task-group-params'),
+      response: {
+        200: {
+          type: 'array',
+          items: fastify.getPrescottSchema('dto/task-brief.dto'),
+        },
+      },
+    },
+    preHandler: [authHooks.permissionHook('view_task')],
+    handler: async (request, reply) => {
+      const { groupId } = request.params;
+      const tasks = await taskService.getAllByGroupIdBrief(groupId);
+      reply.code(200).send(tasks);
     },
   });
 };
