@@ -6,7 +6,7 @@ DB_CONN_STRING="" # connection string
 DB_CLIENT="" # database type
 ```
 SQLite3 is being used by default because it does not require any extra actions from the user's side.\
-Upon changing storage option install corresponding database driver. For example:
+Upon changing the storage option install the corresponding database driver. For example:
 ```shell
 yarn add pg # postgres
 ```
