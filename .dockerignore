@@ -1,3 +1,27 @@
 # tmp
 **/workdir/data/**/*.json
 **/workdir/data/prescott.sqlite
+
+# tests
+coverage/
+.nyc_output
+
+# misc
+tmp
+
+# vscode local configuration
+.vscode
+
+# idea config
+.idea
+
+# docs
+docs
+
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# compiled output
+build/

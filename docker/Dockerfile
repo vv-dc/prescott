@@ -1,4 +1,4 @@
-FROM node:20.2-buster-slim AS base
+FROM node:20.9-bullseye-slim AS base
 WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=yarn.lock,target=yarn.lock \
@@ -26,14 +26,15 @@ RUN echo "deb [arch=$(dpkg --print-architecture) \
 RUN apt-get update && apt-get install -y docker-ce-cli
 
 # setup arguments
+ARG PRESCOTT_LOG_LEVEL=info
 ARG PRESCOTT_WORKDIR=/var/lib/prescott
 ARG PRESCOTT_PORT=8080
 
 # setup env variables
-ENV PRESCOTT_LOG_LEVEL info
-ENV PRESCOTT_PORT $PRESCOTT_PORT
-ENV PRESCOTT_DB_CLIENT sqlite3
-ENV PRESCOTT_DB_CONN_STRING $PRESCOTT_WORKDIR/src/workdir/data/prescott.sqlite
+ENV PRESCOTT_LOG_LEVEL=info
+ENV PRESCOTT_PORT=$PRESCOTT_PORT
+ENV PRESCOTT_DB_CLIENT=better-sqlite3
+ENV PRESCOTT_DB_CONN_STRING=$PRESCOTT_WORKDIR/src/workdir/data/prescott.sqlite
 
 # setup workdir
 WORKDIR $PRESCOTT_WORKDIR
@@ -51,6 +52,6 @@ COPY --from=base /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/build ./build
 
 # run server
-ENV PRESCOTT_WORKDIR $PRESCOTT_WORKDIR/src/workdir
+ENV PRESCOTT_WORKDIR=$PRESCOTT_WORKDIR/src/workdir
 EXPOSE ${PRESCOTT_PORT}
 CMD ["/bin/sh", "./run-prescott.sh"]
