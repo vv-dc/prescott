@@ -120,8 +120,6 @@ describe('task e2e', () => {
     });
     expect(stopRes.statusCode).toEqual(204);
 
-    return;
-
     // DELETE task
     const deleteRes = await fastify.inject({
       method: 'DELETE',
@@ -220,8 +218,6 @@ describe('task e2e', () => {
     });
     expect(stopBeforeDeleteRes.statusCode).toEqual(204);
 
-    return;
-
     // DELETE task
     const deletedRes = await fastify.inject({
       method: 'DELETE',
@@ -284,8 +280,6 @@ describe('task e2e', () => {
     expect(runsResponse.statusCode).toEqual(200);
     const runsList = runsResponse.json<TaskRun[]>();
     expect(runsList).toHaveLength(2);
-
-    return;
 
     const deletedRes = await fastify.inject({
       method: 'DELETE',
@@ -425,8 +419,6 @@ describe('task e2e', () => {
         std: '0.000',
       },
     } as MetricsAggregated);
-
-    return;
 
     // DELETE task
     const deletedRes = await fastify.inject({
