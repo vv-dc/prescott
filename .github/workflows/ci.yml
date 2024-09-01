@@ -6,7 +6,7 @@ on:
 env:
   DB_CONN_STRING: src/workdir/data/prescott.sqlite
   DB_CLIENT: better-sqlite3
-  PRESCOTT_JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
   build:
