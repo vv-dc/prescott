@@ -19,7 +19,8 @@
     "build",
     "coverage",
     "node_modules",
-    "src/workdir/data"
+    "src/workdir/data",
+    "tmp"
   ],
   "rules": {
     "prettier/prettier": "error",
