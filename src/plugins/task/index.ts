@@ -14,7 +14,7 @@ import { TaskQueueContract } from '@modules/contract/model/task-queue.contract';
 import { TaskExecutorService } from '@plugins/task/task-executor.service';
 
 const task: FastifyPluginAsync = async (fastify) => {
-  const { pg, contractMap } = fastify;
+  const { db, contractMap } = fastify;
   const { env, log, metric, scheduler, queue } = contractMap;
 
   const taskExecutorService = new TaskExecutorService(
@@ -23,14 +23,14 @@ const task: FastifyPluginAsync = async (fastify) => {
     queue as TaskQueueContract
   );
 
-  const taskRunDao = new TaskRunDao(pg);
+  const taskRunDao = new TaskRunDao(db);
   const taskRunService = new TaskRunService(
     taskRunDao,
     log as LogProviderContract,
     metric as MetricProviderContract
   );
 
-  const taskDao = new TaskDao(pg);
+  const taskDao = new TaskDao(db);
   const taskService = new TaskService(
     taskDao,
     taskExecutorService,
@@ -45,7 +45,7 @@ const task: FastifyPluginAsync = async (fastify) => {
 export default fp(task, {
   name: 'task',
   decorators: {
-    fastify: ['pg', 'contractMap', 'authHooks'],
+    fastify: ['db', 'contractMap', 'authHooks'],
   },
-  dependencies: ['pg', 'schema', 'authentication', 'authorization'],
+  dependencies: ['db', 'schema', 'authentication', 'authorization'],
 });

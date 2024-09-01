@@ -4,9 +4,8 @@ on:
   pull_request:
 
 env:
-  PGUSER: ${{ secrets.PGUSER }}
-  PGPASSWORD: ${{ secrets.PGPASSWORD }}
-  PGDB: ${{ secrets.PGDB }}
+  DB_CONN_STRING: src/workdir/data/prescott.sqlite
+  DB_CLIENT: better-sqlite3
   JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
 jobs:
@@ -14,21 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
-    services:
-      postgres:
-        image: postgres:alpine
-        env:
-          POSTGRES_USER: ${{ env.PGUSER }}
-          POSTGRES_PASSWORD: ${{ env.PGPASSWORD }}
-          POSTGRES_DB: ${{ env.PGDB }}
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        node-version: [20.x]
     steps:
       - uses: actions/checkout@v3
       - name: Use Node.js ${{ matrix.node-version }}

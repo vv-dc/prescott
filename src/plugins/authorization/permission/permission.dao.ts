@@ -1,12 +1,12 @@
-import { PgConnection } from '@model/shared/pg-connection';
+import { DbConnection } from '@model/shared/db-connection';
 
 export class PermissionDao {
-  constructor(private pg: PgConnection) {}
+  constructor(private db: DbConnection) {}
 
   async findByUserAndGroup(groupId: number, userId: number): Promise<string[]> {
-    return this.pg('role_permissions as rp')
-      .join('permissions', 'role_permissions.permission_id', 'permissions.id')
-      .join('user_roles', 'role_permissions.role_id', 'user_roles.role_id')
+    return this.db('role_permissions as rp')
+      .join('permissions', 'rp.permission_id', 'permissions.id')
+      .join('user_roles', 'rp.role_id', 'user_roles.role_id')
       .join('user_groups', 'user_roles.user_group_id', 'user_groups.id')
       .where({
         'user_groups.group_id': groupId,
