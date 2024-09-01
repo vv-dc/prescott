@@ -1,56 +1,38 @@
-FROM node:20.2-buster-slim AS base
+FROM node:16-stretch-slim AS base
 WORKDIR /usr/src/app
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=yarn.lock,target=yarn.lock \
     yarn --frozen-lockfile
 
-FROM base AS builder
+FROM base AS lint
 RUN --mount=type=bind,source=src,target=src \
-    --mount=type=bind,source=@types,target=@types \
-    --mount=type=bind,source=knexfile.ts,target=knexfile.ts \
     --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=.eslintrc,target=.eslintrc \
+    --mount=type=bind,source=.prettierrc,target=.prettierrc \
+    --mount=type=bind,source=/usr/src/app/node_modules,target=node_modules,from=base \
+    yarn lint --format=json --output-file=main.lint.json
+
+FROM base AS unit-test
+RUN --mount=type=bind,source=src,target=src \
+    --mount=type=bind,source=test/unit,target=test/unit \
+    --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=jest.config.ts,target=jest.config.ts \
+    --mount=type=bind,source=jest/jest.setup.ts,target=jest/jest.setup.ts \
     --mount=type=bind,source=tsconfig.json,target=tsconfig.json \
     --mount=type=bind,source=/usr/src/app/node_modules,target=node_modules,from=base \
-    yarn build
+    yarn test:unit --json --outputFile=main.unit.test.json
 
-FROM base AS runner
+FROM base AS integration-test
+RUN --mount=type=bind,source=src,target=src \
+    --mount=type=bind,source=test/integration,target=test/integration \
+    --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=tsconfig.json,target=tsconfig.json \
+    --mount=type=bind,source=jest.config.ts,target=jest.config.ts \
+    --mount=type=bind,source=jest/jest.setup.ts,target=jest/jest.setup.ts \
+    --mount=type=bind,source=/usr/src/app/node_modules,target=node_modules,from=base \
+    yarn test:integration --json --outputFile=main.integration.test.json
 
-# install docker
-RUN apt-get update && apt-get install -y lsb-release curl gnupg
-RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc \
-  https://download.docker.com/linux/debian/gpg
-RUN echo "deb [arch=$(dpkg --print-architecture) \
-  signed-by=/usr/share/keyrings/docker-archive-keyring.asc] \
-  https://download.docker.com/linux/debian \
-  $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
-RUN apt-get update && apt-get install -y docker-ce-cli
-
-# setup arguments
-ARG PRESCOTT_WORKDIR=/var/lib/prescott
-ARG PRESCOTT_PORT=8080
-
-# setup env variables
-ENV PRESCOTT_LOG_LEVEL info
-ENV PRESCOTT_PORT $PRESCOTT_PORT
-ENV PRESCOTT_DB_CLIENT sqlite3
-ENV PRESCOTT_DB_CONN_STRING $PRESCOTT_WORKDIR/src/workdir/data/prescott.sqlite
-
-# setup workdir
-WORKDIR $PRESCOTT_WORKDIR
-RUN mkdir -p $PRESCOTT_WORKDIR
-
-# copy files
-COPY package.json .
-COPY tsconfig.json .
-COPY src ./src
-COPY @types @types
-COPY migrations ./migrations
-COPY knexfile.ts .
-COPY ./docker/scripts/run-prescott.sh run-prescott.sh
-COPY --from=base /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/build ./build
-
-# run server
-ENV PRESCOTT_WORKDIR $PRESCOTT_WORKDIR/src/workdir
-EXPOSE ${PRESCOTT_PORT}
-CMD ["/bin/sh", "./run-prescott.sh"]
+FROM scratch AS ci
+COPY --from=lint /usr/src/app/main.lint.json .
+COPY --from=unit-test /usr/src/app/main.unit.test.json .
+#COPY --from=integration-test /usr/src/app/main.integration.test.json .
