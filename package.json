@@ -5,6 +5,9 @@
   "repository": "git@github.com:vv-dc/prescott.git",
   "author": "vvkin <vkincur@gmail.com>, ShkarupaDC <dimon.shkarupa@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "pre-build": "rimraf build/",
     "build": "yarn pre-build && yarn tsc -p ./tsconfig.json",
@@ -56,6 +59,7 @@
     "@fastify/swagger": "^8.3.1",
     "@fastify/swagger-ui": "^1.5.0",
     "argon2": "^0.30.3",
+    "better-sqlite3": "^11.2.1",
     "dotenv": "^16.0.3",
     "fastify": "^4.15.0",
     "fastify-plugin": "^4.5.0",
@@ -63,10 +67,8 @@
     "jsonwebtoken": "^9.0.0",
     "knex": "^2.4.2",
     "node-cron": "^3.0.2",
-    "pg": "^8.11.0",
     "pidusage": "^3.0.2",
     "pino": "^8.12.1",
-    "qs": "^6.11.1",
-    "sqlite3": "^5.1.4"
+    "qs": "^6.11.1"
   }
 }
