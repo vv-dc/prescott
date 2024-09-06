@@ -29,12 +29,12 @@ export const config: {
     logLevel: (process.env.PRESCOTT_LOG_LEVEL as LevelWithSilent) || 'debug',
   },
   [DATABASE_CONFIG]: {
-    client: process.env.DB_CLIENT as string,
-    connection: process.env.DB_CONN_STRING as string,
+    client: process.env.PRESCOTT_DB_CLIENT as string,
+    connection: process.env.PRESCOTT_DB_CONN_STRING as string,
   },
   [SERVER_CONFIG]: {
-    port: parseInt(process.env.PORT || '', 10) ?? 8080,
-    host: process.env.HOST ?? '0.0.0.0',
+    port: parseInt(process.env.PRESCOTT_PORT || '', 10) ?? 8080,
+    host: process.env.PRESCOTT_HOST ?? '0.0.0.0',
   },
   [SCHEMAS_CONFIG]: {
     schemasPath: path.join(__dirname, '../', 'schemas/'),
@@ -51,7 +51,7 @@ export const config: {
       memoryCost: 15360,
     } as PasswordConfig,
     jwtConfig: {
-      secret: process.env.JWT_SECRET as string,
+      secret: process.env.PRESCOTT_JWT_SECRET ?? 'prescott-secret',
       accessExpiresIn: 900, // in seconds
       refreshExpiresIn: 5.184e9,
     },

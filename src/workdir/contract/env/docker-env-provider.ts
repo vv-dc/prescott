@@ -22,10 +22,14 @@ import { EnvHandle } from '@modules/contract/model/env-handle';
 import { ContractOpts } from '@modules/contract/model/contract';
 import { CommandBuilder } from '@lib/command-builder';
 import { DockerEnvHandle } from '@src/workdir/contract/env/docker-env-handle';
+import { getLogger } from '@logger/logger';
+import { errorToReason } from '@modules/errors/get-error-reason';
 
 const config = {
   workDir: process.env.PRESCOTT_WORKDIR || '',
 };
+
+const logger = getLogger('docker-env-provider');
 
 const init = async (opts: ContractOpts): Promise<void> => {
   config.workDir = opts.workDir;
@@ -84,7 +88,14 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
   if (limitations?.ttl) {
     setTimeout(async () => {
       // some containers don't support 124
-      await envHandle.kill({ signal: 9, reason: 'TTL elapsed' });
+      try {
+        await envHandle.kill({ signal: 9, reason: 'TTL elapsed' });
+      } catch (err) {
+        const reason = errorToReason(err);
+        logger.warn(
+          `runEnv[handleId=${envHandle.id()} - unable to stop on TTL - ${reason}`
+        );
+      }
     }, limitations.ttl);
   }
 
@@ -102,7 +113,6 @@ const deleteEnv = async (dto: DeleteEnvDto): Promise<void> => {
 const getEnvChildren = async (envId: EnvId): Promise<string[]> => {
   const command = new CommandBuilder()
     .init('docker container ls')
-    .arg('a')
     .param('format', `"{{.Names}}\t{{.Image}}"`)
     .param('filter')
     .with(`ancestor=${envId}`);

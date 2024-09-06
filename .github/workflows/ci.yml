@@ -4,9 +4,9 @@ on:
   pull_request:
 
 env:
-  DB_CONN_STRING: src/workdir/data/prescott.sqlite
-  DB_CLIENT: better-sqlite3
-  JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  PRESCOTT_DB_CONN_STRING: src/workdir/data/prescott.sqlite
+  PRESCOTT_DB_CLIENT: better-sqlite3
+  PRESCOTT_JWT_SECRET: ${{ secrets.PRESCOTT_JWT_SECRET }}
 
 jobs:
   build:
