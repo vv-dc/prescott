@@ -8,7 +8,7 @@ import {
   MetricAggregateDto,
   MetricProviderContract,
 } from '@modules/contract/model/metric-provider.contract';
-import { EnvHandle } from '@modules/contract/model/env-handle';
+import { EnvHandle } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log-entry';
 import {
   EntryPage,
@@ -125,6 +125,7 @@ export class TaskRunService {
 
   registerRunListeners(runHandle: TaskRunHandle, envHandle: EnvHandle): void {
     const logGenerator = envHandle.logs();
+    // TODO: if not metrics - stop
     const metricGenerator = envHandle.metrics();
     dispatchTask(() =>
       Promise.all([

@@ -3,7 +3,8 @@ import { Contract, ContractOpts } from '@modules/contract/model/contract';
 export type ContractConfigFile = Record<ContractType, ContractConfigFileEntry>;
 
 export const CONTRACT_CONFIG_TYPES = [
-  'env',
+  'envBuilder',
+  'envRunner',
   'log',
   'metric',
   'scheduler',

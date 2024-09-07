@@ -9,13 +9,13 @@ import {
   getContainerPid,
   removeEscapeCharacters,
   inspectDockerContainer,
-} from '@src/workdir/contract/env/docker.utils';
+} from '@src/workdir/contract/env/docker/docker.utils';
 import {
   DeleteEnvHandleDto,
   EnvHandle,
   KillEnvHandleDto,
   StopEnvHandleDto,
-} from '@modules/contract/model/env-handle';
+} from '@modules/contract/model/env/env-handle';
 import { LogEntry, LogEntryStream } from '@modules/contract/model/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric-entry';
 

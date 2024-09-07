@@ -1,71 +1,29 @@
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
-import * as process from 'node:process';
-
-import { generateRandomString } from '@lib/random.utils';
+import { ContractOpts } from '@modules/contract/model/contract';
+import {
+  EnvRunnerContract,
+  RunEnvDto,
+} from '@modules/contract/model/env/env-runner.contract';
+import { EnvHandle } from '@modules/contract/model/env/env-handle';
+import { DockerEnvHandle } from '@src/workdir/contract/env/docker/docker-env-handle';
 import {
   applyDockerLimitations,
   applyDockerRunOptions,
-  buildDockerfile,
-  buildDockerImage,
-  normalizeDockerContainerName,
   execDockerCommandWithCheck,
-} from '@src/workdir/contract/env/docker.utils';
-import {
-  CompileEnvDto,
-  DeleteEnvDto,
-  EnvId,
-  EnvProviderContract,
-  RunEnvDto,
-} from '@modules/contract/model/env-provider.contract';
-import { EnvHandle } from '@modules/contract/model/env-handle';
-import { ContractOpts } from '@modules/contract/model/contract';
+  normalizeDockerContainerName,
+} from '@src/workdir/contract/env/docker/docker.utils';
+import { generateRandomString } from '@lib/random.utils';
 import { CommandBuilder } from '@lib/command-builder';
-import { DockerEnvHandle } from '@src/workdir/contract/env/docker-env-handle';
-import { getLogger } from '@logger/logger';
 import { errorToReason } from '@modules/errors/get-error-reason';
+import { getLogger } from '@logger/logger';
+import { EnvId } from '@modules/contract/model/env/env-id';
 
+const logger = getLogger('docker-env-runner');
 const config = {
   workDir: process.env.PRESCOTT_WORKDIR || '',
-};
-
-const logger = getLogger('docker-env-provider');
+} as ContractOpts;
 
 const init = async (opts: ContractOpts): Promise<void> => {
   config.workDir = opts.workDir;
-};
-
-const compileEnv = async (dto: CompileEnvDto): Promise<string> => {
-  const dockerfileName = generateRandomString('dockerfile');
-  const dockerfilePath = path.join(config.workDir, dockerfileName);
-  try {
-    return await compileEnvImpl(dto, dockerfilePath);
-  } finally {
-    await fs.rm(dockerfilePath).catch();
-  }
-};
-
-const compileEnvImpl = async (
-  dto: CompileEnvDto,
-  dockerfilePath: string
-): Promise<string> => {
-  const { envInfo, script, isCache, alias: imageTag } = dto;
-  const { name, version } = envInfo;
-
-  const baseImage = buildDockerImage(name, version);
-  const dockerfile = buildDockerfile(baseImage, script, false);
-  await fs.writeFile(dockerfilePath, dockerfile);
-
-  const command = new CommandBuilder()
-    .init('docker build')
-    .param('tag', imageTag)
-    .with('- <') // ignore context
-    .with(dockerfilePath); // read from dockerfile
-
-  if (!isCache) command.param('no-cache');
-  await execDockerCommandWithCheck(imageTag, command);
-
-  return imageTag;
 };
 
 const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
@@ -102,13 +60,6 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
   return envHandle;
 };
 
-const deleteEnv = async (dto: DeleteEnvDto): Promise<void> => {
-  const { envId: image, isForce } = dto;
-  const command = new CommandBuilder().init('docker rmi');
-  if (isForce) command.param('force');
-  await execDockerCommandWithCheck(image, command.with(image));
-};
-
 // docker searches containers not for exact match, by rather by BASE image
 const getEnvChildren = async (envId: EnvId): Promise<string[]> => {
   const command = new CommandBuilder()
@@ -128,15 +79,13 @@ const getEnvHandle = async (handleId: string): Promise<EnvHandle> => {
   return new DockerEnvHandle(handleId);
 };
 
-const envProvider: EnvProviderContract = {
+const envRunner: EnvRunnerContract = {
   init,
   runEnv,
-  compileEnv,
-  deleteEnv,
-  getEnvChildren,
   getEnvHandle,
+  getEnvChildren,
 };
 
 export default {
-  buildContract: async () => envProvider,
+  buildContract: async () => envRunner,
 };

@@ -1,10 +1,17 @@
 {
   "contract": {
-    "env": {
+    "envBuilder": {
       "type": "file",
-      "key": "custom-env-file-provider.ts",
+      "key": "custom-env-builder-file.ts",
       "opts": {
         "envParam": -3
+      }
+    },
+    "envRunner": {
+      "type": "file",
+      "key": "custom-env-runner-file.ts",
+      "opts": {
+        "envParam": -42
       }
     },
     "metric": {

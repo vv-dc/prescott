@@ -9,9 +9,13 @@ import {
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
 
 const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
-  env: {
+  envBuilder: {
     type: 'file',
-    key: 'env-provider.ts',
+    key: 'env/docker/docker-env-builder.ts',
+  },
+  envRunner: {
+    type: 'file',
+    key: 'env/docker/docker-env-builder.ts',
   },
   log: {
     type: 'file',

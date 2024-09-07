@@ -4,7 +4,8 @@ import fp from 'fastify-plugin';
 import { TaskDao } from '@plugins/task/task.dao';
 import { TaskService } from '@plugins/task/task.service';
 import { taskRoutes } from '@plugins/task/task.route';
-import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
+import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
+import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
@@ -15,10 +16,11 @@ import { TaskExecutorService } from '@plugins/task/task-executor.service';
 
 const task: FastifyPluginAsync = async (fastify) => {
   const { db, contractMap } = fastify;
-  const { env, log, metric, scheduler, queue } = contractMap;
+  const { envBuilder, envRunner, log, metric, scheduler, queue } = contractMap;
 
   const taskExecutorService = new TaskExecutorService(
-    env as EnvProviderContract,
+    envBuilder as EnvBuilderContract,
+    envRunner as EnvRunnerContract,
     scheduler as TaskSchedulerContract,
     queue as TaskQueueContract
   );

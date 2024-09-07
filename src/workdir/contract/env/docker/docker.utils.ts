@@ -1,12 +1,10 @@
 import { CommandBuilder } from '@lib/command-builder';
-import {
-  EnvId,
-  RunEnvOptions,
-} from '@modules/contract/model/env-provider.contract';
 import { Limitations } from '@model/domain/limitations';
-import { MappedLimitation } from '@src/workdir/contract/env/model/mapped-limitation';
-import { BuilderMapper } from '@src/workdir/contract/env/model/builder-mapper';
-import { InspectParam } from '@src/workdir/contract/env/model/inspect-param';
+import { MappedLimitation } from '@src/workdir/contract/env/docker/model/mapped-limitation';
+import { BuilderMapper } from '@src/workdir/contract/env/docker/model/builder-mapper';
+import { InspectParam } from '@src/workdir/contract/env/docker/model/inspect-param';
+import { EnvId } from '@modules/contract/model/env/env-id';
+import { RunEnvOptions } from '@modules/contract/model/env/env-runner.contract';
 
 export class DockerEnvError extends Error {
   constructor(private resourceId: string | EnvId, message: string) {

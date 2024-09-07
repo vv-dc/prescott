@@ -4,15 +4,17 @@ import {
   ContractConfigFile,
   ContractType,
 } from '@modules/contract/model/contract-config';
-import { envProviderSchema } from '@modules/contract/schema/env-provider.schema';
+import { envBuilderSchema } from '@modules/contract/schema/env-builder.schema';
 import { logProviderSchema } from '@modules/contract/schema/log-provider.schema';
 import { metricProviderSchema } from '@modules/contract/schema/metric-provider.schema';
 import { contractConfigSchema } from '@modules/contract/schema/contract-config.schema';
 import { taskSchedulerSchema } from '@modules/contract/schema/task-scheduler.schema';
 import { taskQueueSchema } from '@modules/contract/schema/task-queue.schema';
+import { envRunnerSchema } from '@modules/contract/schema/env-runner.schema';
 
 const contractSchema: Record<ContractType, Schema> = {
-  env: envProviderSchema,
+  envBuilder: envBuilderSchema,
+  envRunner: envRunnerSchema,
   log: logProviderSchema,
   metric: metricProviderSchema,
   scheduler: taskSchedulerSchema,
