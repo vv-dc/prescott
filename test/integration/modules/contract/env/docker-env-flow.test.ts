@@ -38,12 +38,12 @@ describe('docker-env-provider integration', () => {
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
     // check image has only one container
-    const children = await envRunner.getEnvChildren(envId);
+    const children = await envRunner.getEnvChildrenHandleIds(envId);
     expect(children).toEqual([envHandle.id()]);
 
     //  delete env container stop logs collecting => check it does not exist
     await envHandle.delete({ isForce: true });
-    expect(await envRunner.getEnvChildren(envId)).toHaveLength(0);
+    expect(await envRunner.getEnvChildrenHandleIds(envId)).toHaveLength(0);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(false);
 
     // delete env => check it does not exist

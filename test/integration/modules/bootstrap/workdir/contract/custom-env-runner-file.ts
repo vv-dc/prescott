@@ -11,7 +11,7 @@ const envRunner: EnvRunnerContract = {
     envWorkDir = opts.workDir;
   },
   runEnv: async (dto) => ({} as EnvHandle),
-  getEnvChildren: async (envId) => [],
+  getEnvChildrenHandleIds: async (envId) => [],
   getEnvHandle: async (handleId) => ({} as EnvHandle),
 };
 /* eslint-enable @typescript-eslint/no-unused-vars */

@@ -6,7 +6,7 @@ import { EnvId } from '@modules/contract/model/env/env-id';
 export interface EnvRunnerContract extends Contract {
   runEnv(dto: RunEnvDto): Promise<EnvHandle>;
   getEnvHandle(handleId: string): Promise<EnvHandle>;
-  getEnvChildren(envId: EnvId): Promise<string[]>;
+  getEnvChildrenHandleIds(envId: EnvId): Promise<string[]>;
 }
 
 export interface RunEnvDto {

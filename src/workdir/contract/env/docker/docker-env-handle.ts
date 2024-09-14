@@ -13,7 +13,6 @@ import {
 import {
   DeleteEnvHandleDto,
   EnvHandle,
-  KillEnvHandleDto,
   StopEnvHandleDto,
 } from '@modules/contract/model/env/env-handle';
 import { LogEntry, LogEntryStream } from '@modules/contract/model/log-entry';
@@ -33,7 +32,15 @@ export class DockerEnvHandle implements EnvHandle {
   }
 
   async stop(dto: StopEnvHandleDto): Promise<void> {
-    const { timeout } = dto;
+    const { timeout, signal } = dto;
+    if (signal === 'timeout') {
+      await this.killImpl(9); // some containers don't support 124
+    } else {
+      await this.stopImpl(timeout);
+    }
+  }
+
+  private async stopImpl(timeout?: number): Promise<void> {
     const command = new CommandBuilder().init('docker stop');
     if (timeout) command.param('time', millisecondsToSeconds(timeout));
 
@@ -43,8 +50,7 @@ export class DockerEnvHandle implements EnvHandle {
     );
   }
 
-  async kill(dto: KillEnvHandleDto): Promise<void> {
-    const { signal } = dto;
+  private async killImpl(signal: number): Promise<void> {
     const command = new CommandBuilder()
       .init('docker kill')
       .param('signal', signal);

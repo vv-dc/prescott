@@ -52,7 +52,7 @@ describe('contract-validator unit', () => {
       init: async (opts) => {},
       runEnv: async (dto) => ({} as EnvHandle),
       getEnvHandle: async (dto) => ({} as EnvHandle),
-      getEnvChildren: async (envId: EnvId) => [generateRandomString()],
+      getEnvChildrenHandleIds: async (envId: EnvId) => [generateRandomString()],
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContactImpl('envRunner', envBuilderImpl);

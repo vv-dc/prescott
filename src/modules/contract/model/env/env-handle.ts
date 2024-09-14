@@ -5,23 +5,18 @@ export interface EnvHandle {
   id(): string;
   stop(dto: StopEnvHandleDto): Promise<void>;
   delete(dto: DeleteEnvHandleDto): Promise<void>;
-  kill(dto: KillEnvHandleDto): Promise<void>; // TODO: remove
-  wait(): Promise<number>; // exit code
+  wait(): Promise<number>; // TODO: use status and text instead of exit code
   logs(): AsyncGenerator<LogEntry>;
   metrics(intervalMs?: number): AsyncGenerator<MetricEntry>;
 }
 
 export interface StopEnvHandleDto {
   timeout?: number;
-  signal?: number;
-  reason?: number;
+  signal: StopEnvHandleSignalType;
 }
+
+export type StopEnvHandleSignalType = 'timeout' | 'user' | 'system';
 
 export interface DeleteEnvHandleDto {
   isForce: boolean;
-}
-
-export interface KillEnvHandleDto {
-  signal: number;
-  reason?: string;
 }

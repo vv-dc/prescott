@@ -10,7 +10,7 @@ export interface EnvBuilderContract extends Contract {
 export interface BuildEnvDto {
   alias: string;
   envInfo: EnvInfo;
-  script: string;
+  script: string; // TODO: list of steps - every env builder should specify how to chain it
   isCache: boolean;
 }
 

@@ -45,9 +45,8 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
 
   if (limitations?.ttl) {
     setTimeout(async () => {
-      // some containers don't support 124
       try {
-        await envHandle.kill({ signal: 9, reason: 'TTL elapsed' });
+        await envHandle.stop({ signal: 'timeout' });
       } catch (err) {
         const reason = errorToReason(err);
         logger.warn(
@@ -83,7 +82,7 @@ const envRunner: EnvRunnerContract = {
   init,
   runEnv,
   getEnvHandle,
-  getEnvChildren,
+  getEnvChildrenHandleIds: getEnvChildren,
 };
 
 export default {
