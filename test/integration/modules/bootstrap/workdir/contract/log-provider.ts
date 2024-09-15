@@ -1,4 +1,4 @@
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
+import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const logProvider: LogProviderContract = {

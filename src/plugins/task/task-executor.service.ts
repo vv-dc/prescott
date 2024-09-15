@@ -1,8 +1,8 @@
 import {
   ExecuteTaskFn,
   TaskQueueContract,
-} from '@modules/contract/model/task-queue.contract';
-import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
+} from '@modules/contract/model/queue/task-queue.contract';
+import { TaskSchedulerContract } from '@modules/contract/model/scheduler/task-scheduler.contract';
 import { TaskConfigDto } from '@model/dto/task-config.dto';
 import { EnvInfo } from '@model/domain/env-info';
 import { TaskStep } from '@model/domain/task-step';

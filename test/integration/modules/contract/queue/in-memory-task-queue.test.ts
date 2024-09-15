@@ -2,17 +2,14 @@ import { setTimeout } from 'node:timers/promises';
 import {
   ExecuteTaskFn,
   TaskQueueContract,
-} from '@modules/contract/model/task-queue.contract';
+} from '@modules/contract/model/queue/task-queue.contract';
 import taskQueueBuilder from '@src/workdir/contract/queue/in-memory-task-queue';
-const buildTaskQueue = async (
-  maxConcurrency: number
-): Promise<TaskQueueContract> => {
-  const taskQueue = await taskQueueBuilder.buildContract();
-  await taskQueue.init({
-    workDir: __dirname,
-    maxConcurrency,
+import { prepareContract } from '@test/lib/test-contract.utils';
+
+const buildTaskQueue = (maxConcurrency: number): Promise<TaskQueueContract> => {
+  return prepareContract<TaskQueueContract>(taskQueueBuilder, {
+    maxConcurrency: maxConcurrency.toString(),
   });
-  return taskQueue;
 };
 
 describe('in-memory-task-queue integration', () => {

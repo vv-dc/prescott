@@ -1,5 +1,8 @@
 import { randomInt } from 'node:crypto';
-import { buildContract } from '@modules/contract/contract-loader';
+import {
+  buildContract,
+  buildContractSystemOpts,
+} from '@modules/contract/contract-loader';
 import { generateRandomString } from '@lib/random.utils';
 import { ContractConfigFileEntry } from '@modules/contract/model/contract-config';
 import { Contract, ContractModule } from '@modules/contract/model/contract';
@@ -23,27 +26,29 @@ describe('contract-loader unit', () => {
         key: 'some-random-contract-42',
         opts: {
           foo: generateRandomString(),
-          bar: randomInt(10_000),
+          bar: randomInt(10_000).toString(),
         },
       };
 
-      const contract = await buildContract(configEntry, generateRandomString());
+      const systemOpts = await buildContractSystemOpts(generateRandomString());
+      const contract = await buildContract(configEntry, systemOpts);
       expect(contract).toEqual(mockContract);
       expect(mockContract.init).toBeCalledWith({
-        workDir: expect.any(String),
-        ...configEntry.opts,
+        system: systemOpts,
+        contract: configEntry.opts,
       });
     });
 
     it('should throw if file contract extension is not supported', async () => {
       const fileKey = 'some-file.py';
+      const systemOpts = await buildContractSystemOpts(generateRandomString());
       await expect(
         buildContract(
           {
             type: 'file',
             key: fileKey,
           },
-          generateRandomString()
+          systemOpts
         )
       ).rejects.toThrow(Error);
     });
@@ -51,8 +56,9 @@ describe('contract-loader unit', () => {
     it('should throw if path is not within workDir', async () => {
       const fileKey = '../../something.js';
       const workDir = 'src/workdir';
+      const systemOpts = await buildContractSystemOpts(workDir);
       await expect(
-        buildContract({ type: 'file', key: fileKey }, workDir)
+        buildContract({ type: 'file', key: fileKey }, systemOpts)
       ).rejects.toThrow(Error);
     });
 
@@ -78,15 +84,16 @@ describe('contract-loader unit', () => {
         key: 'some-random-contract.js',
         opts: {
           foo: generateRandomString(),
-          bar: randomInt(10_000),
+          bar: randomInt(10_000).toString(),
         },
       };
 
-      const contract = await buildContract(configEntry, 'src');
+      const systemOpts = await buildContractSystemOpts('src');
+      const contract = await buildContract(configEntry, systemOpts);
       expect(contract).toEqual(mockContract);
       expect(mockContract.init).toBeCalledWith({
-        workDir: expect.any(String),
-        ...configEntry.opts,
+        system: systemOpts,
+        contract: configEntry.opts,
       });
     });
   });

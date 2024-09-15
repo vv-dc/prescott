@@ -1,4 +1,4 @@
-import { TaskSchedulerContract } from '@modules/contract/model/task-scheduler.contract';
+import { TaskSchedulerContract } from '@modules/contract/model/scheduler/task-scheduler.contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const taskScheduler: TaskSchedulerContract = {
@@ -12,5 +12,5 @@ const taskScheduler: TaskSchedulerContract = {
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 export default {
-  buildContract: () => taskScheduler,
+  buildContract: async () => taskScheduler,
 };

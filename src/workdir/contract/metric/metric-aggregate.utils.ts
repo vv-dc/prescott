@@ -2,7 +2,7 @@ import {
   MetricEntry,
   MetricsAggregated,
   MetricValue,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
 
 export interface MetricAggregator {
   add(value: number): void;

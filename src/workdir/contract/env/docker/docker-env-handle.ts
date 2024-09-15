@@ -15,8 +15,11 @@ import {
   EnvHandle,
   StopEnvHandleDto,
 } from '@modules/contract/model/env/env-handle';
-import { LogEntry, LogEntryStream } from '@modules/contract/model/log-entry';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import {
+  LogEntry,
+  LogEntryStream,
+} from '@modules/contract/model/log/log-entry';
+import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';

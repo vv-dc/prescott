@@ -15,7 +15,7 @@ export type ContractType = (typeof CONTRACT_CONFIG_TYPES)[number];
 export interface ContractConfigFileEntry {
   type: ContractSourceType;
   key: string;
-  opts?: Omit<ContractOpts, 'workDir'>;
+  opts?: ContractOpts;
 }
 
 export const CONTRACT_CONFIG_SOURCE_TYPES = ['file', 'npm'] as const;

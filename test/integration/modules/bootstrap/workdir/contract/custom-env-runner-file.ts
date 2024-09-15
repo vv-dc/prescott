@@ -1,14 +1,15 @@
 import { EnvHandle } from '@modules/contract/model/env/env-handle';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
+import { ContractInitOpts } from '@modules/contract/model/contract';
 
-export let envParam = 0;
+export let envParam = '';
 export let envWorkDir = '';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const envRunner: EnvRunnerContract = {
-  init: async (opts) => {
-    envParam = opts.envParam as number;
-    envWorkDir = opts.workDir;
+  init: async (opts: ContractInitOpts) => {
+    envParam = opts.contract.envParam || '';
+    envWorkDir = opts.system.workDir;
   },
   runEnv: async (dto) => ({} as EnvHandle),
   getEnvChildrenHandleIds: async (envId) => [],

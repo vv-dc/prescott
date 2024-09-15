@@ -10,7 +10,11 @@ import {
   ContractMap,
   ContractSourceType,
 } from '@modules/contract/model/contract-config';
-import { Contract, ContractModule } from '@modules/contract/model/contract';
+import {
+  Contract,
+  ContractModule,
+  ContractSystemOpts,
+} from '@modules/contract/model/contract';
 import { getLogger } from '@logger/logger';
 import { errorToReason } from '@modules/errors/get-error-reason';
 
@@ -25,10 +29,12 @@ export const buildContractMap = async (
     throw new Error(configError);
   }
 
+  const systemOpts = await buildContractSystemOpts(workDir);
   const contractMap = {} as ContractMap;
+
   for (const type of CONTRACT_CONFIG_TYPES) {
     const entry = config[type];
-    const impl = await buildContract(entry, workDir);
+    const impl = await buildContract(entry, systemOpts);
 
     const entryError: string | null = validateContactImpl(type, impl);
     if (entryError !== null) {
@@ -44,13 +50,13 @@ export const buildContractMap = async (
 
 export const buildContract = async (
   configEntry: ContractConfigFileEntry,
-  workDir: string
+  systemOpts: ContractSystemOpts
 ): Promise<Contract> => {
   const { type, key, opts } = configEntry;
   try {
-    const contractWorkdir = path.join(workDir, 'contract');
+    const contractWorkdir = path.join(systemOpts.workDir, 'contract');
     const contract = await loadContract(type, key, contractWorkdir);
-    await contract.init({ ...opts, workDir });
+    await contract.init({ contract: opts ?? {}, system: systemOpts });
     return contract;
   } catch (err) {
     const reason = errorToReason(err);
@@ -104,4 +110,12 @@ const loadFileContract = async (
   }
   const moduleKey = path.join(dir, name);
   return await importContractModule(moduleKey);
+};
+
+export const buildContractSystemOpts = async (
+  workDir: string
+): Promise<ContractSystemOpts> => {
+  return {
+    workDir,
+  };
 };

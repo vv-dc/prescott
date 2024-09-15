@@ -3,13 +3,13 @@ import { dispatchTask, InMemoryMutex } from '@lib/async.utils';
 import { TaskRunDao } from '@plugins/task/task-run.dao';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskRun } from '@model/domain/task-run';
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
+import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
 import {
   MetricAggregateDto,
   MetricProviderContract,
-} from '@modules/contract/model/metric-provider.contract';
+} from '@modules/contract/model/metric/metric-provider.contract';
 import { EnvHandle } from '@modules/contract/model/env/env-handle';
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import {
   EntryPage,
   EntryPaging,
@@ -19,7 +19,7 @@ import { BadRequest, EntityNotFound } from '@modules/errors/abstract-errors';
 import {
   MetricEntry,
   MetricsAggregated,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
 import { TaskRunStatus } from '@model/domain/task-run-status';
 
 export class TaskRunService {

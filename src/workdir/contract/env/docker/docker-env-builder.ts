@@ -1,7 +1,10 @@
 import * as path from 'node:path';
 import * as fs from 'node:fs/promises';
 
-import { ContractOpts } from '@modules/contract/model/contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 import {
   BuildEnvDto,
   DeleteEnvDto,
@@ -16,12 +19,10 @@ import {
 import { CommandBuilder } from '@lib/command-builder';
 
 // TODO: add push to registry
-const config = {
-  workDir: process.env.PRESCOTT_WORKDIR || '',
-} as ContractOpts;
+const config = {} as { workDir: string };
 
-const init = async (opts: ContractOpts): Promise<void> => {
-  config.workDir = opts.workDir;
+const init = async (opts: ContractInitOpts): Promise<void> => {
+  config.workDir = opts.system.workDir;
 };
 
 const buildEnv = async (dto: BuildEnvDto): Promise<string> => {
@@ -72,4 +73,4 @@ const envBuilder: EnvBuilderContract = {
 
 export default {
   buildContract: async () => envBuilder,
-};
+} satisfies ContractModule;

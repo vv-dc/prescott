@@ -1,5 +1,5 @@
-import { LogEntry } from '@modules/contract/model/log-entry';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
+import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 
 export interface EnvHandle {
   id(): string;

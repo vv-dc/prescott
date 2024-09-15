@@ -1,4 +1,4 @@
-import { TaskQueueContract } from '@modules/contract/model/task-queue.contract';
+import { TaskQueueContract } from '@modules/contract/model/queue/task-queue.contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const taskQueue: TaskQueueContract = {
@@ -8,5 +8,5 @@ const taskQueue: TaskQueueContract = {
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 export default {
-  buildContract: () => taskQueue,
+  buildContract: async () => taskQueue,
 };

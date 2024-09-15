@@ -2,7 +2,7 @@ import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import {
   MetricEntry,
   MetricsAggregated,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
 import {
   EntryPage,
   EntryPaging,

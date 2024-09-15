@@ -1,4 +1,4 @@
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import {
   EntryPage,

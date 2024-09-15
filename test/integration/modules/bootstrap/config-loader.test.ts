@@ -27,8 +27,8 @@ describe('config-loader integration', () => {
       queue: await queueDefaultContract.buildContract(), // default
     } as ContractMap);
 
-    expect(envBuilderFileContract.getEnvParam()).toEqual(-3);
-    expect(envRunnerFileContract.getEnvParam()).toEqual(-42);
-    expect(metricNpmContract.getMetricParam()).toEqual(424242);
+    expect(envBuilderFileContract.getEnvParam()).toEqual('-3');
+    expect(envRunnerFileContract.getEnvParam()).toEqual('-42');
+    expect(metricNpmContract.getMetricParam()).toEqual('424242');
   });
 });
