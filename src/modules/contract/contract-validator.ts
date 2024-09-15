@@ -11,8 +11,10 @@ import { contractConfigSchema } from '@modules/contract/schema/contract-config.s
 import { taskSchedulerSchema } from '@modules/contract/schema/task-scheduler.schema';
 import { taskQueueSchema } from '@modules/contract/schema/task-queue.schema';
 import { envRunnerSchema } from '@modules/contract/schema/env-runner.schema';
+import { configProviderSchema } from '@modules/contract/schema/config-provider.schema';
 
 const contractSchema: Record<ContractType, Schema> = {
+  config: configProviderSchema,
   envBuilder: envBuilderSchema,
   envRunner: envRunnerSchema,
   log: logProviderSchema,

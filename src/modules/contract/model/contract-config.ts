@@ -3,6 +3,7 @@ import { Contract, ContractOpts } from '@modules/contract/model/contract';
 export type ContractConfigFile = Record<ContractType, ContractConfigFileEntry>;
 
 export const CONTRACT_CONFIG_TYPES = [
+  'config', // always loads first
   'envBuilder',
   'envRunner',
   'log',

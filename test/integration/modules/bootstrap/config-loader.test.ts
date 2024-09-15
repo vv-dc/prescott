@@ -7,6 +7,7 @@ import metricNpmContract from '@test/integration/modules/bootstrap/workdir/contr
 import logDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/log-provider';
 import schedulerDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/task-scheduler';
 import queueDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/task-queue';
+import configDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/config-provider';
 
 describe('config-loader integration', () => {
   it('should bootstrap application by root config file', async () => {
@@ -19,6 +20,7 @@ describe('config-loader integration', () => {
 
     expect(rootConfig).toHaveProperty('contractMap');
     expect(rootConfig.contractMap).toStrictEqual({
+      config: await configDefaultContract.buildContract(), // default
       envBuilder: await envBuilderFileContract.buildContract(), // custom 'file'
       envRunner: await envRunnerFileContract.buildContract(), // custom 'file
       log: await logDefaultContract.buildContract(), // default

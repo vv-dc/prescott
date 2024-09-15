@@ -1,5 +1,9 @@
 {
   "contract": {
+    "config": {
+      "type": "file",
+      "key": "config/env-config-provider.ts"
+    },
     "envBuilder": {
       "type": "file",
       "key": "env/docker/docker-env-builder.ts"

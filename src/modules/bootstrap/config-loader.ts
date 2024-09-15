@@ -8,14 +8,19 @@ import {
 } from '@modules/bootstrap/model/root-config';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
 
+// TODO: remove this map - config.json should be always available in the workDir
 const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
+  config: {
+    type: 'file',
+    key: 'config-provider.ts',
+  },
   envBuilder: {
     type: 'file',
-    key: 'env/docker/docker-env-builder.ts',
+    key: 'env-builder.ts',
   },
   envRunner: {
     type: 'file',
-    key: 'env/docker/docker-env-builder.ts',
+    key: 'env-runner.ts',
   },
   log: {
     type: 'file',

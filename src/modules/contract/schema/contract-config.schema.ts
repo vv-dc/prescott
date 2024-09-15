@@ -14,6 +14,7 @@ export const contractConfigEntrySchema = Joi.object<ContractConfigFileEntry>({
 });
 
 export const contractConfigSchema = Joi.object<ContractConfigFile>({
+  config: contractConfigEntrySchema,
   envBuilder: contractConfigEntrySchema,
   envRunner: contractConfigEntrySchema,
   log: contractConfigEntrySchema,

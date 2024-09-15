@@ -107,6 +107,10 @@ describe('contract-validator unit', () => {
 
   it('should validate config - VALID', () => {
     const config: ContractConfigFile = {
+      config: {
+        type: 'file',
+        key: 'some-config-provider-contract-impl',
+      },
       envBuilder: {
         type: 'npm',
         key: 'some-env-builder-contract-impl',
