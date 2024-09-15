@@ -1,4 +1,3 @@
-import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
 import {
   ExecuteTaskFn,
   TaskQueueContract,
@@ -8,17 +7,24 @@ import { TaskConfigDto } from '@model/dto/task-config.dto';
 import { EnvInfo } from '@model/domain/env-info';
 import { TaskStep } from '@model/domain/task-step';
 import { buildTaskCmd, buildTaskIdentifier } from '@plugins/task/task.utils';
-import { EnvHandle } from '@modules/contract/model/env-handle';
+import {
+  EnvHandle,
+  StopEnvHandleSignalType,
+} from '@modules/contract/model/env/env-handle';
 import { LocalTaskConfig } from '@model/domain/local-task-config';
 import { dispatchTask } from '@lib/async.utils';
 import { getLogger } from '@logger/logger';
 import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
+import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
+import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
 
 export class TaskExecutorService {
   private readonly logger = getLogger('task-executor-service');
 
+  // TODO: pass builder + runner together?
   constructor(
-    private readonly env: EnvProviderContract,
+    private readonly envBuilder: EnvBuilderContract,
+    private readonly envRunner: EnvRunnerContract,
     private readonly scheduler: TaskSchedulerContract,
     private readonly queue: TaskQueueContract
   ) {}
@@ -61,7 +67,7 @@ export class TaskExecutorService {
     envInfo: EnvInfo,
     steps: TaskStep[]
   ): Promise<void> {
-    await this.env.compileEnv({
+    await this.envBuilder.buildEnv({
       alias: identifier,
       envInfo,
       script: buildTaskCmd(identifier, steps),
@@ -74,7 +80,7 @@ export class TaskExecutorService {
     config: LocalTaskConfig
   ): Promise<EnvHandle> {
     const identifier = buildTaskIdentifier(taskId);
-    const envHandle = await this.env.runEnv({
+    const envHandle = await this.envRunner.runEnv({
       envId: identifier,
       limitations: config.appConfig?.limitations,
       options: { isDelete: false },
@@ -90,33 +96,60 @@ export class TaskExecutorService {
     this.logger.info(`unscheduleExecutable[taskId=${taskId}]: disabled`);
   }
 
-  async deleteExecutableEnv(taskId: number): Promise<void> {
-    const identifier = buildTaskIdentifier(taskId);
-    await this.env.deleteEnv({ envId: identifier, isForce: false });
-  }
-
   async deleteExecutable(taskId: number): Promise<void> {
     const identifier = buildTaskIdentifier(taskId);
     await this.scheduler.delete(taskId);
-    await this.env.deleteEnv({ envId: identifier, isForce: true });
+    await this.deleteAllChildren(identifier, true);
+    await this.envBuilder.deleteEnv({ envId: identifier, isForce: true });
   }
 
-  async stopExecutable(taskId: number): Promise<void> {
+  async deleteExecutableEnv(taskId: number): Promise<void> {
+    const identifier = buildTaskIdentifier(taskId);
+    await this.envBuilder.deleteEnv({ envId: identifier, isForce: false });
+  }
+
+  private async deleteAllChildren(envId: string, isForce: boolean) {
+    await this.callForAllChildren(envId, async (envHandle: EnvHandle) => {
+      await envHandle.delete({ isForce });
+      this.logger.info(`deleteAllChildren[handleId=${envHandle.id()}]: done`);
+    });
+  }
+
+  async stopExecutable(
+    taskId: number,
+    stopSignal: StopEnvHandleSignalType
+  ): Promise<void> {
     const identifier = buildTaskIdentifier(taskId);
     await this.scheduler.stop(taskId);
-    await this.stopAllChildren(identifier);
+    await this.stopAllChildren(identifier, stopSignal);
     this.logger.info(`stopExecutable[taskId=${taskId}]: stop all children`);
   }
 
-  private async stopAllChildren(envId: string): Promise<void> {
-    const handleIds = await this.env.getEnvChildren(envId);
+  private async stopAllChildren(
+    envId: string,
+    stopSignal: StopEnvHandleSignalType
+  ): Promise<void> {
+    await this.callForAllChildren(envId, async (envHandle: EnvHandle) => {
+      await envHandle.stop({ timeout: 5_000, signal: stopSignal });
+      this.logger.info(`stopAllChildren[handleId=${envHandle.id()}]: done`);
+    });
+  }
+
+  private async callForAllChildren(
+    envId: string,
+    callbackFn: (envHandle: EnvHandle) => Promise<void> | void
+  ): Promise<void> {
+    const handleIds = await this.envRunner.getEnvChildrenHandleIds(envId);
     this.logger.info(
-      `stopAllChildren[envId=${envId}]: found ${handleIds.length} children`
+      `callForAllChildren[envId=${envId}]: found ${handleIds.length} children`
     );
+    if (handleIds.length === 0) {
+      return;
+    }
+
     const promises = handleIds.map(async (handleId) => {
-      const envHandle = await this.env.getEnvHandle(handleId);
-      await envHandle.stop({ timeout: 5_000 });
-      this.logger.info(`stopAllChildren[handleId=${handleId}]: done`);
+      const envHandle = await this.envRunner.getEnvHandle(handleId);
+      await callbackFn(envHandle);
     });
     await Promise.allSettled(promises);
   }

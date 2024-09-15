@@ -118,7 +118,7 @@ export class TaskService {
     this.logger.info(`runTask[taskId=${taskId}]: exitCode=${exitCode}`);
 
     if (times !== undefined && runHandle.runRank >= times) {
-      await this.executorService.stopExecutable(taskId);
+      await this.executorService.stopExecutable(taskId, 'system');
       await this.executorService.deleteExecutableEnv(taskId);
       await this.dao.setActive(taskId, false);
       this.logger.info(`runTask[taskId=${taskId}]: stop - no runs left`);
@@ -180,7 +180,7 @@ export class TaskService {
       throw new BadRequest(`Cannot stop NOT active task: taskId=${taskId}`);
     }
     await this.dao.setActive(taskId, false);
-    await this.executorService.stopExecutable(taskId);
+    await this.executorService.stopExecutable(taskId, 'user');
     await this.runService.stopAll(taskId);
     this.logger.info(`stopTask[taskId=${taskId}]: set active=false`);
   }

@@ -1,8 +1,12 @@
 {
   "contract": {
-    "env": {
+    "envBuilder": {
       "type": "file",
-      "key": "env/docker-env-provider.ts"
+      "key": "env/docker/docker-env-builder.ts"
+    },
+    "envRunner": {
+      "type": "file",
+      "key": "env/docker/docker-env-runner.ts"
     },
     "log": {
       "type": "file",

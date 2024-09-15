@@ -4,8 +4,6 @@ import {
 } from '@modules/contract/contract-validator';
 import { generateRandomString } from '@lib/random.utils';
 import { Contract } from '@modules/contract/model/contract';
-import { EnvProviderContract } from '@modules/contract/model/env-provider.contract';
-import { EnvHandle } from '@modules/contract/model/env-handle';
 import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
 import { EntryPage } from '@modules/contract/model/entry-paging';
@@ -14,28 +12,50 @@ import {
   MetricsAggregated,
 } from '@modules/contract/model/metric-entry';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
+import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
+import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
+import { EnvHandle } from '@modules/contract/model/env/env-handle';
+import { EnvId } from '@modules/contract/model/env/env-id';
 
 describe('contract-validator unit', () => {
-  it('should validate env - INVALID', () => {
+  it('should validate envBuilder - INVALID', () => {
     const invalidEnvImpl: Contract = {
       init: async () => {},
     };
-    const error = validateContactImpl('env', invalidEnvImpl);
+    const error = validateContactImpl('envBuilder', invalidEnvImpl);
     expect(error).not.toBeNull();
   });
 
-  it('should validate env - VALID', () => {
+  it('should validate envBuilder - VALID', () => {
     /* eslint-disable @typescript-eslint/no-unused-vars */
-    const envImpl: EnvProviderContract = {
+    const envBuilderImpl: EnvBuilderContract = {
       init: async (opts) => {},
-      runEnv: async (dto) => ({} as EnvHandle),
-      compileEnv: async (dto) => generateRandomString(),
+      buildEnv: async (dto) => generateRandomString(),
       deleteEnv: async (dto) => {},
-      getEnvChildren: async (envId) => [],
-      getEnvHandle: async (handleId) => ({} as EnvHandle),
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
-    const error = validateContactImpl('env', envImpl);
+    const error = validateContactImpl('envBuilder', envBuilderImpl);
+    expect(error).toBeNull();
+  });
+
+  it('should validate envRunner - INVALID', () => {
+    const invalidEnvImpl: Contract = {
+      init: async () => {},
+    };
+    const error = validateContactImpl('envRunner', invalidEnvImpl);
+    expect(error).not.toBeNull();
+  });
+
+  it('should validate envRunner - VALID', () => {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const envBuilderImpl: EnvRunnerContract = {
+      init: async (opts) => {},
+      runEnv: async (dto) => ({} as EnvHandle),
+      getEnvHandle: async (dto) => ({} as EnvHandle),
+      getEnvChildrenHandleIds: async (envId: EnvId) => [generateRandomString()],
+    };
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+    const error = validateContactImpl('envRunner', envBuilderImpl);
     expect(error).toBeNull();
   });
 
@@ -87,9 +107,14 @@ describe('contract-validator unit', () => {
 
   it('should validate config - VALID', () => {
     const config: ContractConfigFile = {
-      env: {
+      envBuilder: {
         type: 'npm',
-        key: 'some-env-contract-impl',
+        key: 'some-env-builder-contract-impl',
+        opts: { envParam: generateRandomString('env') },
+      },
+      envRunner: {
+        type: 'npm',
+        key: 'some-env-runner-contract-impl',
         opts: { envParam: generateRandomString('env') },
       },
       log: {
