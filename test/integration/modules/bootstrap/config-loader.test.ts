@@ -1,13 +1,28 @@
 import * as path from 'node:path';
 import { getRootConfig } from '@modules/bootstrap/config-loader';
 import { ContractMap } from '@modules/contract/model/contract-config';
-import envBuilderFileContract from '@test/integration/modules/bootstrap/workdir/contract/env-builder-file';
-import envRunnerFileContract from '@test/integration/modules/bootstrap/workdir/contract/env-runner-file';
-import metricNpmContract from '@test/integration/modules/bootstrap/workdir/contract/metric-provider-npm';
-import logDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/log-provider-file';
-import schedulerDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/task-scheduler-file';
-import queueDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/task-queue-npm';
-import configDefaultContract from '@test/integration/modules/bootstrap/workdir/contract/config-provider-file';
+import envBuilderFileContract, {
+  envBuilderOpts,
+} from '@test/integration/modules/bootstrap/workdir/contract/env-builder-file';
+import envRunnerFileContract, {
+  envRunnerOpts,
+} from '@test/integration/modules/bootstrap/workdir/contract/env-runner-file';
+import metricNpmContract, {
+  metricProviderOpts,
+} from '@test/integration/modules/bootstrap/workdir/contract/metric-provider-npm';
+import logDefaultContract, {
+  logProviderOpts,
+} from '@test/integration/modules/bootstrap/workdir/contract/log-provider-file';
+import schedulerDefaultContract, {
+  taskSchedulerOpts,
+} from '@test/integration/modules/bootstrap/workdir/contract/task-scheduler-file';
+import queueDefaultContract, {
+  taskQueueOpts,
+} from '@test/integration/modules/bootstrap/workdir/contract/task-queue-npm';
+import configDefaultContract, {
+  configResolverOpts,
+  PREDEFINED_VARIABLES_MAP,
+} from '@test/integration/modules/bootstrap/workdir/contract/config-resolver-file';
 import taskQueueNpm from '@test/integration/modules/bootstrap/workdir/contract/task-queue-npm';
 
 describe('config-loader integration', () => {
@@ -18,7 +33,7 @@ describe('config-loader integration', () => {
     );
   });
 
-  it('should bootstrap application by root config', async () => {
+  it('should bootstrap application by root config and resolve variables', async () => {
     jest.mock('metric-provider-npm', () => metricNpmContract, {
       virtual: true,
     });
@@ -26,8 +41,8 @@ describe('config-loader integration', () => {
       virtual: true,
     });
 
-    const workdir = path.join(__dirname, 'workdir');
-    const rootConfig = await getRootConfig(workdir);
+    const workDir = path.join(__dirname, 'workdir');
+    const rootConfig = await getRootConfig(workDir);
 
     expect(rootConfig).toHaveProperty('contractMap');
     expect(rootConfig.contractMap).toStrictEqual({
@@ -40,8 +55,34 @@ describe('config-loader integration', () => {
       queue: await queueDefaultContract.buildContract(), // default
     } as ContractMap);
 
-    expect(envBuilderFileContract.getEnvParam()).toEqual('-3');
-    expect(envRunnerFileContract.getEnvParam()).toEqual('-42');
-    expect(metricNpmContract.getMetricParam()).toEqual('424242');
+    expect(configResolverOpts).toStrictEqual({
+      configNotResolved: '{{CONFIG_RESOLVER_VAR}}',
+      configRaw: 'foo-bar-42',
+      workDir,
+    });
+    expect(envBuilderOpts).toStrictEqual({
+      resolved: PREDEFINED_VARIABLES_MAP['{{ENV_BUILDER_VAR}}'],
+      raw: '-3',
+      workDir,
+    });
+    expect(envRunnerOpts).toStrictEqual({
+      envParam: '-42',
+      workDir,
+    });
+    expect(logProviderOpts).toStrictEqual({
+      someValue: PREDEFINED_VARIABLES_MAP['{{LOG_PROVIDER_VAR}}'],
+      workDir,
+    });
+    expect(metricProviderOpts).toStrictEqual({
+      metricParam: '424242',
+      workDir,
+    });
+    expect(taskSchedulerOpts).toStrictEqual({
+      someVar: PREDEFINED_VARIABLES_MAP['{{SCHEDULER_VAR}}'],
+      workDir,
+    });
+    expect(taskQueueOpts).toStrictEqual({
+      workDir,
+    });
   });
 });

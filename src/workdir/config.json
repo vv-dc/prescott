@@ -2,7 +2,7 @@
   "contract": {
     "config": {
       "type": "file",
-      "key": "config/env-config-provider.ts"
+      "key": "config/env-config-resolver.ts"
     },
     "envBuilder": {
       "type": "file",
@@ -28,7 +28,7 @@
       "type": "file",
       "key": "queue/in-memory-task-queue.ts",
       "opts": {
-        "maxConcurrency": 5
+        "maxConcurrency": "5"
       }
     }
   }

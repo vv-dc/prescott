@@ -4,13 +4,19 @@ import {
   ContractConfigFile,
   ContractConfigFileEntry,
 } from '@modules/contract/model/contract-config';
+import { ContractOpts } from '@modules/contract/model/contract';
+
+export const contractConfigOptsSchema = Joi.object<ContractOpts>().pattern(
+  /.*/,
+  Joi.string()
+); // any keys, but only string values
 
 export const contractConfigEntrySchema = Joi.object<ContractConfigFileEntry>({
   type: Joi.string()
     .valid(...CONTRACT_CONFIG_SOURCE_TYPES)
     .required(),
   key: Joi.string().required(),
-  opts: Joi.object().optional(),
+  opts: contractConfigOptsSchema.optional(),
 });
 
 export const contractConfigSchema = Joi.object<ContractConfigFile>({

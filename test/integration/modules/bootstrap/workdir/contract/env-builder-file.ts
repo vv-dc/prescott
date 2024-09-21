@@ -1,15 +1,16 @@
 import { generateRandomString } from '@lib/random.utils';
 import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
-import { ContractInitOpts } from '@modules/contract/model/contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 
-export let envParam = '';
-export let envWorkDir = '';
+export let envBuilderOpts = {} as Record<string, string | undefined>;
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const envBuilder: EnvBuilderContract = {
   init: async (opts: ContractInitOpts) => {
-    envParam = opts.contract.envParam ?? '';
-    envWorkDir = opts.system.workDir;
+    envBuilderOpts = { ...opts.contract, ...opts.system };
   },
   buildEnv: async (dto) => generateRandomString(),
   deleteEnv: async (dto) => {},
@@ -18,5 +19,4 @@ const envBuilder: EnvBuilderContract = {
 
 export default {
   buildContract: async () => envBuilder,
-  getEnvParam: () => envParam,
-};
+} satisfies ContractModule;

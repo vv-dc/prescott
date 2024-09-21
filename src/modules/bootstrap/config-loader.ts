@@ -1,6 +1,9 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import { buildContractMap } from '@modules/contract/contract-loader';
+import {
+  buildContractMap,
+  buildContractSystemOpts,
+} from '@modules/contract/contract-loader';
 import { validateRootConfigFile } from '@modules/bootstrap/config-validator';
 import {
   RootConfig,
@@ -33,7 +36,8 @@ const parseRootConfigFile = async (
   workDir: string
 ): Promise<RootConfig> => {
   const { contract } = configFile;
+  const systemOpts = await buildContractSystemOpts(workDir);
   return {
-    contractMap: await buildContractMap(contract, workDir),
+    contractMap: await buildContractMap(contract, systemOpts),
   };
 };

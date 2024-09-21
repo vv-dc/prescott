@@ -1,13 +1,13 @@
 import { prepareContract } from '@test/lib/test-contract.utils';
-import envConfigProviderBuilder from '@src/workdir/contract/config/env-config-provider';
-import { ConfigProviderContract } from '@modules/contract/model/config/config.contract';
+import envConfigResolverBuilder from '@src/workdir/contract/config/env-config-resolver';
+import { ConfigResolverContract } from '@modules/contract/model/config/config.contract';
 import { generateRandomString } from '@lib/random.utils';
 
-const buildConfigProvider = (): Promise<ConfigProviderContract> => {
-  return prepareContract(envConfigProviderBuilder);
+const buildConfigResolver = (): Promise<ConfigResolverContract> => {
+  return prepareContract(envConfigResolverBuilder);
 };
 
-describe('env-config-provider integration', () => {
+describe('env-config-resolver integration', () => {
   it.each([
     '0',
     '42',
@@ -21,8 +21,8 @@ describe('env-config-provider integration', () => {
     'null',
     'undefined',
   ])('should return unresolvable value directly - %s', async (value) => {
-    const configProvider = await buildConfigProvider();
-    const result = await configProvider.resolveValue(value);
+    const configResolver = await buildConfigResolver();
+    const result = await configResolver.resolveValue(value);
     expect(result).toEqual(value);
   });
 
@@ -34,23 +34,23 @@ describe('env-config-provider integration', () => {
     const prefixedValue = `prescott-test-env-config-provider-${value}`;
     process.env[prefixedValue] = expectedResult;
 
-    const configProvider = await buildConfigProvider();
-    const result = await configProvider.resolveValue(`{{${prefixedValue}}}`);
+    const configResolver = await buildConfigResolver();
+    const result = await configResolver.resolveValue(`{{${prefixedValue}}}`);
     expect(result).toEqual(expectedResult);
   });
 
   it('should return null if value is not available', async () => {
-    const configProvider = await buildConfigProvider();
+    const configResolver = await buildConfigResolver();
     const value = generateRandomString(`SOME_NON_EXISTENT_ENV_VARIABLE`);
-    const result = configProvider.resolveValueNullable(`{{${value}}}`);
+    const result = configResolver.resolveValueNullable(`{{${value}}}`);
     expect(result).toBeNull();
   });
 
   it('should throw if value is not available', async () => {
-    const configProvider = await buildConfigProvider();
+    const configResolver = await buildConfigResolver();
     const value = generateRandomString(`SOME_NON_EXISTENT_ENV_VARIABLE`);
     expect(() => {
-      configProvider.resolveValue(`{{${value}}}`);
+      configResolver.resolveValue(`{{${value}}}`);
     }).toThrow(new Error(`Cannot resolve value='{{${value}}}'`));
   });
 });

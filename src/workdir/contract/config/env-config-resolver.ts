@@ -3,7 +3,7 @@ import {
   ContractInitOpts,
   ContractModule,
 } from '@modules/contract/model/contract';
-import { ConfigProviderContract } from '@modules/contract/model/config/config.contract';
+import { ConfigResolverContract } from '@modules/contract/model/config/config.contract';
 
 const IS_RESOLVABLE_REGEXP = /^\{\{.*\}\}$/;
 
@@ -31,12 +31,12 @@ const isResolvable = (value: string): boolean => {
   return IS_RESOLVABLE_REGEXP.test(value);
 };
 
-const configProvider: ConfigProviderContract = {
+const configResolver: ConfigResolverContract = {
   init,
   resolveValue,
   resolveValueNullable,
 };
 
 export default {
-  buildContract: async () => configProvider,
+  buildContract: async () => configResolver,
 } satisfies ContractModule;
