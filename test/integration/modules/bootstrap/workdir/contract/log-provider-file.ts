@@ -1,7 +1,7 @@
 import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-const logProvider: LogProviderContract = {
+const logProviderFile: LogProviderContract = {
   init: async (opts) => {},
   consumeLogGenerator: async (id, generator) => {},
   searchLog: async (id, paging, dto) => ({
@@ -13,5 +13,5 @@ const logProvider: LogProviderContract = {
 /* eslint-enable @typescript-eslint/no-unused-vars */
 
 export default {
-  buildContract: async () => logProvider,
+  buildContract: async () => logProviderFile,
 };

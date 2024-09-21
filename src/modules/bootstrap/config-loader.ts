@@ -6,42 +6,6 @@ import {
   RootConfig,
   RootConfigFile,
 } from '@modules/bootstrap/model/root-config';
-import { ContractConfigFile } from '@modules/contract/model/contract-config';
-
-// TODO: remove this map - config.json should be always available in the workDir
-const DEFAULT_CONTRACT_CONFIG_FILE: Readonly<ContractConfigFile> = {
-  config: {
-    type: 'file',
-    key: 'config-provider.ts',
-  },
-  envBuilder: {
-    type: 'file',
-    key: 'env-builder.ts',
-  },
-  envRunner: {
-    type: 'file',
-    key: 'env-runner.ts',
-  },
-  log: {
-    type: 'file',
-    key: 'log-provider.ts',
-  },
-  metric: {
-    type: 'file',
-    key: 'metric-provider.ts',
-  },
-  scheduler: {
-    type: 'file',
-    key: 'task-scheduler.ts',
-  },
-  queue: {
-    type: 'file',
-    key: 'task-queue.ts',
-    opts: {
-      maxConcurrency: '5',
-    },
-  },
-};
 
 export const getRootConfig = async (workDir: string): Promise<RootConfig> => {
   const configPath = buildRootConfigPath(workDir);
@@ -69,17 +33,7 @@ const parseRootConfigFile = async (
   workDir: string
 ): Promise<RootConfig> => {
   const { contract } = configFile;
-  const completeContract = completeContractConfig(contract ?? {});
   return {
-    contractMap: await buildContractMap(completeContract, workDir),
+    contractMap: await buildContractMap(contract, workDir),
   };
-};
-
-const completeContractConfig = (
-  configFile: Partial<ContractConfigFile>
-): ContractConfigFile => {
-  return {
-    ...DEFAULT_CONTRACT_CONFIG_FILE,
-    ...configFile,
-  } as ContractConfigFile;
 };

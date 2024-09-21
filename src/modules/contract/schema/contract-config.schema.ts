@@ -14,11 +14,11 @@ export const contractConfigEntrySchema = Joi.object<ContractConfigFileEntry>({
 });
 
 export const contractConfigSchema = Joi.object<ContractConfigFile>({
-  config: contractConfigEntrySchema,
-  envBuilder: contractConfigEntrySchema,
-  envRunner: contractConfigEntrySchema,
-  log: contractConfigEntrySchema,
-  metric: contractConfigEntrySchema,
-  scheduler: contractConfigEntrySchema,
-  queue: contractConfigEntrySchema,
+  config: contractConfigEntrySchema.required(),
+  envBuilder: contractConfigEntrySchema.required(),
+  envRunner: contractConfigEntrySchema.required(),
+  log: contractConfigEntrySchema.required(),
+  metric: contractConfigEntrySchema.required(),
+  scheduler: contractConfigEntrySchema.required(),
+  queue: contractConfigEntrySchema.required(),
 });
