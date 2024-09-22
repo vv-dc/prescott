@@ -5,4 +5,5 @@ sleep 10s &&\
 kubectl cluster-info --context kind-prescott-test &&\
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml &&\
 kubectl patch -n kube-system deployment metrics-server --type=json \
-  -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
+  -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]' &&\
+kind export kubeconfig --name prescott-test --kubeconfig ../../src/workdir/data/kubeconfig.yml

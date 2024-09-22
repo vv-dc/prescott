@@ -38,4 +38,5 @@ build/
 
 # prescott data
 **/workdir/data/**/*.json
+**/workdir/data/**/*.yml
 **/workdir/data/prescott.sqlite
