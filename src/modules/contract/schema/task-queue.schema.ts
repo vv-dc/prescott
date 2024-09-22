@@ -4,4 +4,4 @@ import { TaskQueueContract } from '@modules/contract/model/queue/task-queue.cont
 export const taskQueueSchema = Joi.object<TaskQueueContract>({
   init: Joi.function().minArity(1).required(),
   enqueue: Joi.function().minArity(2).required(),
-});
+}).options({ allowUnknown: true });

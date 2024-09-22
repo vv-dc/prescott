@@ -8,4 +8,4 @@ export const taskSchedulerSchema = Joi.object<TaskSchedulerContract>({
   stop: Joi.function().minArity(1).required(),
   delete: Joi.function().minArity(1).required(),
   exists: Joi.function().minArity(1).required(),
-});
+}).options({ allowUnknown: true });

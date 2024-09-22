@@ -6,4 +6,4 @@ export const envRunnerSchema = Joi.object<EnvRunnerContract>({
   runEnv: Joi.function().minArity(1).required(),
   getEnvHandle: Joi.function().minArity(1).required(),
   getEnvChildrenHandleIds: Joi.function().minArity(1).required(),
-});
+}).options({ allowUnknown: true });

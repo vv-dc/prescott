@@ -3,7 +3,7 @@ import {
   validateContractConfig,
 } from '@modules/contract/contract-validator';
 import { generateRandomString } from '@lib/random.utils';
-import { Contract } from '@modules/contract/model/contract';
+import { Contract, ContractInitOpts } from '@modules/contract/model/contract';
 import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
 import { MetricProviderContract } from '@modules/contract/model/metric/metric-provider.contract';
 import { EntryPage } from '@modules/contract/model/entry-paging';
@@ -12,7 +12,11 @@ import {
   MetricsAggregated,
 } from '@modules/contract/model/metric/metric-entry';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
-import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
+import {
+  BuildEnvDto,
+  DeleteEnvDto,
+  EnvBuilderContract,
+} from '@modules/contract/model/env/env-builder.contract';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { EnvHandle } from '@modules/contract/model/env/env-handle';
 import { EnvId } from '@modules/contract/model/env/env-id';
@@ -34,6 +38,28 @@ describe('contract-validator unit', () => {
       deleteEnv: async (dto) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
+    const error = validateContractImpl('envBuilder', envBuilderImpl);
+    expect(error).toBeNull();
+  });
+
+  it('should validate envBuilder - class with fields', () => {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    class EnvBuilder implements EnvBuilderContract {
+      private workDir = '';
+
+      async init(opts: ContractInitOpts) {}
+      async buildEnv(dto: BuildEnvDto) {
+        return generateRandomString();
+      }
+      async deleteEnv(dto: DeleteEnvDto) {}
+
+      async extraFunction() {
+        return generateRandomString();
+      }
+    }
+    /* eslint-enable @typescript-eslint/no-unused-vars */
+
+    const envBuilderImpl = new EnvBuilder();
     const error = validateContractImpl('envBuilder', envBuilderImpl);
     expect(error).toBeNull();
   });

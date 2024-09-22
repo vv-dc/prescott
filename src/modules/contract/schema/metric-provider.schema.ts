@@ -7,4 +7,4 @@ export const metricProviderSchema = Joi.object<MetricProviderContract>({
   aggregateMetric: Joi.function().minArity(2).required(),
   searchMetric: Joi.function().minArity(3).required(),
   flushMetric: Joi.function().minArity(1).required(),
-});
+}).options({ allowUnknown: true });

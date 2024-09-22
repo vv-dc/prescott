@@ -5,4 +5,4 @@ export const configResolverSchema = Joi.object<ConfigResolverContract>({
   init: Joi.function().minArity(1).required(),
   resolveValue: Joi.function().minArity(1).required(),
   resolveValueNullable: Joi.function().minArity(1).required(),
-});
+}).options({ allowUnknown: true });

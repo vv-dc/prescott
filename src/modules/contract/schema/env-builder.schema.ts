@@ -5,4 +5,4 @@ export const envBuilderSchema = Joi.object<EnvBuilderContract>({
   init: Joi.function().minArity(1).required(),
   buildEnv: Joi.function().minArity(1).required(),
   deleteEnv: Joi.function().minArity(1).required(),
-});
+}).options({ allowUnknown: true });
