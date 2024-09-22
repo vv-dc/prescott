@@ -2,23 +2,37 @@ import { asyncGeneratorToArray } from '@lib/async.utils';
 import { DOCKER_IMAGES, OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 import envBuilderFn from '@src/workdir/contract/env/docker/docker-env-builder';
 import envRunnerFn from '@src/workdir/contract/env/docker/docker-env-runner';
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import {
   buildDockerImage,
   inspectDockerContainer,
   isDockerResourceExist,
 } from '@src/workdir/contract/env/docker/docker.utils';
 import { generateRandomString } from '@lib/random.utils';
-import { MetricEntry } from '@modules/contract/model/metric-entry';
-import { BuildEnvDto } from '@modules/contract/model/env/env-builder.contract';
-import { RunEnvDto } from '@modules/contract/model/env/env-runner.contract';
+import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
+import {
+  BuildEnvDto,
+  EnvBuilderContract,
+} from '@modules/contract/model/env/env-builder.contract';
+import {
+  EnvRunnerContract,
+  RunEnvDto,
+} from '@modules/contract/model/env/env-runner.contract';
+import { prepareContract } from '@test/lib/test-contract.utils';
 
-// TODO: split tests?
+const buildEnvBuilder = (): Promise<EnvBuilderContract> => {
+  return prepareContract(envBuilderFn);
+};
+
+const buildEnvRunner = (): Promise<EnvRunnerContract> => {
+  return prepareContract(envRunnerFn);
+};
+
 describe('docker-env-provider integration', () => {
   it('should handle life cycle of env from CREATE to DELETE', async () => {
     // build image => check it exists
-    const envBuilder = await envBuilderFn.buildContract();
-    const envRunner = await envRunnerFn.buildContract();
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
 
     const createDto: BuildEnvDto = {
       alias: generateRandomString('build-test'),
@@ -52,8 +66,8 @@ describe('docker-env-provider integration', () => {
   });
 
   it('should kill container if ram limit is reached', async () => {
-    const envBuilder = await envBuilderFn.buildContract();
-    const envRunner = await envRunnerFn.buildContract();
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
 
     const createDto: BuildEnvDto = {
       alias: generateRandomString('ram-test'),
@@ -85,7 +99,7 @@ describe('docker-env-provider integration', () => {
   });
 
   it('should kill container if timeout is reached', async () => {
-    const envRunner = await envRunnerFn.buildContract();
+    const envRunner = await buildEnvRunner();
 
     const { name, version } = DOCKER_IMAGES.nginx;
 
@@ -111,8 +125,8 @@ describe('docker-env-provider integration', () => {
   });
 
   it('should collect logs', async () => {
-    const envBuilder = await envBuilderFn.buildContract();
-    const envRunner = await envRunnerFn.buildContract();
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
 
     const createDto: BuildEnvDto = {
       alias: generateRandomString('log-test'),
@@ -161,8 +175,8 @@ describe('docker-env-provider integration', () => {
   });
 
   it('should collect metrics - CONTINUOUS', async () => {
-    const envBuilder = await envBuilderFn.buildContract();
-    const envRunner = await envRunnerFn.buildContract();
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
 
     const createDto: BuildEnvDto = {
       alias: generateRandomString('metrics-continuous-test'),
@@ -206,8 +220,8 @@ describe('docker-env-provider integration', () => {
   });
 
   it('should collect metrics - INTERVAL', async () => {
-    const envBuilder = await envBuilderFn.buildContract();
-    const envRunner = await envRunnerFn.buildContract();
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
 
     const createDto: BuildEnvDto = {
       alias: generateRandomString('metrics-interval-test'),

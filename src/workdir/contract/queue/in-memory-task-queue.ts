@@ -2,8 +2,11 @@ import { getLogger } from '@logger/logger';
 import {
   ExecuteTaskFn,
   TaskQueueContract,
-} from '@modules/contract/model/task-queue.contract';
-import { ContractOpts } from '@modules/contract/model/contract';
+} from '@modules/contract/model/queue/task-queue.contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 import { errorToReason } from '@modules/errors/get-error-reason';
 
 const config = { maxConcurrency: Infinity };
@@ -12,10 +15,8 @@ const logger = getLogger('in-memory-task-queue');
 const queue: ExecuteTaskFn[] = [];
 let running = 0;
 
-const init = async (opts: ContractOpts): Promise<void> => {
-  if (opts.maxConcurrency) {
-    config.maxConcurrency = +opts.maxConcurrency;
-  }
+const init = async (opts: ContractInitOpts): Promise<void> => {
+  config.maxConcurrency = +(opts.contract.maxConcurrency ?? 5);
 };
 
 const enqueue = async (
@@ -67,5 +68,5 @@ const taskQueue: TaskQueueContract = {
 };
 
 export default {
-  buildContract: () => taskQueue,
-};
+  buildContract: async () => taskQueue,
+} satisfies ContractModule;

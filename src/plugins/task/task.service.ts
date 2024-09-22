@@ -9,7 +9,7 @@ import { Task } from '@model/domain/task';
 import { TaskConfigDto, LocalTaskConfig } from '@model/dto/task-config.dto';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
-import { ExecuteTaskFn } from '@modules/contract/model/task-queue.contract';
+import { ExecuteTaskFn } from '@modules/contract/model/queue/task-queue.contract';
 
 export class TaskService {
   private readonly logger = getLogger('task-service');

@@ -1,10 +1,17 @@
-export type ContractOpts = {
+// TODO: make it generic + add validation schema to check opts before passing it to init
+export type ContractOpts = Record<string, string | undefined>;
+
+export interface ContractSystemOpts {
   workDir: string;
-  [key: string]: unknown; // TODO: add types for every contract
+}
+
+export type ContractInitOpts = {
+  system: ContractSystemOpts;
+  contract: ContractOpts;
 };
 
 export interface Contract {
-  init: (opts: ContractOpts) => Promise<void>;
+  init: (opts: ContractInitOpts) => Promise<void>;
 }
 
 export interface ContractModule {

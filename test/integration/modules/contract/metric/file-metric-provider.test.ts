@@ -1,16 +1,15 @@
 import { randomInt } from 'node:crypto';
 import fileMetricProviderBuilder from '@src/workdir/contract/metric/file-metric-provider';
 import { generateTaskRunHandle } from '@test/lib/test-data.utils';
-import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import { MetricProviderContract } from '@modules/contract/model/metric/metric-provider.contract';
 import {
   MetricEntry,
   MetricsAggregated,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
+import { prepareContract } from '@test/lib/test-contract.utils';
 
-const buildMetricProvider = async (): Promise<MetricProviderContract> => {
-  const metricProvider = await fileMetricProviderBuilder.buildContract();
-  await metricProvider.init({ workDir: __dirname });
-  return metricProvider;
+const buildMetricProvider = (): Promise<MetricProviderContract> => {
+  return prepareContract(fileMetricProviderBuilder);
 };
 
 describe('file-metric-provider integration', () => {

@@ -7,20 +7,23 @@ import {
   waitStreamFinished,
 } from '@lib/file.utils';
 import { buildPaginator, PagingMatcherFn } from '@lib/paging.utils';
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
+import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import {
   EntryPage,
   EntryPaging,
   EntrySearchDto,
 } from '@modules/contract/model/entry-paging';
-import { ContractOpts } from '@modules/contract/model/contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 
-const config = { workDir: '' };
+const config = {} as { workDir: string };
 
-const init = async (opts: ContractOpts): Promise<void> => {
-  config.workDir = opts.workDir;
+const init = async (opts: ContractInitOpts): Promise<void> => {
+  config.workDir = opts.system.workDir;
 };
 
 const buildLogFilePath = (runHandle: TaskRunHandle): [string, string] => {
@@ -112,4 +115,4 @@ const fileLogProvider: LogProviderContract = {
 
 export default {
   buildContract: async () => fileLogProvider,
-};
+} satisfies ContractModule;

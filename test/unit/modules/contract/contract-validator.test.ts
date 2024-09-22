@@ -1,16 +1,16 @@
 import {
-  validateContactImpl,
+  validateContractImpl,
   validateContractConfig,
 } from '@modules/contract/contract-validator';
 import { generateRandomString } from '@lib/random.utils';
 import { Contract } from '@modules/contract/model/contract';
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
-import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
+import { MetricProviderContract } from '@modules/contract/model/metric/metric-provider.contract';
 import { EntryPage } from '@modules/contract/model/entry-paging';
 import {
   MetricEntry,
   MetricsAggregated,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
 import { ContractConfigFile } from '@modules/contract/model/contract-config';
 import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
@@ -22,7 +22,7 @@ describe('contract-validator unit', () => {
     const invalidEnvImpl: Contract = {
       init: async () => {},
     };
-    const error = validateContactImpl('envBuilder', invalidEnvImpl);
+    const error = validateContractImpl('envBuilder', invalidEnvImpl);
     expect(error).not.toBeNull();
   });
 
@@ -34,7 +34,7 @@ describe('contract-validator unit', () => {
       deleteEnv: async (dto) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
-    const error = validateContactImpl('envBuilder', envBuilderImpl);
+    const error = validateContractImpl('envBuilder', envBuilderImpl);
     expect(error).toBeNull();
   });
 
@@ -42,7 +42,7 @@ describe('contract-validator unit', () => {
     const invalidEnvImpl: Contract = {
       init: async () => {},
     };
-    const error = validateContactImpl('envRunner', invalidEnvImpl);
+    const error = validateContractImpl('envRunner', invalidEnvImpl);
     expect(error).not.toBeNull();
   });
 
@@ -55,7 +55,7 @@ describe('contract-validator unit', () => {
       getEnvChildrenHandleIds: async (envId: EnvId) => [generateRandomString()],
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
-    const error = validateContactImpl('envRunner', envBuilderImpl);
+    const error = validateContractImpl('envRunner', envBuilderImpl);
     expect(error).toBeNull();
   });
 
@@ -63,7 +63,7 @@ describe('contract-validator unit', () => {
     const invalidLogImpl: Contract = {
       init: async () => {},
     };
-    const error = validateContactImpl('log', invalidLogImpl);
+    const error = validateContractImpl('log', invalidLogImpl);
     expect(error).not.toBeNull();
   });
 
@@ -79,7 +79,7 @@ describe('contract-validator unit', () => {
       flushLog: async (id) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
-    const error = validateContactImpl('log', logImpl);
+    const error = validateContractImpl('log', logImpl);
     expect(error).toBeNull();
   });
 
@@ -87,7 +87,7 @@ describe('contract-validator unit', () => {
     const invalidMetricImpl: Contract = {
       init: async () => {},
     };
-    const error = validateContactImpl('metric', invalidMetricImpl);
+    const error = validateContractImpl('metric', invalidMetricImpl);
     expect(error).not.toBeNull();
   });
 
@@ -101,12 +101,16 @@ describe('contract-validator unit', () => {
       flushMetric: async (id) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
-    const error = validateContactImpl('metric', metricImpl);
+    const error = validateContractImpl('metric', metricImpl);
     expect(error).toBeNull();
   });
 
   it('should validate config - VALID', () => {
     const config: ContractConfigFile = {
+      config: {
+        type: 'file',
+        key: 'some-config-provider-contract-impl',
+      },
       envBuilder: {
         type: 'npm',
         key: 'some-env-builder-contract-impl',

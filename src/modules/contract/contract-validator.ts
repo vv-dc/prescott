@@ -11,8 +11,10 @@ import { contractConfigSchema } from '@modules/contract/schema/contract-config.s
 import { taskSchedulerSchema } from '@modules/contract/schema/task-scheduler.schema';
 import { taskQueueSchema } from '@modules/contract/schema/task-queue.schema';
 import { envRunnerSchema } from '@modules/contract/schema/env-runner.schema';
+import { configResolverSchema } from '@modules/contract/schema/config-resolver.schema';
 
 const contractSchema: Record<ContractType, Schema> = {
+  config: configResolverSchema,
   envBuilder: envBuilderSchema,
   envRunner: envRunnerSchema,
   log: logProviderSchema,
@@ -21,13 +23,13 @@ const contractSchema: Record<ContractType, Schema> = {
   queue: taskQueueSchema,
 };
 
-export const validateContactImpl = (
+export const validateContractImpl = (
   type: ContractType,
   impl: Contract
 ): string | null => {
   const schema = contractSchema[type];
   const { error } = schema.validate(impl);
-  return error ? `Invalid implementation for ${type}: ${error}` : null;
+  return error ? `Invalid contract implementation for ${type}: ${error}` : null;
 };
 
 export const validateContractConfig = (

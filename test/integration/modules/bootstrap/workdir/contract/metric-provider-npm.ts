@@ -1,13 +1,15 @@
-import { MetricProviderContract } from '@modules/contract/model/metric-provider.contract';
+import { MetricProviderContract } from '@modules/contract/model/metric/metric-provider.contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 
-export let metricParam = 0;
-export let metricWorkDir = '';
+export let metricProviderOpts = {} as Record<string, string | undefined>;
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 const metricProvider: MetricProviderContract = {
-  init: async (opts) => {
-    metricParam = opts.metricParam as number;
-    metricWorkDir = opts.workDir;
+  init: async (opts: ContractInitOpts) => {
+    metricProviderOpts = { ...opts.contract, ...opts.system };
   },
   consumeMetricGenerator: async (id, generator) => {},
   searchMetric: async (id, paging, dto) => ({
@@ -24,5 +26,4 @@ const metricProvider: MetricProviderContract = {
 
 export default {
   buildContract: async () => metricProvider,
-  getMetricParam: () => metricParam,
-};
+} satisfies ContractModule;

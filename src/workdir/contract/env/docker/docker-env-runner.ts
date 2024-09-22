@@ -1,4 +1,7 @@
-import { ContractOpts } from '@modules/contract/model/contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 import {
   EnvRunnerContract,
   RunEnvDto,
@@ -18,12 +21,10 @@ import { getLogger } from '@logger/logger';
 import { EnvId } from '@modules/contract/model/env/env-id';
 
 const logger = getLogger('docker-env-runner');
-const config = {
-  workDir: process.env.PRESCOTT_WORKDIR || '',
-} as ContractOpts;
+const config = {} as { workDir: string };
 
-const init = async (opts: ContractOpts): Promise<void> => {
-  config.workDir = opts.workDir;
+const init = async (opts: ContractInitOpts): Promise<void> => {
+  config.workDir = opts.system.workDir;
 };
 
 const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
@@ -87,4 +88,4 @@ const envRunner: EnvRunnerContract = {
 
 export default {
   buildContract: async () => envRunner,
-};
+} satisfies ContractModule;

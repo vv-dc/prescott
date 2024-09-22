@@ -1,24 +1,51 @@
 {
   "contract": {
+    "config": {
+      "type": "file",
+      "key": "config-resolver-file.ts",
+      "opts": {
+        "configNotResolved": "{{CONFIG_RESOLVER_VAR}}",
+        "configRaw": "foo-bar-42"
+      }
+    },
     "envBuilder": {
       "type": "file",
-      "key": "custom-env-builder-file.ts",
+      "key": "env-builder-file.ts",
       "opts": {
-        "envParam": -3
+        "raw": "-3",
+        "resolved": "{{ENV_BUILDER_VAR}}"
       }
     },
     "envRunner": {
       "type": "file",
-      "key": "custom-env-runner-file.ts",
+      "key": "env-runner-file.ts",
       "opts": {
-        "envParam": -42
+        "envParam": "-42"
+      }
+    },
+    "log": {
+      "type": "file",
+      "key": "log-provider-file.ts",
+      "opts": {
+        "someValue": "{{LOG_PROVIDER_VAR}}"
       }
     },
     "metric": {
       "type": "npm",
-      "key": "custom-metric-npm-provider",
+      "key": "metric-provider-npm",
       "opts": {
-        "metricParam": 424242
+        "metricParam": "424242"
+      }
+    },
+    "queue": {
+      "type": "npm",
+      "key": "task-queue-npm"
+    },
+    "scheduler": {
+      "type": "file",
+      "key": "task-scheduler-file.ts",
+      "opts": {
+        "someVar": "{{SCHEDULER_VAR}}"
       }
     }
   }
