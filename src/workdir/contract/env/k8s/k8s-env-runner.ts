@@ -22,7 +22,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const kubeConfig = buildKubeConfigByContractOpts(opts);
     this.namespace = inferCurrentNamespaceByKubeConfig(kubeConfig);
     this.apiClient = kubeConfig.makeApiClient(k8s.CoreV1Api);
-    await checkK8sApiHealth(this.apiClient);
+    await checkK8sApiHealth(this.apiClient, this.namespace);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -1,4 +1,3 @@
-import * as path from 'node:path';
 import * as fsp from 'node:fs/promises';
 
 import {
@@ -10,12 +9,19 @@ import { DOCKER_IMAGES } from '@test/lib/test.const';
 import { generateRandomString } from '@lib/random.utils';
 import k8sKindDockerEnvBuilder from '@src/workdir/contract/env/k8s/k8s-kind-docker-env-builder';
 import k8sEnvRunner from '@src/workdir/contract/env/k8s/k8s-env-runner';
-import { config, PRESCOTT_CONFIG } from '@config/config';
+import { getK8sApiConfig, getK8sResourcePath } from '@test/lib/test-k8s.utils';
+import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
     kindClusterName: 'prescott-test',
   });
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const buildEnvRunner = async (): Promise<EnvRunnerContract> => {
+  const apiConfig = await getK8sApiConfig();
+  return await prepareContract(k8sEnvRunner, apiConfig);
 };
 
 // do not run until explicitly uncommented
@@ -38,21 +44,22 @@ describe.skip('k8s flow', () => {
 
   it('should connect to cluster using kubeConfigPath', async () => {
     await prepareContract(k8sEnvRunner, {
-      kubeConfigPath: 'data/kubeconfig.yml',
+      kubeConfigPath: 'data/k8s/kubeconfig.yml',
     });
     expect.assertions(0);
   });
 
   it('should connect to cluster using kubeConfigString', async () => {
-    const workDir = config[PRESCOTT_CONFIG].workDir;
-    const kubeConfigPath = path.join(workDir, 'data/kubeconfig.yml');
+    const kubeConfigPath = getK8sResourcePath('kubeconfig.yml');
     const kubeConfigString = await fsp.readFile(kubeConfigPath, 'utf-8');
 
-    await prepareContract(k8sEnvRunner, {
-      kubeConfigString,
-    });
+    await prepareContract(k8sEnvRunner, { kubeConfigString });
     expect.assertions(0);
   });
 
-  it.todo('should connect to cluster using host + bearer');
+  it('should connect to cluster using host + bearer', async () => {
+    const apiConfig = await getK8sApiConfig();
+    await prepareContract(k8sEnvRunner, apiConfig);
+    expect.assertions(0);
+  });
 });

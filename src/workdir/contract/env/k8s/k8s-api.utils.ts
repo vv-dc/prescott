@@ -59,7 +59,8 @@ const buildLoadOptions = (opts: ContractOpts) => {
   };
   const user: k8s.User = {
     name: INTERNAL_USER_NAME,
-    token: opts.apiKey,
+    token: opts.token,
+    // TODO: add support for certs
   };
   const context: k8s.Context = {
     name: INTERNAL_CONTEXT_NAME,
@@ -82,20 +83,21 @@ const assertContractOpts = (opts: ContractOpts): void => {
       opts.isInCluster ||
       opts.kubeConfigPath ||
       opts.kubeConfigString ||
-      (opts.host && opts.bearerToken)
+      (opts.host && opts.token)
     )
   ) {
     throw new Error(
-      `opts "kubeConfigPath" | "kubeConfigString" | ("host" & "bearerToken") should be provided'`
+      `opts "kubeConfigPath" | "kubeConfigString" | ("host" & "token") should be provided'`
     );
   }
 };
 
 export const checkK8sApiHealth = async (
-  apiClient: k8s.CoreV1Api
+  apiClient: k8s.CoreV1Api,
+  namespace: string
 ): Promise<void> => {
   try {
-    await apiClient.listPodForAllNamespaces();
+    await apiClient.listNamespacedPod(namespace);
   } catch (err) {
     const reason = errorToReason(err);
     throw new Error(`K8s-runner: health-check failed: ${reason}`);
@@ -108,5 +110,5 @@ export const inferCurrentNamespaceByKubeConfig = (
   const currentContextName = kubeConfig.getCurrentContext();
   const allContexts = kubeConfig.getContexts();
   const currentContext = allContexts.find((c) => c.name === currentContextName);
-  return currentContext?.name ?? DEFAULT_NAMESPACE;
+  return currentContext?.namespace ?? DEFAULT_NAMESPACE;
 };
