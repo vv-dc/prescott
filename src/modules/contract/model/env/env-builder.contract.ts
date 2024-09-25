@@ -7,11 +7,13 @@ export interface EnvBuilderContract extends Contract {
   deleteEnv(dto: DeleteEnvDto): Promise<void>;
 }
 
+// TODO: version separately - always tag images
 export interface BuildEnvDto {
   alias: string;
   envInfo: EnvInfo;
   script: string; // TODO: list of steps - every env builder should specify how to chain it
   isCache: boolean;
+  // TODO: extra args per task?
 }
 
 export interface DeleteEnvDto {

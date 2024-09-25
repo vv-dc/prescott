@@ -10,9 +10,19 @@ export interface EnvRunnerContract extends Contract {
 }
 
 export interface RunEnvDto {
+  /**
+   * identifier of target environment's template (image etc.)
+   */
+  // TODO: rename to templateKey
   envId: EnvId;
+  /**
+   * safe identifier of the target task
+   */
+  // TODO: add
+  // resourceId: string;
   limitations?: Limitations;
   options: RunEnvOptions;
+  // TODO: extra args per task?
 }
 
 export interface RunEnvOptions {

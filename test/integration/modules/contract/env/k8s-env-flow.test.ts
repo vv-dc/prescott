@@ -10,7 +10,10 @@ import { generateRandomString } from '@lib/random.utils';
 import k8sKindDockerEnvBuilder from '@src/workdir/contract/env/k8s/k8s-kind-docker-env-builder';
 import k8sEnvRunner from '@src/workdir/contract/env/k8s/k8s-env-runner';
 import { getK8sApiConfig, getK8sResourcePath } from '@test/lib/test-k8s.utils';
-import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
+import {
+  EnvRunnerContract,
+  RunEnvDto,
+} from '@modules/contract/model/env/env-runner.contract';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -18,7 +21,6 @@ const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const buildEnvRunner = async (): Promise<EnvRunnerContract> => {
   const apiConfig = await getK8sApiConfig();
   return await prepareContract(k8sEnvRunner, apiConfig);
@@ -61,5 +63,28 @@ describe.skip('k8s flow', () => {
     const apiConfig = await getK8sApiConfig();
     await prepareContract(k8sEnvRunner, apiConfig);
     expect.assertions(0);
+  });
+
+  it('should create a pod to run the script', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const buildDto: BuildEnvDto = {
+      alias: generateRandomString('k8s-kind-build-test'),
+      envInfo: DOCKER_IMAGES.alpine,
+      script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
+      isCache: false,
+    };
+    const envId = await envBuilder.buildEnv(buildDto);
+
+    const runDto: RunEnvDto = {
+      envId,
+      limitations: {
+        cpus: 0.5,
+        ram: '512M',
+      },
+      options: { isDelete: true },
+    };
+    await envRunner.runEnv(runDto);
   });
 });

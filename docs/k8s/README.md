@@ -21,13 +21,13 @@ There are two ways to connect to cluster:
 ### Kubeconfig
 (1) Generate kubeconfig:
 ```shell
-kind export kubeconfig --name '<cluster-name'> --kubeconfig '<directory-name>'
+kind export kubeconfig --name '<cluster-name>' --kubeconfig '<directory-name>'
 ```
 (2) Use it in `opts` of `envRunner` in one of two ways:
 ```json
 {
   "opts": {
-    "kubeConfig": "path to kubeconfig on FS",
+    "kubeConfigPath": "path to kubeconfig on FS",
     "kubeConfigString": "content of kubeconfig"
   }
 }
@@ -57,7 +57,7 @@ kubectl apply -f binding.yml
 (4) Export `token` of created `service-account`
 ```shell
 kubectl create token 'prescott-account' # without namespace
-kubectl create token 'prescott-account' -n 'prescott' # with namespaxce
+kubectl create token 'prescott-account' -n 'prescott' # with namespace
 ```
 
 (5) Export `host` K8s cluster:

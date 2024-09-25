@@ -96,12 +96,7 @@ export const checkK8sApiHealth = async (
   apiClient: k8s.CoreV1Api,
   namespace: string
 ): Promise<void> => {
-  try {
-    await apiClient.listNamespacedPod(namespace);
-  } catch (err) {
-    const reason = errorToReason(err);
-    throw new Error(`K8s-runner: health-check failed: ${reason}`);
-  }
+  await makeK8sApiRequest(() => apiClient.listNamespacedPod(namespace));
 };
 
 export const inferCurrentNamespaceByKubeConfig = (
@@ -111,4 +106,16 @@ export const inferCurrentNamespaceByKubeConfig = (
   const allContexts = kubeConfig.getContexts();
   const currentContext = allContexts.find((c) => c.name === currentContextName);
   return currentContext?.namespace ?? DEFAULT_NAMESPACE;
+};
+
+export const makeK8sApiRequest = async <T>(
+  fn: () => Promise<T>
+): Promise<T> => {
+  try {
+    return await fn();
+  } catch (err) {
+    const reason = errorToReason(err);
+    // TODO: handle body too
+    throw new Error(`K8s-runner: ${reason}`);
+  }
 };
