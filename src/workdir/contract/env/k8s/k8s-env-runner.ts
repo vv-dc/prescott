@@ -14,19 +14,27 @@ import {
   makeK8sApiRequest,
 } from '@src/workdir/contract/env/k8s/k8s-api.utils';
 import {
-  buildK8sPodIdentifier,
+  buildK8sPodNamePrefix,
   buildK8sPodLimits,
 } from '@src/workdir/contract/env/k8s/k8s.utils';
+import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
+import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
 
 export class K8sEnvRunner implements EnvRunnerContract {
   private api!: k8s.CoreV1Api;
+  private kubeConfig!: k8s.KubeConfig;
+
   private namespace!: string;
   private imagePullPolicy!: string;
+  private runnerContainer!: string;
 
   async init(opts: ContractInitOpts) {
     this.imagePullPolicy = opts.contract.imagePullPolicy ?? 'Never';
+    this.runnerContainer = opts.contract.runnerContainer ?? 'prescott-runner';
 
+    // TODO: refresh service account token
     const kubeConfig = buildKubeConfigByContractOpts(opts);
+    this.kubeConfig = kubeConfig;
     this.namespace = inferCurrentNamespaceByKubeConfig(kubeConfig);
 
     this.api = kubeConfig.makeApiClient(k8s.CoreV1Api);
@@ -35,7 +43,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   async runEnv(dto: RunEnvDto): Promise<K8sEnvHandle> {
     const { envId, limitations } = dto;
-    const identifier = buildK8sPodIdentifier(); // TODO: get from RunEnvDto
+    const namePrefix = buildK8sPodNamePrefix(); // TODO: get from RunEnvDto
 
     // TODO: handle nodes selection by label
     // TODO: handle lower bound resources
@@ -43,17 +51,15 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const createPodDto: k8s.V1Pod = {
       apiVersion: 'v1',
       metadata: {
-        generateName: identifier,
-        labels: {
-          prescottLabel: identifier,
-        },
+        generateName: namePrefix,
+        labels: {},
         namespace: this.namespace,
       },
       spec: {
         restartPolicy: 'Never',
         containers: [
           {
-            name: 'prescott-task',
+            name: this.runnerContainer,
             image: envId,
             imagePullPolicy: this.imagePullPolicy,
             resources: { limits: podLimits },
@@ -65,12 +71,42 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const podRes = await makeK8sApiRequest(() =>
       this.api.createNamespacedPod(this.namespace, createPodDto)
     );
-    const handleId = podRes.body.metadata?.name as string;
-    return new K8sEnvHandle(handleId);
+
+    const podName = podRes.body.metadata?.name as string;
+    const [stateWatch, envHandle] = this.buildEnvHandleWithStateWatch(podName);
+
+    // wait until running to make sure container started before collecting logs/metrics
+    await stateWatch.start();
+    await stateWatch.waitNonPending();
+
+    return envHandle;
   }
 
-  async getEnvHandle(handleId: string): Promise<K8sEnvHandle> {
-    return new K8sEnvHandle(handleId);
+  private buildEnvHandleWithStateWatch(
+    podName: string
+  ): [K8sPodStateWatch, K8sEnvHandle] {
+    const identifier: K8sPodIdentifier = {
+      name: podName,
+      namespace: this.namespace,
+      runnerContainer: this.runnerContainer,
+    };
+    const stateWatch = new K8sPodStateWatch(
+      identifier,
+      new k8s.Watch(this.kubeConfig)
+    );
+    const envHandle = new K8sEnvHandle(
+      identifier,
+      stateWatch,
+      new k8s.Log(this.kubeConfig),
+      new k8s.Metrics(this.kubeConfig)
+    );
+    return [stateWatch, envHandle];
+  }
+
+  async getEnvHandle(podName: string): Promise<K8sEnvHandle> {
+    // TODO: populate state from existing pod using describe?
+    const [, envHandle] = this.buildEnvHandleWithStateWatch(podName);
+    return envHandle;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

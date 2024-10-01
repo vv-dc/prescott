@@ -115,7 +115,7 @@ export const makeK8sApiRequest = async <T>(
     return await fn();
   } catch (err) {
     const reason = errorToReason(err);
-    // TODO: handle body too
-    throw new Error(`K8s-runner: ${reason}`);
+    const message = (err as k8s.HttpError).body.message;
+    throw new Error(`K8s-runner: ${reason} - ${message}`);
   }
 };

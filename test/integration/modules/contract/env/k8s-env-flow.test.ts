@@ -14,6 +14,7 @@ import {
   EnvRunnerContract,
   RunEnvDto,
 } from '@modules/contract/model/env/env-runner.contract';
+import { asyncGeneratorToArray } from '@lib/async.utils';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -65,26 +66,44 @@ describe.skip('k8s flow', () => {
     expect.assertions(0);
   });
 
-  it('should create a pod to run the script', async () => {
+  it('should throw an error if image does not exist', async () => {
+    const envRunner = await buildEnvRunner();
+
+    const runDto: RunEnvDto = {
+      envId: 'some_non_existent_image_for_k8s',
+      options: { isDelete: true },
+    };
+
+    await expect(envRunner.runEnv(runDto)).rejects.toEqual(
+      new Error(
+        `[prescott-runner]: ErrImageNeverPull: Container image "${runDto.envId}" is not present with pull policy of Never`
+      )
+    );
+  });
+
+  it('should wait until pod is finished - SUCCESS', async () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
     const buildDto: BuildEnvDto = {
       alias: generateRandomString('k8s-kind-build-test'),
       envInfo: DOCKER_IMAGES.alpine,
-      script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
+      script: `for i in $(seq 1 100); do echo "Hello"; done`,
       isCache: false,
     };
     const envId = await envBuilder.buildEnv(buildDto);
 
     const runDto: RunEnvDto = {
       envId,
-      limitations: {
-        cpus: 0.5,
-        ram: '512M',
-      },
       options: { isDelete: true },
     };
-    await envRunner.runEnv(runDto);
+
+    const envHandle = await envRunner.runEnv(runDto);
+    const logsGenerator = envHandle.logs();
+    const exitCode = await envHandle.wait();
+
+    expect(exitCode).toEqual(0);
+    const logsArray = await asyncGeneratorToArray(logsGenerator);
+    expect(logsArray.length).toBeGreaterThan(100);
   });
 });
