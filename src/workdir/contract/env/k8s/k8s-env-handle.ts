@@ -12,6 +12,7 @@ import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 import { makeK8sApiRequest } from '@src/workdir/contract/env/k8s/k8s-api.utils';
 import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
+import { transformReadableToRFC3339LogGenerator } from '@lib/log.utils';
 
 export class K8sEnvHandle implements EnvHandle {
   constructor(
@@ -46,10 +47,10 @@ export class K8sEnvHandle implements EnvHandle {
 
   async *logs(): AsyncGenerator<LogEntry> {
     const { name, namespace, runnerContainer } = this.identifier;
-    const logStream = new PassThrough();
+    const readable = new PassThrough();
 
     await makeK8sApiRequest(() =>
-      this.log.log(namespace, name, runnerContainer, logStream, {
+      this.log.log(namespace, name, runnerContainer, readable, {
         follow: true,
         pretty: false,
         timestamps: true,
@@ -57,17 +58,7 @@ export class K8sEnvHandle implements EnvHandle {
     );
 
     // k8s doesn't separate stdout / stderr
-    for await (const chunk of logStream) {
-      const rawLogs = chunk.toString().split('\n');
-
-      for (const rawLog of rawLogs) {
-        yield {
-          stream: 'stdout',
-          time: Date.now(), // TODO: fixme parse from k8s
-          content: rawLog,
-        };
-      }
-    }
+    yield* transformReadableToRFC3339LogGenerator(readable, 'stdout');
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

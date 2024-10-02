@@ -16,6 +16,7 @@ import {
 } from '@modules/contract/model/env/env-runner.contract';
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -108,7 +109,7 @@ describe.skip('k8s flow', () => {
       exitError: null,
     } as WaitEnvHandleResult);
     const logsArray = await asyncGeneratorToArray(logsGenerator);
-    expect(logsArray.length).toBeGreaterThan(100);
+    expect(logsArray.length).toEqual(100);
   });
 
   it('should wait until pod is finished - FAILURE', async () => {
@@ -139,6 +140,39 @@ describe.skip('k8s flow', () => {
     } as WaitEnvHandleResult);
 
     const logsArray = await asyncGeneratorToArray(logsGenerator);
-    expect(logsArray.length).toEqual(0);
+    expect(logsArray).toHaveLength(0);
+  });
+
+  it('should collect logs during pod execution', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const buildDto: BuildEnvDto = {
+      alias: generateRandomString('k8s-kind-build-test'),
+      envInfo: DOCKER_IMAGES.alpine,
+      script: 'for i in $(seq 50); do echo "hi-${i}"; done',
+      isCache: false,
+    };
+    const envId = await envBuilder.buildEnv(buildDto);
+
+    const runDto: RunEnvDto = {
+      envId,
+      options: { isDelete: true },
+    };
+
+    const envHandle = await envRunner.runEnv(runDto);
+    const logsGenerator = envHandle.logs();
+    const logArrayPromise = asyncGeneratorToArray(logsGenerator);
+    await envHandle.wait();
+
+    const logsArray = await logArrayPromise;
+    expect(logsArray).toHaveLength(50);
+
+    const expectedLogs: LogEntry[] = Array.from({ length: 50 }, (_, idx) => ({
+      time: expect.any(Number),
+      content: `hi-${idx + 1}`,
+      stream: 'stdout',
+    }));
+    expect(logsArray).toEqual(expectedLogs);
   });
 });
