@@ -5,6 +5,7 @@ import {
   DeleteEnvHandleDto,
   EnvHandle,
   StopEnvHandleDto,
+  WaitEnvHandleResult,
 } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
@@ -24,9 +25,12 @@ export class K8sEnvHandle implements EnvHandle {
     return this.identifier.name;
   }
 
-  async wait(): Promise<number> {
+  async wait(): Promise<WaitEnvHandleResult> {
     await this.stateWatch.waitTerminal();
-    return this.stateWatch.getExitCodeThrowable();
+    return {
+      exitCode: this.stateWatch.getExitCodeThrowable(),
+      exitError: this.stateWatch.getExitError(),
+    };
   }
 
   // there is no difference between stop and delete of pod in K8S

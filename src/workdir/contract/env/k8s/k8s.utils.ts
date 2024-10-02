@@ -54,12 +54,27 @@ const inferK8sWaitingContainerFailureReasonNullable = (
   return null;
 };
 
-export const formatK8sReasonMessageByPodStatus = (
-  status: k8s.V1PodStatus
-): string => {
-  return status.reason
-    ? formatK8sReasonMessage(status.reason, status.message)
-    : 'Unknown reason';
+export const inferK8sTerminatedPodReasonNullable = (
+  status: k8s.V1PodStatus,
+  runnerContainer: string
+): string | null => {
+  const { reason, message, containerStatuses } = status;
+
+  if (reason) {
+    return formatK8sReasonMessage(reason, message);
+  }
+  if (!containerStatuses || containerStatuses.length === 0) {
+    return null;
+  }
+
+  const container = containerStatuses.find((c) => c.name === runnerContainer);
+  if (!container?.state?.terminated?.reason) {
+    return null;
+  }
+
+  const { reason: containerReason, message: containerMessage } =
+    container.state.terminated;
+  return formatK8sReasonMessage(containerReason, containerMessage);
 };
 
 const formatK8sReasonMessage = (reason: string, message?: string): string => {

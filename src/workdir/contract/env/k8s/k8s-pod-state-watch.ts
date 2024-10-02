@@ -2,17 +2,17 @@ import * as events from 'node:events';
 import * as k8s from '@kubernetes/client-node';
 import {
   inferAllWaitingContainersFailureReasonNullable,
-  formatK8sReasonMessageByPodStatus,
   inferK8sPodExitCodeNullable,
+  inferK8sTerminatedPodReasonNullable,
 } from '@src/workdir/contract/env/k8s/k8s.utils';
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { V1ContainerStatus, V1PodStatus } from '@kubernetes/client-node';
 
 const enum PodLifeTimeEvent {
-  'running' = 'running',
-  'failed' = 'failed',
-  'succeeded' = 'succeeded',
+  'running' = 'running', // container was created but still running
+  'failed' = 'failed', // container failed during execution (exit_code != 0) or creation (ErrImageNeverPull)
+  'succeeded' = 'succeeded', // container executed successfully
 }
 
 const DEFAULT_SUCCESS_EXIT_CODE = 0;
@@ -21,12 +21,30 @@ const DEFAULT_FAILURE_EXIT_CODE = 1;
 export class K8sPodStateWatch {
   private readonly emitter = new events.EventEmitter();
   private watchResult: k8s.WatchResult | null = null; // null - watch is not started, or pod finished running
+
+  private initError: string | null = null; // error throw during container initialization (ImagePullErr etc.)
   private exitCode: number | null = null; // null - still running
+  private exitError: string | null = null;
 
   constructor(
     private readonly identifier: K8sPodIdentifier,
     private readonly watch: k8s.Watch
   ) {}
+
+  getInitError(): string | null {
+    return this.initError;
+  }
+
+  getExitCodeThrowable(): number {
+    if (!this.isStateTerminal()) {
+      throw new Error('Pod is not terminal - exitCode is not available');
+    }
+    return this.exitCode as number;
+  }
+
+  getExitError(): string | null {
+    return this.exitError;
+  }
 
   // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
   async start(): Promise<void> {
@@ -57,9 +75,9 @@ export class K8sPodStateWatch {
       },
       (err) => {
         // watch abort is also recognized as error and is passed here, so it should be skipped
-        if (err && !this.isTerminal()) {
+        if (err && !this.isStateTerminal()) {
           const reason = errorToReason(err);
-          this.setFailed(reason, DEFAULT_FAILURE_EXIT_CODE);
+          this.setRunFailed(DEFAULT_FAILURE_EXIT_CODE, reason);
         }
       }
     );
@@ -73,12 +91,8 @@ export class K8sPodStateWatch {
     const reasonNullable =
       inferAllWaitingContainersFailureReasonNullable(containerStatuses);
     if (reasonNullable !== null) {
-      const exitCodeNullable = inferK8sPodExitCodeNullable(
-        containerStatuses,
-        this.identifier.runnerContainer
-      );
       this.stopIfApplicable(); // no need to wait - container already failed
-      this.setFailed(reasonNullable, exitCodeNullable ?? 1);
+      this.setInitFailed(reasonNullable);
     }
   }
 
@@ -98,28 +112,27 @@ export class K8sPodStateWatch {
     );
 
     if (phase === 'Failed') {
-      const reason = formatK8sReasonMessageByPodStatus(podStatus);
-      this.setFailed(reason, exitCodeNullable ?? DEFAULT_FAILURE_EXIT_CODE);
+      const reasonNullable = inferK8sTerminatedPodReasonNullable(
+        podStatus,
+        this.identifier.runnerContainer
+      );
+      this.setRunFailed(
+        exitCodeNullable ?? DEFAULT_FAILURE_EXIT_CODE,
+        reasonNullable ?? 'Unknown'
+      );
     } else {
-      this.setSucceed(exitCodeNullable ?? DEFAULT_SUCCESS_EXIT_CODE);
+      this.setRunSucceeded(exitCodeNullable ?? DEFAULT_SUCCESS_EXIT_CODE);
     }
   }
 
-  private stopIfApplicable() {
+  stopIfApplicable() {
     if (this.watchResult !== null) {
       this.watchResult.abort();
       this.watchResult = null;
     }
   }
 
-  getExitCodeThrowable(): number {
-    if (!this.isTerminal()) {
-      throw new Error('Pod is not terminal - exitCode is not available');
-    }
-    return this.exitCode as number;
-  }
-
-  isTerminal(): boolean {
+  private isStateTerminal(): boolean {
     return this.exitCode !== null;
   }
 
@@ -127,34 +140,41 @@ export class K8sPodStateWatch {
     this.emitter.emit(PodLifeTimeEvent.running);
   }
 
-  private setSucceed(exitCode: number) {
+  private setRunSucceeded(exitCode: number) {
     this.exitCode = exitCode;
-    this.emitter.emit(PodLifeTimeEvent.succeeded, exitCode);
+    this.emitter.emit(PodLifeTimeEvent.succeeded);
   }
 
-  private setFailed(reason: string, exitCode: number): void {
+  private setRunFailed(exitCode: number, reason: string): void {
     this.exitCode = exitCode;
-    this.emitter.emit(PodLifeTimeEvent.failed, new Error(reason));
+    this.exitError = reason;
+    this.emitter.emit(PodLifeTimeEvent.failed);
   }
 
-  async waitNonPending(): Promise<void> {
-    if (this.isTerminal()) {
-      return;
+  private setInitFailed(reason: string): void {
+    this.exitCode = DEFAULT_FAILURE_EXIT_CODE; // there is no exit code, because container was not started
+    this.initError = reason;
+    this.emitter.emit(PodLifeTimeEvent.failed);
+  }
+
+  waitNonPending(): Promise<void> {
+    if (this.isStateTerminal()) {
+      return Promise.resolve();
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.emitter.once(PodLifeTimeEvent.running, () => resolve());
       this.emitter.once(PodLifeTimeEvent.succeeded, () => resolve());
-      this.emitter.once(PodLifeTimeEvent.failed, (err) => reject(err));
+      this.emitter.once(PodLifeTimeEvent.failed, () => resolve());
     });
   }
 
-  async waitTerminal(): Promise<void> {
-    if (this.isTerminal()) {
-      return;
+  waitTerminal(): Promise<void> {
+    if (this.isStateTerminal()) {
+      return Promise.resolve();
     }
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.emitter.once(PodLifeTimeEvent.succeeded, () => resolve());
-      this.emitter.once(PodLifeTimeEvent.failed, (err) => reject(err));
+      this.emitter.once(PodLifeTimeEvent.failed, () => resolve());
     });
   }
 }

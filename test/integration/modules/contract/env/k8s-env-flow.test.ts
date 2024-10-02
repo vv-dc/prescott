@@ -15,6 +15,7 @@ import {
   RunEnvDto,
 } from '@modules/contract/model/env/env-runner.contract';
 import { asyncGeneratorToArray } from '@lib/async.utils';
+import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -66,7 +67,7 @@ describe.skip('k8s flow', () => {
     expect.assertions(0);
   });
 
-  it('should throw an error if image does not exist', async () => {
+  it('should handle errors during container creation inside the pod', async () => {
     const envRunner = await buildEnvRunner();
 
     const runDto: RunEnvDto = {
@@ -100,10 +101,44 @@ describe.skip('k8s flow', () => {
 
     const envHandle = await envRunner.runEnv(runDto);
     const logsGenerator = envHandle.logs();
-    const exitCode = await envHandle.wait();
+    const waitResult = await envHandle.wait();
 
-    expect(exitCode).toEqual(0);
+    expect(waitResult).toMatchObject({
+      exitCode: 0,
+      exitError: null,
+    } as WaitEnvHandleResult);
     const logsArray = await asyncGeneratorToArray(logsGenerator);
     expect(logsArray.length).toBeGreaterThan(100);
+  });
+
+  it('should wait until pod is finished - FAILURE', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const exitCode = 123;
+    const buildDto: BuildEnvDto = {
+      alias: generateRandomString('k8s-kind-build-test'),
+      envInfo: DOCKER_IMAGES.alpine,
+      script: `exit ${exitCode}`,
+      isCache: false,
+    };
+    const envId = await envBuilder.buildEnv(buildDto);
+
+    const runDto: RunEnvDto = {
+      envId,
+      options: { isDelete: true },
+    };
+
+    const envHandle = await envRunner.runEnv(runDto);
+    const logsGenerator = envHandle.logs();
+
+    const waitResult = await envHandle.wait();
+    expect(waitResult).toMatchObject({
+      exitCode: exitCode,
+      exitError: 'Error',
+    } as WaitEnvHandleResult);
+
+    const logsArray = await asyncGeneratorToArray(logsGenerator);
+    expect(logsArray.length).toEqual(0);
   });
 });

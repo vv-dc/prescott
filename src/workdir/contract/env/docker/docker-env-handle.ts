@@ -14,12 +14,14 @@ import {
   DeleteEnvHandleDto,
   EnvHandle,
   StopEnvHandleDto,
+  WaitEnvHandleResult,
 } from '@modules/contract/model/env/env-handle';
 import {
   LogEntry,
   LogEntryStream,
 } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
+import { errorToReason } from '@modules/errors/get-error-reason';
 
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';
@@ -73,19 +75,21 @@ export class DockerEnvHandle implements EnvHandle {
     );
   }
 
-  async wait(): Promise<number> {
+  async wait(): Promise<WaitEnvHandleResult> {
     const command = new CommandBuilder().init('docker wait');
     try {
       const { stdout } = await execDockerCommandWithCheck(
         this.container,
         command.with(this.container)
       );
-      return parseInt(stdout.slice(0, -1), 10); // skip last \n
+      const exitCode = parseInt(stdout.slice(0, -1), 10); // skip last \n
+      return { exitCode, exitError: null };
     } catch (err) {
-      const [exitCode] = await inspectDockerContainer(this.container, [
+      const [exitCodeString] = await inspectDockerContainer(this.container, [
         'exitCode',
       ]);
-      return parseInt(exitCode, 10);
+      const exitCode = parseInt(exitCodeString, 10);
+      return { exitCode, exitError: errorToReason(err) };
     }
   }
 

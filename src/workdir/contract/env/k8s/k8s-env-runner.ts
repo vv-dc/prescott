@@ -43,15 +43,19 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   async runEnv(dto: RunEnvDto): Promise<K8sEnvHandle> {
     const { envId, limitations } = dto;
-    const namePrefix = buildK8sPodNamePrefix(); // TODO: get from RunEnvDto
+
+    const podName = buildK8sPodNamePrefix(); // TODO: get from RunEnvDto
+    const [stateWatch, envHandle] = this.buildEnvHandleWithStateWatch(podName);
+    await stateWatch.start(); // start watching pod state before its creation to receive ALL events
 
     // TODO: handle nodes selection by label
     // TODO: handle lower bound resources
+    // TODO: error handling
     const podLimits = limitations ? buildK8sPodLimits(limitations) : {};
     const createPodDto: k8s.V1Pod = {
       apiVersion: 'v1',
       metadata: {
-        generateName: namePrefix,
+        name: podName,
         labels: {},
         namespace: this.namespace,
       },
@@ -67,17 +71,16 @@ export class K8sEnvRunner implements EnvRunnerContract {
         ],
       },
     };
-
-    const podRes = await makeK8sApiRequest(() =>
-      this.api.createNamespacedPod(this.namespace, createPodDto)
+    await makeK8sApiRequest(
+      () => this.api.createNamespacedPod(this.namespace, createPodDto),
+      () => stateWatch.stopIfApplicable()
     );
 
-    const podName = podRes.body.metadata?.name as string;
-    const [stateWatch, envHandle] = this.buildEnvHandleWithStateWatch(podName);
-
-    // wait until running to make sure container started before collecting logs/metrics
-    await stateWatch.start();
-    await stateWatch.waitNonPending();
+    await stateWatch.waitNonPending(); // wait until container started before collecting logs/metrics
+    const initErrorNullable = stateWatch.getInitError();
+    if (initErrorNullable !== null) {
+      throw new Error(initErrorNullable);
+    }
 
     return envHandle;
   }

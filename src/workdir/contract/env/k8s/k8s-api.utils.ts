@@ -109,11 +109,15 @@ export const inferCurrentNamespaceByKubeConfig = (
 };
 
 export const makeK8sApiRequest = async <T>(
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
+  beforeThrowCallback?: () => Promise<void> | void
 ): Promise<T> => {
   try {
     return await fn();
   } catch (err) {
+    if (beforeThrowCallback) {
+      beforeThrowCallback();
+    }
     const reason = errorToReason(err);
     const message = (err as k8s.HttpError).body.message;
     throw new Error(`K8s-runner: ${reason} - ${message}`);

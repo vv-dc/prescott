@@ -111,11 +111,13 @@ export class TaskService {
 
     const envHandle = await this.executorService.runExecutable(taskId, config);
     await this.runService.start(runHandle, envHandle);
-    const exitCode: number = await envHandle.wait();
-    await this.runService.finish(runHandle, exitCode === 0);
+    const { exitCode, exitError } = await envHandle.wait();
+    await this.runService.finish(runHandle, exitCode === 0); // TODO: check exitError instead
 
     await envHandle.delete({ isForce: false });
-    this.logger.info(`runTask[taskId=${taskId}]: exitCode=${exitCode}`);
+    this.logger.info(
+      `runTask[taskId=${taskId}]: exitCode=${exitCode}, exitError=${exitError}`
+    );
 
     if (times !== undefined && runHandle.runRank >= times) {
       await this.executorService.stopExecutable(taskId, 'system');

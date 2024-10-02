@@ -87,7 +87,7 @@ describe('docker-env-provider integration', () => {
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
     // wait until container killed
-    const exitCode = await envHandle.wait();
+    const { exitCode } = await envHandle.wait();
     expect(exitCode).toEqual(OUT_OF_MEMORY_CODE);
 
     // clear

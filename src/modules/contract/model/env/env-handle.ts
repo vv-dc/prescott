@@ -5,7 +5,10 @@ export interface EnvHandle {
   id(): string;
   stop(dto: StopEnvHandleDto): Promise<void>;
   delete(dto: DeleteEnvHandleDto): Promise<void>;
-  wait(): Promise<number>; // TODO: use status and text instead of exit code
+  /**
+   * Should never throw an error and return the exit code with the reason instead
+   */
+  wait(): Promise<WaitEnvHandleResult>;
   logs(): AsyncGenerator<LogEntry>;
   metrics(intervalMs?: number): AsyncGenerator<MetricEntry>;
 }
@@ -19,4 +22,9 @@ export type StopEnvHandleSignalType = 'timeout' | 'user' | 'system';
 
 export interface DeleteEnvHandleDto {
   isForce: boolean;
+}
+
+export interface WaitEnvHandleResult {
+  exitCode: number;
+  exitError: string | null;
 }
