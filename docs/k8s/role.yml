@@ -12,4 +12,4 @@ rules:
     verbs: ["get"]
   - apiGroups: ["metrics.k8s.io"]
     resources: ["pods"]
-    verbs: ["get", "list", "watch"]
+    verbs: ["get"]

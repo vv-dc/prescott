@@ -3,8 +3,16 @@ import * as k8s from '@kubernetes/client-node';
 
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { Limitations } from '@model/domain/limitations';
+import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
+import { millisecondsToSeconds } from '@lib/time.utils';
 
 const DEFAULT_NAMESPACE = 'default';
+
+export class K8sEnvRunnerError extends Error {
+  constructor(message: string, readonly statusCode: number) {
+    super(`K8s-env-runner: ${message}[${statusCode}]`);
+  }
+}
 
 export const checkK8sApiHealth = async (
   apiClient: k8s.CoreV1Api,
@@ -33,27 +41,71 @@ export const makeK8sApiRequest = async <T>(
       beforeThrowCallback();
     }
     if (err instanceof k8s.HttpError) {
-      throw err;
+      const { statusCode, body } = err;
+      throw new K8sEnvRunnerError(body.message, statusCode ?? 500);
     }
     const reason = errorToReason(err);
-    throw new Error(`K8s-runner: ${reason}`);
+    throw new K8sEnvRunnerError(reason, 500);
   }
 };
 
 export const buildK8sPodNamePrefix = () =>
   `prescott-${randomInt(1, 1_000_000)}`; // TODO: fixme
 
-export const buildK8sPodLimits = (
-  limitations: Limitations
-): Record<string, string> => {
-  const podLimitations: Record<string, string> = {};
+export const buildK8sPodCreateDto = (
+  identifier: K8sPodIdentifier,
+  imageKey: string,
+  imagePullPolicy: string,
+  limitations?: Limitations
+): k8s.V1Pod => {
+  const [resourceLimits, ttlSeconds] = buildK8sPodResourceLimits(limitations);
+
+  const podSpec: k8s.V1PodSpec = {
+    restartPolicy: 'Never',
+    containers: [
+      {
+        name: identifier.runnerContainer,
+        image: imageKey,
+        imagePullPolicy,
+        resources: { limits: resourceLimits },
+      },
+    ],
+  };
+  if (ttlSeconds !== undefined) {
+    podSpec.activeDeadlineSeconds = ttlSeconds;
+    podSpec.terminationGracePeriodSeconds = 0;
+  }
+
+  return {
+    apiVersion: 'v1',
+    metadata: {
+      name: identifier.name,
+      labels: {},
+      namespace: identifier.namespace,
+    },
+    spec: podSpec,
+  };
+};
+
+const buildK8sPodResourceLimits = (
+  limitations?: Limitations
+): [Record<string, string>, number | undefined] => {
+  if (!limitations) {
+    return [{}, undefined];
+  }
+
+  const resourceLimitations: Record<string, string> = {};
   if (limitations.cpus) {
-    podLimitations.cpu = limitations.cpus.toString();
+    resourceLimitations.cpu = limitations.cpus.toString();
   }
   if (limitations.ram) {
-    podLimitations.memory = limitations.ram;
+    resourceLimitations.memory = limitations.ram;
   }
-  return podLimitations;
+  const ttlSeconds = limitations.ttl
+    ? millisecondsToSeconds(limitations.ttl)
+    : undefined;
+
+  return [resourceLimitations, ttlSeconds];
 };
 
 export const inferAllWaitingContainersFailureReasonNullable = (

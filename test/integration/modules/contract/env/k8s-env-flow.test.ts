@@ -88,6 +88,62 @@ describe.skip('k8s flow', () => {
     );
   });
 
+  it('should stop/delete pod immediately after TTL', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const buildDto: BuildEnvDto = {
+      alias: generateRandomString('k8s-kind-build-test'),
+      envInfo: DOCKER_IMAGES.alpine,
+      script: `sleep 1000`, // 1000s
+      isCache: false,
+    };
+    const envId = await envBuilder.buildEnv(buildDto);
+    const runDto: RunEnvDto = {
+      envId,
+      options: { isDelete: true },
+      limitations: {
+        ttl: 3_000, // 3s
+      },
+    };
+
+    const envHandle = await envRunner.runEnv(runDto);
+    const waitResult = await envHandle.wait();
+
+    expect(waitResult).toMatchObject({
+      exitCode: 137,
+      exitError:
+        'DeadlineExceeded: Pod was active on the node longer than the specified deadline',
+    } as WaitEnvHandleResult);
+
+    await envHandle.delete({ isForce: true });
+    await envBuilder.deleteEnv({ envId, isForce: true });
+  });
+
+  it('should delete pod on stop', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const buildDto: BuildEnvDto = {
+      alias: generateRandomString('k8s-kind-build-test'),
+      envInfo: DOCKER_IMAGES.alpine,
+      script: `sleep 1000`, // 1000s
+      isCache: false,
+    };
+    const envId = await envBuilder.buildEnv(buildDto);
+    const runDto: RunEnvDto = {
+      envId,
+      options: { isDelete: true },
+    };
+
+    const envHandle = await envRunner.runEnv(runDto);
+    await envHandle.stop({ timeout: 3_000, signal: 'system' }); // 3s
+    await envHandle.wait();
+
+    // TODO: check using getEnvChildrenHandleIds
+    await envBuilder.deleteEnv({ envId, isForce: true });
+  });
+
   it('should wait until pod is finished - SUCCESS', async () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
@@ -115,6 +171,9 @@ describe.skip('k8s flow', () => {
     } as WaitEnvHandleResult);
     const logsArray = await asyncGeneratorToArray(logsGenerator);
     expect(logsArray.length).toEqual(100);
+
+    await envHandle.delete({ isForce: true });
+    await envBuilder.deleteEnv({ envId, isForce: true });
   });
 
   it('should wait until pod is finished - FAILURE', async () => {
@@ -146,6 +205,9 @@ describe.skip('k8s flow', () => {
 
     const logsArray = await asyncGeneratorToArray(logsGenerator);
     expect(logsArray).toHaveLength(0);
+
+    await envHandle.delete({ isForce: true });
+    await envBuilder.deleteEnv({ envId, isForce: true });
   });
 
   it('should collect logs during pod execution', async () => {
@@ -179,6 +241,9 @@ describe.skip('k8s flow', () => {
       stream: 'stdout',
     }));
     expect(logsArray).toEqual(expectedLogs);
+
+    await envHandle.delete({ isForce: true });
+    await envBuilder.deleteEnv({ envId, isForce: true });
   });
 
   it('should collect metrics during pod execution - metrics-server', async () => {
@@ -216,5 +281,8 @@ describe.skip('k8s flow', () => {
       })
     );
     expect(metricsArray).toEqual(expectedMetrics);
+
+    await envHandle.delete({ isForce: true });
+    await envBuilder.deleteEnv({ envId, isForce: true });
   });
 });

@@ -9,11 +9,14 @@ import {
 } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
-import { makeK8sApiRequest } from '@src/workdir/contract/env/k8s/k8s-api.utils';
+import {
+  K8sEnvRunnerError,
+  makeK8sApiRequest,
+} from '@src/workdir/contract/env/k8s/k8s-api.utils';
 import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { transformReadableToRFC3339LogGenerator } from '@lib/log.utils';
-import { delay } from '@lib/time.utils';
+import { delay, millisecondsToSeconds } from '@lib/time.utils';
 import { K8sPodMetricConfig } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
 
 export class K8sEnvHandle implements EnvHandle {
@@ -25,6 +28,7 @@ export class K8sEnvHandle implements EnvHandle {
     identifier: K8sPodIdentifier,
     private readonly stateWatch: K8sPodStateWatch,
     private readonly metricConfig: K8sPodMetricConfig,
+    private readonly api: k8s.CoreV1Api,
     private readonly log: k8s.Log,
     private readonly metric: k8s.Metrics
   ) {
@@ -45,15 +49,36 @@ export class K8sEnvHandle implements EnvHandle {
     };
   }
 
-  // there is no difference between stop and delete of pod in K8S
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // there is no difference between stop and delete of pod in K8s
   async stop(dto: StopEnvHandleDto): Promise<void> {
-    // TODO: impl
+    const { signal, timeout } = dto;
+    if (signal === 'timeout') {
+      return this.deleteImpl(0);
+    } else {
+      const seconds = timeout ? millisecondsToSeconds(timeout) : undefined;
+      return this.deleteImpl(seconds);
+    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async delete(dto: DeleteEnvHandleDto): Promise<void> {
-    // TODO: impl
+    const gracePeriod = dto.isForce ? 0 : undefined;
+    await this.deleteImpl(gracePeriod);
+  }
+
+  /**
+   * @param gracePeriodSeconds time to wait before sending SIGKILL signal after SIGTERM.
+   * If 0, then SIGKILL is sent immediately. Default period is 30 seconds
+   */
+  private async deleteImpl(gracePeriodSeconds?: number): Promise<void> {
+    await makeK8sApiRequest(() =>
+      this.api.deleteNamespacedPod(
+        this.podName,
+        this.namespace,
+        undefined,
+        undefined,
+        gracePeriodSeconds ?? 30
+      )
+    );
   }
 
   async *logs(): AsyncGenerator<LogEntry> {
@@ -120,7 +145,7 @@ export class K8sEnvHandle implements EnvHandle {
       ];
     } catch (err) {
       // TODO: implement backoff - increase wait time when 404 happens too many times in a row?
-      if (!(err instanceof k8s.HttpError)) {
+      if (!(err instanceof K8sEnvRunnerError)) {
         return [false, null];
       }
       const isLastMetric = err.statusCode !== 404; // metrics were not collected yet
