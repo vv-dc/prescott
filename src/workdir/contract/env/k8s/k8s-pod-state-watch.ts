@@ -4,7 +4,7 @@ import {
   inferAllWaitingContainersFailureReasonNullable,
   inferK8sPodExitCodeNullable,
   inferK8sTerminatedPodReasonNullable,
-} from '@src/workdir/contract/env/k8s/k8s.utils';
+} from '@src/workdir/contract/env/k8s/k8s-api.utils';
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { V1ContainerStatus, V1PodStatus } from '@kubernetes/client-node';
@@ -23,7 +23,7 @@ export class K8sPodStateWatch {
   private watchResult: k8s.WatchResult | null = null; // null - watch is not started, or pod finished running
 
   private initError: string | null = null; // error throw during container initialization (ImagePullErr etc.)
-  private exitCode: number | null = null; // null - still running
+  private exitCode: number | null = null; // null - container never exited
   private exitError: string | null = null;
 
   constructor(
@@ -132,7 +132,7 @@ export class K8sPodStateWatch {
     }
   }
 
-  private isStateTerminal(): boolean {
+  isStateTerminal(): boolean {
     return this.exitCode !== null;
   }
 

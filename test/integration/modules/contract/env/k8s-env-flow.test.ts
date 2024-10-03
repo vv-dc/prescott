@@ -17,6 +17,7 @@ import {
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
+import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -26,7 +27,11 @@ const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
 
 const buildEnvRunner = async (): Promise<EnvRunnerContract> => {
   const apiConfig = await getK8sApiConfig();
-  return await prepareContract(k8sEnvRunner, apiConfig);
+  const opts = {
+    ...apiConfig,
+    metricProvider: 'metrics-server',
+  };
+  return await prepareContract(k8sEnvRunner, opts);
 };
 
 // do not run until explicitly uncommented
@@ -174,5 +179,42 @@ describe.skip('k8s flow', () => {
       stream: 'stdout',
     }));
     expect(logsArray).toEqual(expectedLogs);
+  });
+
+  it('should collect metrics during pod execution - metrics-server', async () => {
+    // metrics-server takes some time to start collecting metrics, so the test should run for a while
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const buildDto: BuildEnvDto = {
+      alias: generateRandomString('k8s-kind-build-test'),
+      envInfo: DOCKER_IMAGES.alpine,
+      script: 'for i in $(seq 20); do echo "nop-${i}" && sleep 1; done', // 20 seconds running
+      isCache: false,
+    };
+    const envId = await envBuilder.buildEnv(buildDto);
+
+    const runDto: RunEnvDto = {
+      envId,
+      options: { isDelete: true },
+    };
+
+    const envHandle = await envRunner.runEnv(runDto);
+    const metricsGenerator = envHandle.metrics(1_000); // every 1s
+    const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);
+    await envHandle.wait();
+
+    const metricsArray = await metricsArrayPromise;
+    expect(metricsArray.length).toBeGreaterThan(1);
+
+    const expectedMetrics: MetricEntry[] = Array.from(
+      { length: metricsArray.length },
+      () => ({
+        time: expect.any(Number),
+        ram: expect.any(String),
+        cpu: expect.any(String),
+      })
+    );
+    expect(metricsArray).toEqual(expectedMetrics);
   });
 });

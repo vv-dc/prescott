@@ -8,17 +8,21 @@ import { K8sEnvHandle } from '@src/workdir/contract/env/k8s/k8s-env-handle';
 import { ContractInitOpts } from '@modules/contract/model/contract';
 import { EnvId } from '@modules/contract/model/env/env-id';
 import {
-  buildKubeConfigByContractOpts,
+  buildK8sPodLimits,
+  buildK8sPodNamePrefix,
   checkK8sApiHealth,
   inferCurrentNamespaceByKubeConfig,
   makeK8sApiRequest,
 } from '@src/workdir/contract/env/k8s/k8s-api.utils';
-import {
-  buildK8sPodNamePrefix,
-  buildK8sPodLimits,
-} from '@src/workdir/contract/env/k8s/k8s.utils';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
+import {
+  buildK8sPodMetricConfig,
+  buildKubeConfigByContractOpts,
+} from '@src/workdir/contract/env/k8s/k8s-contract-opts.utils';
+import { K8sPodMetricConfig } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
+
+const RUNNER_CONTAINER_NAME = 'prescott-runner';
 
 export class K8sEnvRunner implements EnvRunnerContract {
   private api!: k8s.CoreV1Api;
@@ -26,11 +30,11 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   private namespace!: string;
   private imagePullPolicy!: string;
-  private runnerContainer!: string;
+  private podMetricConfig!: K8sPodMetricConfig;
 
   async init(opts: ContractInitOpts) {
     this.imagePullPolicy = opts.contract.imagePullPolicy ?? 'Never';
-    this.runnerContainer = opts.contract.runnerContainer ?? 'prescott-runner';
+    this.podMetricConfig = buildK8sPodMetricConfig(opts.contract);
 
     // TODO: refresh service account token
     const kubeConfig = buildKubeConfigByContractOpts(opts);
@@ -63,7 +67,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
         restartPolicy: 'Never',
         containers: [
           {
-            name: this.runnerContainer,
+            name: RUNNER_CONTAINER_NAME,
             image: envId,
             imagePullPolicy: this.imagePullPolicy,
             resources: { limits: podLimits },
@@ -91,7 +95,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const identifier: K8sPodIdentifier = {
       name: podName,
       namespace: this.namespace,
-      runnerContainer: this.runnerContainer,
+      runnerContainer: RUNNER_CONTAINER_NAME,
     };
     const stateWatch = new K8sPodStateWatch(
       identifier,
@@ -100,6 +104,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const envHandle = new K8sEnvHandle(
       identifier,
       stateWatch,
+      this.podMetricConfig,
       new k8s.Log(this.kubeConfig),
       new k8s.Metrics(this.kubeConfig)
     );
