@@ -39,7 +39,13 @@ export class TaskExecutorService {
     afterBuildCallbackFn?: TaskAfterBuildCallbackFn
   ): Promise<void> {
     const isScheduled = await this.scheduler.exists(taskId);
-    if (isScheduled) return;
+    if (isScheduled) {
+      await this.scheduler.start(taskId);
+      this.logger.info(
+        `scheduleExecutable[taskId=${taskId}]: already scheduled - start`
+      );
+      return;
+    }
 
     const { config, envInfo } = taskConfig;
     const label = buildTaskLabel(taskId);
