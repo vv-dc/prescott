@@ -16,11 +16,11 @@ class K8sKindDockerEnvBuilder
   extends DockerEnvBuilder
   implements EnvBuilderContract
 {
-  private clusterName = '';
+  private clusterName!: string;
 
   override async init(opts: ContractInitOpts): Promise<void> {
     await super.init(opts);
-    this.clusterName = opts.contract.kindClusterName || 'prescott';
+    this.clusterName = opts.contract.clusterName || 'prescott';
   }
 
   override async buildEnv(dto: BuildEnvDto): Promise<string> {

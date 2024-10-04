@@ -54,10 +54,25 @@ export class K8sPodStateWatch {
         fieldSelector: `metadata.name=${this.identifier.name}`,
       },
       (updateType: string, pod: k8s.V1Pod) => {
-        if (!['ADDED', 'MODIFIED'].includes(updateType) || !pod.status?.phase) {
+        if (
+          !['ADDED', 'MODIFIED', 'DELETED'].includes(updateType) ||
+          !pod.status?.phase
+        ) {
           return; // wait until next update
         }
         const { phase, containerStatuses = [] } = pod.status;
+
+        // pod can be deleted in any of states while running
+        if (updateType === 'DELETED') {
+          const actualPhase = ['Succeed', 'Failed'].includes(phase)
+            ? phase
+            : 'Failed';
+          return this.handleTerminalPhase(
+            actualPhase,
+            containerStatuses,
+            pod.status
+          );
+        }
 
         switch (phase) {
           case 'Pending':

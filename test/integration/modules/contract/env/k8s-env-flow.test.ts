@@ -10,18 +10,16 @@ import { generateRandomString } from '@lib/random.utils';
 import k8sKindDockerEnvBuilder from '@src/workdir/contract/env/k8s/k8s-kind-docker-env-builder';
 import k8sEnvRunner from '@src/workdir/contract/env/k8s/k8s-env-runner';
 import { getK8sApiConfig, getK8sResourcePath } from '@test/lib/test-k8s.utils';
-import {
-  EnvRunnerContract,
-  RunEnvDto,
-} from '@modules/contract/model/env/env-runner.contract';
+import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { asyncGeneratorToArray } from '@lib/async.utils';
 import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
+import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
-    kindClusterName: 'prescott-test',
+    clusterName: 'prescott-test',
   });
 };
 
@@ -76,11 +74,9 @@ describe.skip('k8s flow', () => {
   it('should handle errors during container creation inside the pod', async () => {
     const envRunner = await buildEnvRunner();
 
-    const runDto: RunEnvDto = {
-      envKey: 'some_non_existent_image_for_k8s',
-      label: 'some-label', // _ are not allowed in pod names
-      options: { isDelete: true },
-    };
+    const label = 'k8s-test-failure-during-creation';
+    const envKey = 'some_non_existent_image-for_k8s';
+    const runDto = getRunEnvDto(label, envKey);
 
     await expect(envRunner.runEnv(runDto)).rejects.toEqual(
       new Error(
@@ -89,25 +85,50 @@ describe.skip('k8s flow', () => {
     );
   });
 
+  it('should return all children by label', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const label = 'k8s-kind-test-full-flow';
+    const script = 'sleep 1000';
+    const buildDto = getAlpineBuildEnvDto(label, script);
+
+    const envKey = await envBuilder.buildEnv(buildDto);
+    const runDto = getRunEnvDto(label, envKey);
+
+    const envHandle1 = await envRunner.runEnv(runDto);
+    const envHandle2 = await envRunner.runEnv(runDto);
+    const envHandle3 = await envRunner.runEnv(runDto);
+
+    const handleIds = await envRunner.getEnvChildrenHandleIds(label);
+    expect(handleIds).toEqual(
+      expect.arrayContaining([
+        envHandle1.id(),
+        envHandle2.id(),
+        envHandle3.id(),
+      ])
+    );
+    expect(handleIds).toHaveLength(3);
+
+    await envHandle1.delete({ isForce: true });
+    await envHandle2.delete({ isForce: true });
+    await envHandle3.delete({ isForce: true });
+
+    await envBuilder.deleteEnv({ envKey, isForce: true });
+  });
+
   it('should stop/delete pod immediately after TTL', async () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `sleep 1000`, // 1000s
-      isCache: false,
-    };
+    const label = 'k8s-test-ttl';
+    const script = 'sleep 1000';
+    const buildDto = getAlpineBuildEnvDto(label, script);
+
     const envKey = await envBuilder.buildEnv(buildDto);
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: true },
-      limitations: {
-        ttl: 3_000, // 3s
-      },
-    };
+    const runDto = getRunEnvDto(label, envKey, {
+      ttl: 3_000,
+    });
 
     const envHandle = await envRunner.runEnv(runDto);
     const waitResult = await envHandle.wait();
@@ -122,28 +143,45 @@ describe.skip('k8s flow', () => {
     await envBuilder.deleteEnv({ envKey, isForce: true });
   });
 
-  it('should delete pod on stop', async () => {
+  it('should delete pod on stop - IMMEDIATELY', async () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `sleep 1000`, // 1000s
-      isCache: false,
-    };
+    const label = 'k8s-test-stop-immediate';
+    const script = 'sleep 1000';
+
+    const buildDto = getAlpineBuildEnvDto(label, script);
     const envKey = await envBuilder.buildEnv(buildDto);
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: true },
-    };
+    const runDto = getRunEnvDto(label, envKey);
 
     const envHandle = await envRunner.runEnv(runDto);
-    await envHandle.stop({ timeout: 3_000, signal: 'system' }); // 3s
+    await envHandle.stop({ timeout: 0, signal: 'user' }); // stop immediately
     await envHandle.wait();
 
-    // TODO: check using getEnvChildrenHandleIds
+    const handleIds = await envRunner.getEnvChildrenHandleIds(runDto.label);
+    expect(handleIds).toHaveLength(0);
+
+    await envBuilder.deleteEnv({ envKey, isForce: true });
+  });
+
+  it('should delete pod on stop - TIMEOUT', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const label = 'k8s-test-stop-timeout';
+    const script = 'sleep 1000';
+
+    const buildDto = getAlpineBuildEnvDto(label, script);
+    const envKey = await envBuilder.buildEnv(buildDto);
+    const runDto = getRunEnvDto(label, envKey);
+
+    const envHandle = await envRunner.runEnv(runDto);
+    await envHandle.stop({ timeout: 3_000, signal: 'user' }); // 3s
+    await envHandle.wait();
+
+    const handleIds = await envRunner.getEnvChildrenHandleIds(runDto.label);
+    expect(handleIds).toHaveLength(0);
+
     await envBuilder.deleteEnv({ envKey, isForce: true });
   });
 
@@ -151,20 +189,13 @@ describe.skip('k8s flow', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 1 100); do echo "Hello"; done`,
-      isCache: false,
-    };
+    const label = 'k8s-test-wait-success';
+    const script = `for i in $(seq 1 100); do echo "Hello"; done`;
+
+    const buildDto = getAlpineBuildEnvDto(label, script);
     const envKey = await envBuilder.buildEnv(buildDto);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: true },
-    };
-
+    const runDto = getRunEnvDto(label, envKey);
     const envHandle = await envRunner.runEnv(runDto);
     const logsGenerator = envHandle.logs();
     const waitResult = await envHandle.wait();
@@ -184,21 +215,14 @@ describe.skip('k8s flow', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
+    const label = 'k8s-test-wait-failure';
     const exitCode = 123;
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `exit ${exitCode}`,
-      isCache: false,
-    };
+    const script = `exit ${exitCode}`;
+
+    const buildDto = getAlpineBuildEnvDto(label, script);
     const envKey = await envBuilder.buildEnv(buildDto);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: true },
-    };
-
+    const runDto = getRunEnvDto(label, envKey);
     const envHandle = await envRunner.runEnv(runDto);
     const logsGenerator = envHandle.logs();
 
@@ -219,20 +243,13 @@ describe.skip('k8s flow', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: 'for i in $(seq 50); do echo "hi-${i}"; done',
-      isCache: false,
-    };
+    const label = 'k8s-test-log';
+    const script = 'for i in $(seq 50); do echo "hi-${i}"; done';
+
+    const buildDto = getAlpineBuildEnvDto(label, script);
     const envKey = await envBuilder.buildEnv(buildDto);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: true },
-    };
-
+    const runDto = getRunEnvDto(label, envKey);
     const envHandle = await envRunner.runEnv(runDto);
     const logsGenerator = envHandle.logs();
     const logArrayPromise = asyncGeneratorToArray(logsGenerator);
@@ -257,20 +274,13 @@ describe.skip('k8s flow', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: 'for i in $(seq 20); do echo "nop-${i}" && sleep 1; done', // 20 seconds running
-      isCache: false,
-    };
+    const label = 'k8s-test-metrics';
+    const script = 'for i in $(seq 20); do echo "nop-${i}" && sleep 1; done'; // 20 seconds running
+
+    const buildDto = getAlpineBuildEnvDto(label, script);
     const envKey = await envBuilder.buildEnv(buildDto);
 
-    const runDto: RunEnvDto = {
-      label: buildDto.label,
-      envKey,
-      options: { isDelete: true },
-    };
-
+    const runDto = getRunEnvDto(label, envKey);
     const envHandle = await envRunner.runEnv(runDto);
     const metricsGenerator = envHandle.metrics(1_000); // every 1s
     const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);

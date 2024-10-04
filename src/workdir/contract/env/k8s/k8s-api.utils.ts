@@ -5,6 +5,7 @@ import { Limitations } from '@model/domain/limitations';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { millisecondsToSeconds } from '@lib/time.utils';
 import { generateRandomString } from '@lib/random.utils';
+import { PRESCOTT_POD_K8S_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
 
 export class K8sEnvRunnerError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -50,13 +51,18 @@ export const makeK8sApiRequest = async <T>(
 export const generateK8sPodNameByLabel = (label: string): string =>
   generateRandomString(label);
 
+export const getK8sPodLabelByName = (podName: string): string => {
+  const lastSeparatorIdx = podName.lastIndexOf('-');
+  return podName.slice(0, lastSeparatorIdx);
+};
+
 export const buildK8sPodCreateDto = (
   identifier: K8sPodIdentifier,
   imageKey: string,
   imagePullPolicy: string,
   limitations?: Limitations
 ): k8s.V1Pod => {
-  const { namespace, name, runnerContainer } = identifier;
+  const { namespace, label, name, runnerContainer } = identifier;
   const [resourceLimits, ttlSeconds] = buildK8sPodResourceLimits(limitations);
 
   const podSpec: k8s.V1PodSpec = {
@@ -79,7 +85,9 @@ export const buildK8sPodCreateDto = (
     apiVersion: 'v1',
     metadata: {
       name,
-      labels: {},
+      labels: {
+        [PRESCOTT_POD_K8S_CONST.LABEL_ORIGIN_KEY]: label,
+      },
       namespace,
     },
     spec: podSpec,

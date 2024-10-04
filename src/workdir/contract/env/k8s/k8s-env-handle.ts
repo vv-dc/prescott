@@ -51,13 +51,10 @@ export class K8sEnvHandle implements EnvHandle {
 
   // there is no difference between stop and delete of pod in K8s
   async stop(dto: StopEnvHandleDto): Promise<void> {
-    const { signal, timeout } = dto;
-    if (signal === 'timeout') {
-      return this.deleteImpl(0);
-    } else {
-      const seconds = timeout ? millisecondsToSeconds(timeout) : undefined;
-      return this.deleteImpl(seconds);
-    }
+    const { timeout } = dto;
+    const seconds =
+      timeout !== undefined ? millisecondsToSeconds(timeout) : undefined;
+    return this.deleteImpl(seconds);
   }
 
   async delete(dto: DeleteEnvHandleDto): Promise<void> {
