@@ -6,7 +6,7 @@ import { TaskSchedulerContract } from '@modules/contract/model/scheduler/task-sc
 import { TaskConfigDto } from '@model/dto/task-config.dto';
 import { EnvInfo } from '@model/domain/env-info';
 import { TaskStep } from '@model/domain/task-step';
-import { buildTaskCmd, buildTaskIdentifier } from '@plugins/task/task.utils';
+import { buildTaskCmd, buildTaskLabel } from '@plugins/task/task.utils';
 import {
   EnvHandle,
   StopEnvHandleSignalType,
@@ -14,7 +14,10 @@ import {
 import { LocalTaskConfig } from '@model/domain/local-task-config';
 import { dispatchTask } from '@lib/async.utils';
 import { getLogger } from '@logger/logger';
-import { TaskCallbackFn } from '@plugins/task/model/task-callback-fn';
+import {
+  TaskAfterBuildCallbackFn,
+  TaskOnRunCallbackFn,
+} from '@plugins/task/model/task-callback-fn';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
 
@@ -32,17 +35,18 @@ export class TaskExecutorService {
   async scheduleExecutable(
     taskId: number,
     taskConfig: TaskConfigDto,
-    callbackFn: TaskCallbackFn
+    onRunCallbackFn: TaskOnRunCallbackFn,
+    afterBuildCallbackFn?: TaskAfterBuildCallbackFn
   ): Promise<void> {
     const isScheduled = await this.scheduler.exists(taskId);
     if (isScheduled) return;
 
     const { config, envInfo } = taskConfig;
-    const identifier = buildTaskIdentifier(taskId);
+    const label = buildTaskLabel(taskId);
 
     await this.scheduler.schedule(taskId, {
       callback: async () => {
-        const executorFnNullable = await callbackFn(taskId);
+        const executorFnNullable = await onRunCallbackFn(taskId);
         if (executorFnNullable !== null) {
           await this.enqueueExecutable(taskId, executorFnNullable);
         }
@@ -50,9 +54,23 @@ export class TaskExecutorService {
       scheduleConfig: config.local.scheduleConfig,
     });
 
-    // no need to wait for the end of build as task scheduled to run not immediately
+    // task was already built, no need to it again
+    if (!afterBuildCallbackFn) {
+      await this.scheduler.start(taskId);
+      this.logger.info(`scheduleExecutable[taskId=${taskId}]: scheduled`);
+      return;
+    }
+
+    // build task, but no need to wait for the end of it as task scheduled to run not immediately
     dispatchTask(async () => {
-      await this.buildClearTask(identifier, envInfo, config.appConfig.steps);
+      const envKey = await this.buildClearTask(
+        label,
+        envInfo,
+        config.appConfig.steps
+      );
+      this.logger.info(`scheduleExecutable[taskId=${taskId}]: built`);
+      await afterBuildCallbackFn(taskId, envKey);
+
       await this.scheduler.start(taskId);
       this.logger.info(`scheduleExecutable[taskId=${taskId}]: scheduled`);
     });
@@ -63,25 +81,27 @@ export class TaskExecutorService {
   }
 
   private async buildClearTask(
-    identifier: string,
+    label: string,
     envInfo: EnvInfo,
     steps: TaskStep[]
-  ): Promise<void> {
-    await this.envBuilder.buildEnv({
-      alias: identifier,
+  ): Promise<string> {
+    return await this.envBuilder.buildEnv({
+      label,
       envInfo,
-      script: buildTaskCmd(identifier, steps),
+      script: buildTaskCmd(label, steps),
       isCache: false,
     });
   }
 
   async runExecutable(
     taskId: number,
+    envKey: string,
     config: LocalTaskConfig
   ): Promise<EnvHandle> {
-    const identifier = buildTaskIdentifier(taskId);
+    const label = buildTaskLabel(taskId);
     const envHandle = await this.envRunner.runEnv({
-      envId: identifier,
+      envKey,
+      label: label,
       limitations: config.appConfig?.limitations,
       options: { isDelete: false },
     });
@@ -97,19 +117,19 @@ export class TaskExecutorService {
   }
 
   async deleteExecutable(taskId: number): Promise<void> {
-    const identifier = buildTaskIdentifier(taskId);
+    const label = buildTaskLabel(taskId);
     await this.scheduler.delete(taskId);
-    await this.deleteAllChildren(identifier, true);
-    await this.envBuilder.deleteEnv({ envId: identifier, isForce: true });
+    await this.deleteAllChildren(label, true);
+    await this.envBuilder.deleteEnv({ envKey: label, isForce: true });
   }
 
   async deleteExecutableEnv(taskId: number): Promise<void> {
-    const identifier = buildTaskIdentifier(taskId);
-    await this.envBuilder.deleteEnv({ envId: identifier, isForce: false });
+    const label = buildTaskLabel(taskId);
+    await this.envBuilder.deleteEnv({ envKey: label, isForce: false });
   }
 
-  private async deleteAllChildren(envId: string, isForce: boolean) {
-    await this.callForAllChildren(envId, async (envHandle: EnvHandle) => {
+  private async deleteAllChildren(label: string, isForce: boolean) {
+    await this.callForAllChildren(label, async (envHandle: EnvHandle) => {
       await envHandle.delete({ isForce });
       this.logger.info(`deleteAllChildren[handleId=${envHandle.id()}]: done`);
     });
@@ -119,29 +139,29 @@ export class TaskExecutorService {
     taskId: number,
     stopSignal: StopEnvHandleSignalType
   ): Promise<void> {
-    const identifier = buildTaskIdentifier(taskId);
+    const label = buildTaskLabel(taskId);
     await this.scheduler.stop(taskId);
-    await this.stopAllChildren(identifier, stopSignal);
+    await this.stopAllChildren(label, stopSignal);
     this.logger.info(`stopExecutable[taskId=${taskId}]: stop all children`);
   }
 
   private async stopAllChildren(
-    envId: string,
+    label: string,
     stopSignal: StopEnvHandleSignalType
   ): Promise<void> {
-    await this.callForAllChildren(envId, async (envHandle: EnvHandle) => {
+    await this.callForAllChildren(label, async (envHandle: EnvHandle) => {
       await envHandle.stop({ timeout: 5_000, signal: stopSignal });
       this.logger.info(`stopAllChildren[handleId=${envHandle.id()}]: done`);
     });
   }
 
   private async callForAllChildren(
-    envId: string,
+    label: string,
     callbackFn: (envHandle: EnvHandle) => Promise<void> | void
   ): Promise<void> {
-    const handleIds = await this.envRunner.getEnvChildrenHandleIds(envId);
+    const handleIds = await this.envRunner.getEnvChildrenHandleIds(label);
     this.logger.info(
-      `callForAllChildren[envId=${envId}]: found ${handleIds.length} children`
+      `callForAllChildren[label=${label}]: found ${handleIds.length} children`
     );
     if (handleIds.length === 0) {
       return;
@@ -157,9 +177,15 @@ export class TaskExecutorService {
   async updateExecutable(
     taskId: number,
     newConfig: TaskConfigDto,
-    callbackFn: TaskCallbackFn
+    onRunCallbackFn: TaskOnRunCallbackFn,
+    afterBuildCallbackFn: TaskAfterBuildCallbackFn
   ): Promise<void> {
     await this.deleteExecutable(taskId);
-    await this.scheduleExecutable(taskId, newConfig, callbackFn);
+    await this.scheduleExecutable(
+      taskId,
+      newConfig,
+      onRunCallbackFn,
+      afterBuildCallbackFn
+    );
   }
 }

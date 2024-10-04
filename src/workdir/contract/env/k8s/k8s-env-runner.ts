@@ -6,10 +6,9 @@ import {
 } from '@modules/contract/model/env/env-runner.contract';
 import { K8sEnvHandle } from '@src/workdir/contract/env/k8s/k8s-env-handle';
 import { ContractInitOpts } from '@modules/contract/model/contract';
-import { EnvId } from '@modules/contract/model/env/env-id';
 import {
   buildK8sPodCreateDto,
-  buildK8sPodNamePrefix,
+  generateK8sPodNameByLabel,
   checkK8sApiHealth,
   inferCurrentNamespaceByKubeConfig,
   makeK8sApiRequest,
@@ -51,9 +50,9 @@ export class K8sEnvRunner implements EnvRunnerContract {
   }
 
   async runEnv(dto: RunEnvDto): Promise<K8sEnvHandle> {
-    const { envId, limitations } = dto;
+    const { envKey, label, limitations } = dto;
 
-    const podName = buildK8sPodNamePrefix(); // TODO: get from RunEnvDto
+    const podName = generateK8sPodNameByLabel(label);
     const { identifier, stateWatch, envHandle } = this.buildEnvHandle(podName);
     await stateWatch.start(); // start watching pod state before its creation to receive ALL events
 
@@ -62,7 +61,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
     // TODO: error handling
     const podDto = buildK8sPodCreateDto(
       identifier,
-      envId,
+      envKey,
       this.imagePullPolicy,
       limitations
     );
@@ -112,7 +111,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async getEnvChildrenHandleIds(envId: EnvId): Promise<string[]> {
+  async getEnvChildrenHandleIds(label: string): Promise<string[]> {
     return [];
   }
 }

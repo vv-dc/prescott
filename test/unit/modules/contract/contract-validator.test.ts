@@ -19,7 +19,6 @@ import {
 } from '@modules/contract/model/env/env-builder.contract';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { EnvHandle } from '@modules/contract/model/env/env-handle';
-import { EnvId } from '@modules/contract/model/env/env-id';
 
 describe('contract-validator unit', () => {
   it('should validate envBuilder - INVALID', () => {
@@ -78,7 +77,7 @@ describe('contract-validator unit', () => {
       init: async (opts) => {},
       runEnv: async (dto) => ({} as EnvHandle),
       getEnvHandle: async (dto) => ({} as EnvHandle),
-      getEnvChildrenHandleIds: async (envId: EnvId) => [generateRandomString()],
+      getEnvChildrenHandleIds: async (envKey) => [generateRandomString()],
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContractImpl('envRunner', envBuilderImpl);

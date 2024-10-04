@@ -1,12 +1,10 @@
-import { randomInt } from 'node:crypto';
 import * as k8s from '@kubernetes/client-node';
 
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { Limitations } from '@model/domain/limitations';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { millisecondsToSeconds } from '@lib/time.utils';
-
-const DEFAULT_NAMESPACE = 'default';
+import { generateRandomString } from '@lib/random.utils';
 
 export class K8sEnvRunnerError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -27,7 +25,7 @@ export const inferCurrentNamespaceByKubeConfig = (
   const currentContextName = kubeConfig.getCurrentContext();
   const allContexts = kubeConfig.getContexts();
   const currentContext = allContexts.find((c) => c.name === currentContextName);
-  return currentContext?.namespace ?? DEFAULT_NAMESPACE;
+  return currentContext?.namespace ?? 'default';
 };
 
 export const makeK8sApiRequest = async <T>(
@@ -49,8 +47,8 @@ export const makeK8sApiRequest = async <T>(
   }
 };
 
-export const buildK8sPodNamePrefix = () =>
-  `prescott-${randomInt(1, 1_000_000)}`; // TODO: fixme
+export const generateK8sPodNameByLabel = (label: string): string =>
+  generateRandomString(label);
 
 export const buildK8sPodCreateDto = (
   identifier: K8sPodIdentifier,
@@ -58,13 +56,14 @@ export const buildK8sPodCreateDto = (
   imagePullPolicy: string,
   limitations?: Limitations
 ): k8s.V1Pod => {
+  const { namespace, name, runnerContainer } = identifier;
   const [resourceLimits, ttlSeconds] = buildK8sPodResourceLimits(limitations);
 
   const podSpec: k8s.V1PodSpec = {
     restartPolicy: 'Never',
     containers: [
       {
-        name: identifier.runnerContainer,
+        name: runnerContainer,
         image: imageKey,
         imagePullPolicy,
         resources: { limits: resourceLimits },
@@ -79,9 +78,9 @@ export const buildK8sPodCreateDto = (
   return {
     apiVersion: 'v1',
     metadata: {
-      name: identifier.name,
+      name,
       labels: {},
-      namespace: identifier.namespace,
+      namespace,
     },
     spec: podSpec,
   };

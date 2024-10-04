@@ -3,11 +3,10 @@ import { Limitations } from '@model/domain/limitations';
 import { MappedLimitation } from '@src/workdir/contract/env/docker/model/mapped-limitation';
 import { BuilderMapper } from '@src/workdir/contract/env/docker/model/builder-mapper';
 import { InspectParam } from '@src/workdir/contract/env/docker/model/inspect-param';
-import { EnvId } from '@modules/contract/model/env/env-id';
 import { RunEnvOptions } from '@modules/contract/model/env/env-runner.contract';
 
 export class DockerEnvError extends Error {
-  constructor(private resourceId: string | EnvId, message: string) {
+  constructor(private resourceId: string, message: string) {
     super(message);
   }
 }
@@ -158,3 +157,6 @@ export const getContainerPid = async (container: string): Promise<number> => {
     return 0;
   }
 };
+
+export const formatDockerLabel = (key: string, value: string): string =>
+  `${key}=${value}`;

@@ -16,7 +16,7 @@ export const buildTaskCmd = (separator: string, steps: TaskStep[]): string => {
 };
 
 export const buildTaskUniqueName = (groupId: number, name: string): string =>
-  `${groupId}_${name}`;
+  `${groupId}-${name}`;
 
-export const buildTaskIdentifier = (taskId: number): string =>
-  `prescott_${taskId}`;
+// RFC 1123
+export const buildTaskLabel = (taskId: number): string => `prescott-${taskId}`;

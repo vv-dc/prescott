@@ -1,6 +1,5 @@
 import { Contract } from '@modules/contract/model/contract';
 import { EnvInfo } from '@model/domain/env-info';
-import { EnvId } from '@modules/contract/model/env/env-id';
 
 export interface EnvBuilderContract extends Contract {
   buildEnv(dto: BuildEnvDto): Promise<string>;
@@ -9,7 +8,10 @@ export interface EnvBuilderContract extends Contract {
 
 // TODO: version separately - always tag images
 export interface BuildEnvDto {
-  alias: string;
+  /**
+   * DNS-safe identifier of task. Unique per task, but not per run
+   */
+  label: string;
   envInfo: EnvInfo;
   script: string; // TODO: list of steps - every env builder should specify how to chain it
   isCache: boolean;
@@ -17,6 +19,6 @@ export interface BuildEnvDto {
 }
 
 export interface DeleteEnvDto {
-  envId: EnvId;
+  envKey: string;
   isForce: boolean;
 }

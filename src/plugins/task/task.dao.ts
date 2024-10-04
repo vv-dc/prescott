@@ -57,6 +57,10 @@ export class TaskDao {
     await this.db('tasks').update({ config }).where({ id });
   }
 
+  async updateEnvKey(id: number, envKey: string): Promise<void> {
+    await this.db('tasks').update({ envKey }).where({ id });
+  }
+
   async delete(id: number): Promise<void> {
     await this.db('tasks').delete().where({ id });
   }

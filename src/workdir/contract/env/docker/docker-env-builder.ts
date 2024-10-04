@@ -39,7 +39,7 @@ export class DockerEnvBuilder implements EnvBuilderContract {
     dto: BuildEnvDto,
     dockerfilePath: string
   ): Promise<string> {
-    const { envInfo, script, isCache, alias: imageTag } = dto;
+    const { envInfo, script, isCache, label: imageTag } = dto;
     const { name, version } = envInfo;
 
     const baseImage = buildDockerImage(name, version);
@@ -59,7 +59,7 @@ export class DockerEnvBuilder implements EnvBuilderContract {
   }
 
   async deleteEnv(dto: DeleteEnvDto): Promise<void> {
-    const { envId: image, isForce } = dto;
+    const { envKey: image, isForce } = dto;
     const command = new CommandBuilder().init('docker rmi');
     if (isForce) command.param('force');
     await execDockerCommandWithCheck(image, command.with(image));
