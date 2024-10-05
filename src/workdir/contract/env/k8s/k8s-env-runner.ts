@@ -16,15 +16,15 @@ import {
   inferCurrentNamespaceByKubeConfig,
   makeK8sApiRequest,
   getK8sPodLabelByName,
-} from '@src/workdir/contract/env/k8s/k8s-api.utils';
+} from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
 import {
   buildK8sPodMetricConfig,
   buildKubeConfigByContractOpts,
-} from '@src/workdir/contract/env/k8s/k8s-contract-opts.utils';
+} from '@src/workdir/contract/env/k8s/util/k8s-contract-opts.utils';
 import { K8sPodMetricConfig } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
-import { PRESCOTT_POD_K8S_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
+import { PRESCOTT_K8S_POD_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
 
 export class K8sEnvRunner implements EnvRunnerContract {
   private api!: k8s.CoreV1Api;
@@ -38,7 +38,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   async init(opts: ContractInitOpts): Promise<void> {
     this.imagePullPolicy =
-      opts.contract.imagePullPolicy || PRESCOTT_POD_K8S_CONST.IMAGE_PULL_POLICY;
+      opts.contract.imagePullPolicy || PRESCOTT_K8S_POD_CONST.IMAGE_PULL_POLICY;
     this.podMetricConfig = buildK8sPodMetricConfig(opts.contract);
 
     // TODO: refresh service account token
@@ -97,7 +97,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
       name: podName,
       label,
       namespace: this.namespace,
-      runnerContainer: PRESCOTT_POD_K8S_CONST.RUNNER_CONTAINER,
+      runnerContainer: PRESCOTT_K8S_POD_CONST.RUNNER_CONTAINER,
     };
     const stateWatch = new K8sPodStateWatch(
       identifier,
@@ -123,7 +123,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   // IN is not supported by field-selector: https://github.com/kubernetes/kubernetes/issues/32946
   async getEnvChildrenHandleIds(label: string): Promise<string[]> {
-    const labelSelector = `${PRESCOTT_POD_K8S_CONST.LABEL_ORIGIN_KEY}=${label}`;
+    const labelSelector = `${PRESCOTT_K8S_POD_CONST.LABEL_ORIGIN_KEY}=${label}`;
     const fieldSelector = 'status.phase!=Failed,status.phase!=Succeeded';
 
     const { body: podList } = await this.api.listNamespacedPod(

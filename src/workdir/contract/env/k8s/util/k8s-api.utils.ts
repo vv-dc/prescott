@@ -5,7 +5,7 @@ import { Limitations } from '@model/domain/limitations';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { millisecondsToSeconds } from '@lib/time.utils';
 import { generateRandomString } from '@lib/random.utils';
-import { PRESCOTT_POD_K8S_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
+import { PRESCOTT_K8S_POD_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
 
 export class K8sEnvRunnerError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -86,7 +86,7 @@ export const buildK8sPodCreateDto = (
     metadata: {
       name,
       labels: {
-        [PRESCOTT_POD_K8S_CONST.LABEL_ORIGIN_KEY]: label,
+        [PRESCOTT_K8S_POD_CONST.LABEL_ORIGIN_KEY]: label,
       },
       namespace,
     },

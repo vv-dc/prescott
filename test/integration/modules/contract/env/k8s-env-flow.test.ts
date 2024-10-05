@@ -275,14 +275,14 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-metrics';
-    const script = 'for i in $(seq 20); do echo "nop-${i}" && sleep 1; done'; // 20 seconds running
+    const script = 'for i in $(seq 30); do echo "nop-${i}" && sleep 1; done'; // 30 seconds running
 
     const buildDto = getAlpineBuildEnvDto(label, script);
     const envKey = await envBuilder.buildEnv(buildDto);
 
     const runDto = getRunEnvDto(label, envKey);
     const envHandle = await envRunner.runEnv(runDto);
-    const metricsGenerator = envHandle.metrics(1_000); // every 1s
+    const metricsGenerator = envHandle.metrics(5_000); // every 5s
     const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);
     await envHandle.wait();
 
@@ -298,6 +298,11 @@ describe.skip('k8s flow', () => {
       })
     );
     expect(metricsArray).toEqual(expectedMetrics);
+
+    // check duplicates were skipped
+    const allTimetamps = metricsArray.map((m) => m.time);
+    const uniqueTimestamps = new Set(allTimetamps);
+    expect(allTimetamps.length).toEqual(uniqueTimestamps.size);
 
     await envHandle.delete({ isForce: true });
     await envBuilder.deleteEnv({ envKey, isForce: true });

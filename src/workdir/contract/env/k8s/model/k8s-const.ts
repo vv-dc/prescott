@@ -1,7 +1,22 @@
-const PRESCOTT_POD_K8S_CONST = {
+const PRESCOTT_K8S_POD_CONST = {
   RUNNER_CONTAINER: 'prescott-runner',
   LABEL_ORIGIN_KEY: 'prescott.origin',
   IMAGE_PULL_POLICY: 'Never',
 } as const;
 
-export { PRESCOTT_POD_K8S_CONST };
+const PRESCOTT_K8S_METRIC_CONST = {
+  PROVIDER: 'none', // do not collect metrics by default
+  INTERVAL_MS: 15_000, // 15s
+} as const;
+
+const PRESCOTT_K8S_CONN_CONST = {
+  INTERNAL_CLUSTER_NAME: 'prescott-k8s-cluster',
+  INTERNAL_USER_NAME: 'prescott-k8s-user',
+  INTERNAL_CONTEXT_NAME: 'prescott-k8s-context',
+} as const;
+
+export {
+  PRESCOTT_K8S_POD_CONST,
+  PRESCOTT_K8S_METRIC_CONST,
+  PRESCOTT_K8S_CONN_CONST,
+};

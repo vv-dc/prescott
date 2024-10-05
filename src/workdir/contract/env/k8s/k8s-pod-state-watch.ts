@@ -1,13 +1,13 @@
 import * as events from 'node:events';
 import * as k8s from '@kubernetes/client-node';
+
 import {
   inferAllWaitingContainersFailureReasonNullable,
   inferK8sPodExitCodeNullable,
   inferK8sTerminatedPodReasonNullable,
-} from '@src/workdir/contract/env/k8s/k8s-api.utils';
+} from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
-import { V1ContainerStatus, V1PodStatus } from '@kubernetes/client-node';
 
 const enum PodLifeTimeEvent {
   'running' = 'running', // container was created but still running
@@ -62,7 +62,7 @@ export class K8sPodStateWatch {
         }
         const { phase, containerStatuses = [] } = pod.status;
 
-        // pod can be deleted in any of states while running
+        // pod can be deleted in any of active/terminal states
         if (updateType === 'DELETED') {
           const actualPhase = ['Succeed', 'Failed'].includes(phase)
             ? phase
@@ -98,7 +98,7 @@ export class K8sPodStateWatch {
     );
   }
 
-  private handlePendingPhase(containerStatuses: V1ContainerStatus[]): void {
+  private handlePendingPhase(containerStatuses: k8s.V1ContainerStatus[]): void {
     if (containerStatuses.length === 0) {
       return;
     }
@@ -117,8 +117,8 @@ export class K8sPodStateWatch {
 
   private handleTerminalPhase(
     phase: string,
-    containerStatuses: V1ContainerStatus[],
-    podStatus: V1PodStatus
+    containerStatuses: k8s.V1ContainerStatus[],
+    podStatus: k8s.V1PodStatus
   ): void {
     this.stopIfApplicable();
     const exitCodeNullable = inferK8sPodExitCodeNullable(

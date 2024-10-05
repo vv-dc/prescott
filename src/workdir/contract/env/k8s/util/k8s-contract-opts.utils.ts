@@ -12,10 +12,10 @@ import {
 } from '@modules/contract/model/contract';
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { ActionOnInvalid } from '@kubernetes/client-node/dist/config_types';
-
-const INTERNAL_CLUSTER_NAME = 'prescott-k8s-cluster';
-const INTERNAL_USER_NAME = 'prescott-k8s-user';
-const INTERNAL_CONTEXT_NAME = 'prescott-k8s-context';
+import {
+  PRESCOTT_K8S_CONN_CONST,
+  PRESCOTT_K8S_METRIC_CONST,
+} from '../model/k8s-const';
 
 export const buildKubeConfigByContractOpts = (
   opts: ContractInitOpts
@@ -55,6 +55,9 @@ const buildKubeConfigByContractOptsImpl = (
 };
 
 const buildLoadOptions = (opts: ContractOpts) => {
+  const { INTERNAL_CLUSTER_NAME, INTERNAL_USER_NAME, INTERNAL_CONTEXT_NAME } =
+    PRESCOTT_K8S_CONN_CONST;
+
   const cluster: k8s.Cluster = {
     name: INTERNAL_CLUSTER_NAME,
     server: opts.host as never,
@@ -101,7 +104,16 @@ export const buildK8sPodMetricConfig = (
   const { metricProvider, metricIntervalMs } = opts;
 
   const provider = inferK8sPodMetricProvider(metricProvider);
-  const intervalMs = metricIntervalMs ? parseInt(metricIntervalMs, 10) : 10_000; // 10s
+  const intervalMs = metricIntervalMs
+    ? parseInt(metricIntervalMs, 10)
+    : PRESCOTT_K8S_METRIC_CONST.INTERVAL_MS;
+
+  if (!intervalMs || intervalMs < 1_000) {
+    throw new Error(
+      'Metrics collection interval "intervalMs" cannot be lower than 1_000'
+    );
+  }
+
   return {
     provider,
     intervalMs,
@@ -112,5 +124,5 @@ const inferK8sPodMetricProvider = (provider?: string): K8sPodMetricProvider => {
   return provider &&
     K8S_POD_METRIC_PROVIDER_LIST.includes(provider as K8sPodMetricProvider)
     ? (provider as K8sPodMetricProvider)
-    : 'none';
+    : PRESCOTT_K8S_METRIC_CONST.PROVIDER;
 };
