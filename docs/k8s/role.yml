@@ -4,12 +4,12 @@ metadata:
   namespace: prescott
   name: prescott-pod
 rules:
-  - apiGroups: [""]
-    resources: ["pods"]
-    verbs: ["create", "get", "list", "delete", "watch"]
-  - apiGroups: [""]
-    resources: ["pods/log"]
-    verbs: ["get"]
-  - apiGroups: ["metrics.k8s.io"]
-    resources: ["pods"]
-    verbs: ["get"]
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['create', 'get', 'list', 'delete', 'watch']
+  - apiGroups: ['']
+    resources: ['pods/log']
+    verbs: ['get']
+  - apiGroups: ['metrics.k8s.io']
+    resources: ['pods']
+    verbs: ['get', 'list']

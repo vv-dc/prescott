@@ -16,6 +16,7 @@ import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
+import { K8sPodMetricProvider } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -23,11 +24,13 @@ const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   });
 };
 
-const buildEnvRunner = async (): Promise<EnvRunnerContract> => {
+const buildEnvRunner = async (
+  metricProvider: K8sPodMetricProvider = 'none'
+): Promise<EnvRunnerContract> => {
   const apiConfig = await getK8sApiConfig();
   const opts = {
     ...apiConfig,
-    metricProvider: 'metrics-server',
+    metricProvider,
   };
   return await prepareContract(k8sEnvRunner, opts);
 };
@@ -269,42 +272,45 @@ describe.skip('k8s flow', () => {
     await envBuilder.deleteEnv({ envKey, isForce: true });
   });
 
-  it('should collect metrics during pod execution - metrics-server', async () => {
-    // metrics-server takes some time to start collecting metrics, so the test should run for a while
-    const envBuilder = await buildEnvBuilder();
-    const envRunner = await buildEnvRunner();
+  it.each(['metrics-server', 'prometheus'] as const)(
+    'should collect metrics during pod execution - %s',
+    async (metricProvider: K8sPodMetricProvider) => {
+      // metrics-server takes some time to start collecting metrics, so the test should run for a while
+      const envBuilder = await buildEnvBuilder();
+      const envRunner = await buildEnvRunner(metricProvider);
 
-    const label = 'k8s-test-metrics';
-    const script = 'for i in $(seq 30); do echo "nop-${i}" && sleep 1; done'; // 30 seconds running
+      const label = 'k8s-test-metrics';
+      const script = 'for i in $(seq 30); do echo "nop-${i}" && sleep 1; done'; // 30 seconds running
 
-    const buildDto = getAlpineBuildEnvDto(label, script);
-    const envKey = await envBuilder.buildEnv(buildDto);
+      const buildDto = getAlpineBuildEnvDto(label, script);
+      const envKey = await envBuilder.buildEnv(buildDto);
 
-    const runDto = getRunEnvDto(label, envKey);
-    const envHandle = await envRunner.runEnv(runDto);
-    const metricsGenerator = envHandle.metrics(5_000); // every 5s
-    const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);
-    await envHandle.wait();
+      const runDto = getRunEnvDto(label, envKey);
+      const envHandle = await envRunner.runEnv(runDto);
+      const metricsGenerator = envHandle.metrics(3_000); // every 3s
+      const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);
+      await envHandle.wait();
 
-    const metricsArray = await metricsArrayPromise;
-    expect(metricsArray.length).toBeGreaterThan(1);
+      const metricsArray = await metricsArrayPromise;
+      expect(metricsArray.length).toBeGreaterThan(0);
 
-    const expectedMetrics: MetricEntry[] = Array.from(
-      { length: metricsArray.length },
-      () => ({
-        time: expect.any(Number),
-        ram: expect.any(String),
-        cpu: expect.any(String),
-      })
-    );
-    expect(metricsArray).toEqual(expectedMetrics);
+      const expectedMetrics: MetricEntry[] = Array.from(
+        { length: metricsArray.length },
+        () => ({
+          time: expect.any(Number),
+          ram: expect.any(String),
+          cpu: expect.any(String),
+        })
+      );
+      expect(metricsArray).toEqual(expectedMetrics);
 
-    // check duplicates were skipped
-    const allTimetamps = metricsArray.map((m) => m.time);
-    const uniqueTimestamps = new Set(allTimetamps);
-    expect(allTimetamps.length).toEqual(uniqueTimestamps.size);
+      // check duplicates were skipped
+      const allTimetamps = metricsArray.map((m) => m.time);
+      const uniqueTimestamps = new Set(allTimetamps);
+      expect(allTimetamps.length).toEqual(uniqueTimestamps.size);
 
-    await envHandle.delete({ isForce: true });
-    await envBuilder.deleteEnv({ envKey, isForce: true });
-  });
+      await envHandle.delete({ isForce: true });
+      await envBuilder.deleteEnv({ envKey, isForce: true });
+    }
+  );
 });

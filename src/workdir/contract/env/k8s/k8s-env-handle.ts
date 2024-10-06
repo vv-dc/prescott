@@ -9,10 +9,7 @@ import {
 } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
-import {
-  K8sEnvRunnerError,
-  makeK8sApiRequest,
-} from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
+import { makeK8sApiRequest } from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
 import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { transformReadableToRFC3339LogGenerator } from '@lib/log.utils';
@@ -20,6 +17,7 @@ import { millisecondsToSeconds } from '@lib/time.utils';
 import { K8sPodMetricConfig } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
 import { K8sPodMetricsServerMetricCollector } from './metric/k8s-pod-metrics-server-metric-collector';
 import { K8sPodMetricCollector } from './metric/k8s-pod-metric-collector';
+import { K8sPodPrometheusMetricCollector } from './metric/k8s-pod-prometheus-metric-collector';
 
 export class K8sEnvHandle implements EnvHandle {
   constructor(
@@ -94,16 +92,27 @@ export class K8sEnvHandle implements EnvHandle {
   }
 
   async *metrics(intervalMs?: number): AsyncGenerator<MetricEntry> {
-    if (this.metricConfig.provider === 'none') {
+    const collector = this.getMetricCollector();
+    if (collector === null) {
       return;
     }
     const isPodActiveFn = () => !this.stateWatch.isStateTerminal();
     const realIntervalMs = intervalMs ?? this.metricConfig.intervalMs;
-    const collector = this.getMetricCollector();
     yield* collector.collect(realIntervalMs, isPodActiveFn);
   }
 
-  private getMetricCollector(): K8sPodMetricCollector {
-    return new K8sPodMetricsServerMetricCollector(this.identifier, this.metric);
+  private getMetricCollector(): K8sPodMetricCollector | null {
+    if (this.metricConfig.provider === 'metrics-server') {
+      return new K8sPodMetricsServerMetricCollector(
+        this.identifier,
+        this.metric
+      );
+    } else if (this.metricConfig.provider === 'prometheus') {
+      return new K8sPodPrometheusMetricCollector(
+        this.identifier,
+        this.metricConfig.prometheusHost as never // validated in runtime
+      );
+    }
+    return null;
   }
 }

@@ -101,7 +101,7 @@ const assertContractOpts = (opts: ContractOpts): void => {
 export const buildK8sPodMetricConfig = (
   opts: ContractOpts
 ): K8sPodMetricConfig => {
-  const { metricProvider, metricIntervalMs } = opts;
+  const { metricProvider, metricIntervalMs, prometheusHost } = opts;
 
   const provider = inferK8sPodMetricProvider(metricProvider);
   const intervalMs = metricIntervalMs
@@ -113,10 +113,16 @@ export const buildK8sPodMetricConfig = (
       'Metrics collection interval "intervalMs" cannot be lower than 1_000'
     );
   }
+  if (provider === 'prometheus' && !prometheusHost) {
+    throw new Error(
+      'Parameter "prometheusHost" if required for metrics provider "prometheus"'
+    );
+  }
 
   return {
     provider,
     intervalMs,
+    prometheusHost,
   };
 };
 
