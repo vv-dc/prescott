@@ -42,7 +42,7 @@ kubectl apply -f role.yml &&\
 kubectl apply -f binding.yml &&\
 
 # export service-account bearer and K8s host
-BEARER=$(kubectl create token $PRESCOTT_ACCOUNT -n $PRESCOTT_NAMESPACE)
+BEARER=$(kubectl create token $PRESCOTT_ACCOUNT -n $PRESCOTT_NAMESPACE --duration=120h) # 5 days
 HOST=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
 PROMETHEUS_PORT='40123'
 echo "{\"host\":\"$HOST\",\"namespace\":\"$PRESCOTT_NAMESPACE\",\"token\":\"$BEARER\", \"prometheusHost\": \"http://localhost:$PROMETHEUS_PORT\"}" > "$PRESCOTT_DIR/api.json"

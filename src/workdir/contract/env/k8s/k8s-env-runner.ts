@@ -1,5 +1,3 @@
-import * as k8s from '@kubernetes/client-node';
-
 import {
   EnvRunnerContract,
   RunEnvDto,
@@ -12,45 +10,30 @@ import {
 import {
   buildK8sPodCreateDto,
   generateK8sPodNameByLabel,
-  checkK8sApiHealth,
-  inferCurrentNamespaceByKubeConfig,
   makeK8sApiRequest,
   getK8sPodLabelByName,
-} from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
+} from '@src/workdir/contract/env/k8s/lib/k8s-api.utils';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
-import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
+import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/lib/k8s-pod-state-watch';
 import {
-  buildK8sPodMetricConfig,
+  buildK8sPodConfig,
   buildKubeConfigByContractOpts,
-} from '@src/workdir/contract/env/k8s/util/k8s-contract-opts.utils';
-import { K8sPodMetricConfig } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
-import { PRESCOTT_K8S_POD_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
+} from '@src/workdir/contract/env/k8s/lib/k8s-config.utils';
+import { K8sApiWrapper } from './lib/k8s-api-wrapper';
+import { K8sPodConfig } from './model/k8s-pod-config';
 
 export class K8sEnvRunner implements EnvRunnerContract {
-  private api!: k8s.CoreV1Api;
-  private log!: k8s.Log;
-  private metric!: k8s.Metrics;
-  private kubeConfig!: k8s.KubeConfig;
-
-  private namespace!: string;
-  private imagePullPolicy!: string;
-  private podMetricConfig!: K8sPodMetricConfig;
+  private api!: K8sApiWrapper;
+  private podConfig!: K8sPodConfig;
 
   async init(opts: ContractInitOpts): Promise<void> {
-    this.imagePullPolicy =
-      opts.contract.imagePullPolicy || PRESCOTT_K8S_POD_CONST.IMAGE_PULL_POLICY;
-    this.podMetricConfig = buildK8sPodMetricConfig(opts.contract);
-
-    // TODO: refresh service account token
     const kubeConfig = buildKubeConfigByContractOpts(opts);
-    this.kubeConfig = kubeConfig;
-    this.namespace = inferCurrentNamespaceByKubeConfig(kubeConfig);
+    this.api = new K8sApiWrapper(kubeConfig);
+    await this.api.resetTokenIfApplicable(); // maybe token was provided with some delay
+    await this.api.assertHealthy();
 
-    this.api = kubeConfig.makeApiClient(k8s.CoreV1Api);
-    await checkK8sApiHealth(this.api, this.namespace);
-
-    this.log = new k8s.Log(this.kubeConfig);
-    this.metric = new k8s.Metrics(this.kubeConfig);
+    const namespace = this.api.getNamespace();
+    this.podConfig = buildK8sPodConfig(opts.contract, namespace);
   }
 
   async runEnv(dto: RunEnvDto): Promise<K8sEnvHandle> {
@@ -68,11 +51,15 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const podDto = buildK8sPodCreateDto(
       identifier,
       envKey,
-      this.imagePullPolicy,
+      this.podConfig.container.pullPolicy,
       limitations
     );
     await makeK8sApiRequest(
-      () => this.api.createNamespacedPod(this.namespace, podDto),
+      () =>
+        this.api.core.createNamespacedPod(
+          this.podConfig.container.namespace,
+          podDto
+        ),
       () => stateWatch.stopIfApplicable()
     );
 
@@ -96,20 +83,15 @@ export class K8sEnvRunner implements EnvRunnerContract {
     const identifier: K8sPodIdentifier = {
       name: podName,
       label,
-      namespace: this.namespace,
-      runnerContainer: PRESCOTT_K8S_POD_CONST.RUNNER_CONTAINER,
+      namespace: this.podConfig.container.namespace,
+      runnerContainer: this.podConfig.container.runnerContainer,
     };
-    const stateWatch = new K8sPodStateWatch(
-      identifier,
-      new k8s.Watch(this.kubeConfig)
-    );
+    const stateWatch = new K8sPodStateWatch(identifier, this.api.createWatch());
     const envHandle = new K8sEnvHandle(
       identifier,
       stateWatch,
-      this.podMetricConfig,
-      this.api,
-      this.log,
-      this.metric
+      this.podConfig.metric,
+      this.api
     );
     return { identifier, stateWatch, envHandle };
   }
@@ -123,16 +105,18 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   // IN is not supported by field-selector: https://github.com/kubernetes/kubernetes/issues/32946
   async getEnvChildrenHandleIds(label: string): Promise<string[]> {
-    const labelSelector = `${PRESCOTT_K8S_POD_CONST.LABEL_ORIGIN_KEY}=${label}`;
+    const labelSelector = `${this.podConfig.container.originLabel}=${label}`;
     const fieldSelector = 'status.phase!=Failed,status.phase!=Succeeded';
 
-    const { body: podList } = await this.api.listNamespacedPod(
-      this.namespace,
-      undefined,
-      undefined,
-      undefined,
-      fieldSelector,
-      labelSelector
+    const { body: podList } = await makeK8sApiRequest(() =>
+      this.api.core.listNamespacedPod(
+        this.podConfig.container.namespace,
+        undefined,
+        undefined,
+        undefined,
+        fieldSelector,
+        labelSelector
+      )
     );
     return podList.items.map((pod) => pod.metadata?.name as string);
   }

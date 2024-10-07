@@ -16,7 +16,7 @@ import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
-import { K8sPodMetricProvider } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
+import { K8sPodMetricProvider } from '@src/workdir/contract/env/k8s/model/k8s-pod-config';
 
 const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
   return prepareContract(k8sKindDockerEnvBuilder, {
@@ -72,6 +72,18 @@ describe.skip('k8s flow', () => {
     const apiConfig = await getK8sApiConfig();
     await prepareContract(k8sEnvRunner, apiConfig);
     expect.assertions(0);
+  });
+
+  it('should throw an error if service account does not have access to namespace', async () => {
+    const apiConfig = {
+      ...(await getK8sApiConfig()),
+      namespace: 'default',
+    };
+    await expect(prepareContract(k8sEnvRunner, apiConfig)).rejects.toThrow(
+      new Error(
+        'K8s-env-runner: serviceaccounts "prescott-sa" is forbidden: User "system:serviceaccount:prescott:prescott-sa" cannot create resource "serviceaccounts/token" in API group "" in the namespace "default"[403]'
+      )
+    );
   });
 
   it('should handle errors during container creation inside the pod', async () => {

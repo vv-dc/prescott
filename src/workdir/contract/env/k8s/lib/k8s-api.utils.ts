@@ -6,6 +6,7 @@ import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-id
 import { millisecondsToSeconds } from '@lib/time.utils';
 import { generateRandomString } from '@lib/random.utils';
 import { PRESCOTT_K8S_POD_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
+import { parseJwtToken } from '@src/lib/jwt.utils';
 
 export class K8sEnvRunnerError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -13,20 +14,35 @@ export class K8sEnvRunnerError extends Error {
   }
 }
 
-export const checkK8sApiHealth = async (
-  apiClient: k8s.CoreV1Api,
-  namespace: string
-): Promise<void> => {
-  await makeK8sApiRequest(() => apiClient.listNamespacedPod(namespace));
-};
+interface K8sServiceAccountTokenPayload {
+  'kubernetes.io'?: {
+    serviceaccount: k8s.V1ServiceAccountSubject;
+  };
+}
 
-export const inferCurrentNamespaceByKubeConfig = (
+export const inferNamespaceByKubeConfig = (
   kubeConfig: k8s.KubeConfig
 ): string => {
   const currentContextName = kubeConfig.getCurrentContext();
   const allContexts = kubeConfig.getContexts();
   const currentContext = allContexts.find((c) => c.name === currentContextName);
-  return currentContext?.namespace ?? 'default';
+  return currentContext?.namespace || PRESCOTT_K8S_POD_CONST.NAMESPACE;
+};
+
+export const inferServiceAccountByKubeConfig = (
+  kubeConfig: k8s.KubeConfig
+): string => {
+  const DEFAULT_SERVICE_ACCOUNT = 'default';
+
+  const user = kubeConfig.getCurrentUser();
+  if (!user?.token) {
+    return DEFAULT_SERVICE_ACCOUNT;
+  }
+
+  const payload = parseJwtToken<K8sServiceAccountTokenPayload>(user.token);
+  return (
+    payload['kubernetes.io']?.serviceaccount?.name || DEFAULT_SERVICE_ACCOUNT
+  );
 };
 
 export const makeK8sApiRequest = async <T>(

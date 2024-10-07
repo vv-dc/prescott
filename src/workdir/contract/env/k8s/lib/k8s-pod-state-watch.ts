@@ -5,7 +5,7 @@ import {
   inferAllWaitingContainersFailureReasonNullable,
   inferK8sPodExitCodeNullable,
   inferK8sTerminatedPodReasonNullable,
-} from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
+} from '@src/workdir/contract/env/k8s/lib/k8s-api.utils';
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 
@@ -63,12 +63,12 @@ export class K8sPodStateWatch {
         const { phase, containerStatuses = [] } = pod.status;
 
         // pod can be deleted in any of active/terminal states
-        if (updateType === 'DELETED') {
-          const actualPhase = ['Succeed', 'Failed'].includes(phase)
-            ? phase
-            : 'Failed';
+        if (
+          updateType === 'DELETED' &&
+          !['Succeed', 'Failed'].includes(phase)
+        ) {
           return this.handleTerminalPhase(
-            actualPhase,
+            'Failed',
             containerStatuses,
             pod.status
           );

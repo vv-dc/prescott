@@ -1,13 +1,12 @@
-import * as k8s from '@kubernetes/client-node';
 import { delay } from '@src/lib/time.utils';
-
 import { MetricEntry } from '@src/modules/contract/model/metric/metric-entry';
-import { K8sEnvRunnerError, makeK8sApiRequest } from '../util/k8s-api.utils';
+import { K8sEnvRunnerError, makeK8sApiRequest } from '../lib/k8s-api.utils';
 import { K8sPodIdentifier } from '../model/k8s-pod-identifier';
 import {
   IsPodActiveFn,
   K8sPodMetricCollector,
 } from './k8s-pod-metric-collector';
+import { K8sApiWrapper } from '../lib/k8s-api-wrapper';
 
 export class K8sPodMetricsServerMetricCollector
   implements K8sPodMetricCollector
@@ -16,7 +15,7 @@ export class K8sPodMetricsServerMetricCollector
 
   constructor(
     private readonly identifier: K8sPodIdentifier,
-    private readonly metric: k8s.Metrics
+    private readonly api: K8sApiWrapper
   ) {}
 
   async *collect(
@@ -37,7 +36,7 @@ export class K8sPodMetricsServerMetricCollector
 
     try {
       const entry = await makeK8sApiRequest(() =>
-        this.metric.getPodMetrics(namespace, name)
+        this.api.metric.getPodMetrics(namespace, name)
       );
       const { containers, timestamp } = entry;
       const metric = containers.find((c) => c.name === runnerContainer);

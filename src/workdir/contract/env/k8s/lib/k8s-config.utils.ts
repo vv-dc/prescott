@@ -2,11 +2,6 @@ import * as path from 'node:path';
 import * as k8s from '@kubernetes/client-node';
 
 import {
-  K8S_POD_METRIC_PROVIDER_LIST,
-  K8sPodMetricConfig,
-  K8sPodMetricProvider,
-} from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
-import {
   ContractInitOpts,
   ContractOpts,
 } from '@modules/contract/model/contract';
@@ -15,7 +10,15 @@ import { ActionOnInvalid } from '@kubernetes/client-node/dist/config_types';
 import {
   PRESCOTT_K8S_CONN_CONST,
   PRESCOTT_K8S_METRIC_CONST,
+  PRESCOTT_K8S_POD_CONST,
 } from '../model/k8s-const';
+import {
+  K8S_POD_METRIC_PROVIDER_LIST,
+  K8sPodConfig,
+  K8sPodContainerConfig,
+  K8sPodMetricConfig,
+  K8sPodMetricProvider,
+} from '../model/k8s-pod-config';
 
 export const buildKubeConfigByContractOpts = (
   opts: ContractInitOpts
@@ -72,7 +75,7 @@ const buildLoadOptions = (opts: ContractOpts) => {
     name: INTERNAL_CONTEXT_NAME,
     user: INTERNAL_USER_NAME,
     cluster: INTERNAL_CLUSTER_NAME,
-    namespace: opts.namespace,
+    namespace: opts.namespace || PRESCOTT_K8S_POD_CONST.NAMESPACE,
   };
 
   return {
@@ -96,6 +99,30 @@ const assertContractOpts = (opts: ContractOpts): void => {
       `opts "kubeConfigPath" | "kubeConfigString" | ("host" & "token") should be provided'`
     );
   }
+};
+
+export const buildK8sPodConfig = (
+  opts: ContractOpts,
+  namespace: string
+): K8sPodConfig => {
+  return {
+    container: buildK8sPodContainerConfig(opts, namespace),
+    metric: buildK8sPodMetricConfig(opts),
+  };
+};
+
+const buildK8sPodContainerConfig = (
+  opts: ContractOpts,
+  namespace: string
+): K8sPodContainerConfig => {
+  const pullPolicy =
+    opts.imagePullPolicy || PRESCOTT_K8S_POD_CONST.IMAGE_PULL_POLICY;
+  return {
+    pullPolicy,
+    namespace,
+    originLabel: PRESCOTT_K8S_POD_CONST.LABEL_ORIGIN_KEY,
+    runnerContainer: PRESCOTT_K8S_POD_CONST.RUNNER_CONTAINER,
+  };
 };
 
 export const buildK8sPodMetricConfig = (

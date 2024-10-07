@@ -1,5 +1,4 @@
 import { PassThrough } from 'node:stream';
-import * as k8s from '@kubernetes/client-node';
 
 import {
   DeleteEnvHandleDto,
@@ -9,24 +8,23 @@ import {
 } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
-import { makeK8sApiRequest } from '@src/workdir/contract/env/k8s/util/k8s-api.utils';
-import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/k8s-pod-state-watch';
+import { makeK8sApiRequest } from '@src/workdir/contract/env/k8s/lib/k8s-api.utils';
+import { K8sPodStateWatch } from '@src/workdir/contract/env/k8s/lib/k8s-pod-state-watch';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
 import { transformReadableToRFC3339LogGenerator } from '@lib/log.utils';
 import { millisecondsToSeconds } from '@lib/time.utils';
-import { K8sPodMetricConfig } from '@src/workdir/contract/env/k8s/model/k8s-pod-metric-config';
 import { K8sPodMetricsServerMetricCollector } from './metric/k8s-pod-metrics-server-metric-collector';
 import { K8sPodMetricCollector } from './metric/k8s-pod-metric-collector';
 import { K8sPodPrometheusMetricCollector } from './metric/k8s-pod-prometheus-metric-collector';
+import { K8sApiWrapper } from './lib/k8s-api-wrapper';
+import { K8sPodMetricConfig } from './model/k8s-pod-config';
 
 export class K8sEnvHandle implements EnvHandle {
   constructor(
     private readonly identifier: K8sPodIdentifier,
     private readonly stateWatch: K8sPodStateWatch,
     private readonly metricConfig: K8sPodMetricConfig,
-    private readonly api: k8s.CoreV1Api,
-    private readonly log: k8s.Log,
-    private readonly metric: k8s.Metrics
+    private readonly api: K8sApiWrapper
   ) {}
 
   id() {
@@ -60,7 +58,7 @@ export class K8sEnvHandle implements EnvHandle {
    */
   private async deleteImpl(gracePeriodSeconds?: number): Promise<void> {
     await makeK8sApiRequest(() =>
-      this.api.deleteNamespacedPod(
+      this.api.core.deleteNamespacedPod(
         this.identifier.name,
         this.identifier.namespace,
         undefined,
@@ -74,7 +72,7 @@ export class K8sEnvHandle implements EnvHandle {
     const readable = new PassThrough();
 
     await makeK8sApiRequest(() =>
-      this.log.log(
+      this.api.log.log(
         this.identifier.namespace,
         this.identifier.name,
         this.identifier.runnerContainer,
@@ -103,10 +101,7 @@ export class K8sEnvHandle implements EnvHandle {
 
   private getMetricCollector(): K8sPodMetricCollector | null {
     if (this.metricConfig.provider === 'metrics-server') {
-      return new K8sPodMetricsServerMetricCollector(
-        this.identifier,
-        this.metric
-      );
+      return new K8sPodMetricsServerMetricCollector(this.identifier, this.api);
     } else if (this.metricConfig.provider === 'prometheus') {
       return new K8sPodPrometheusMetricCollector(
         this.identifier,

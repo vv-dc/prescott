@@ -1,3 +1,15 @@
+export interface K8sPodConfig {
+  container: K8sPodContainerConfig;
+  metric: K8sPodMetricConfig;
+}
+
+export interface K8sPodContainerConfig {
+  namespace: string;
+  runnerContainer: string;
+  originLabel: string;
+  pullPolicy: string;
+}
+
 export const K8S_POD_METRIC_PROVIDER_LIST = [
   'none', // no metrics will be collected
   'metrics-server',
