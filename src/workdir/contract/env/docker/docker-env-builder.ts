@@ -45,7 +45,7 @@ export class DockerEnvBuilder implements EnvBuilderContract {
     dto: BuildEnvDto,
     dockerfilePath: string
   ): Promise<string> {
-    const { envInfo, steps, isCache, label } = dto;
+    const { envInfo, steps, label } = dto;
     const { name, version } = envInfo;
     const script = buildDockerCmd(steps);
 
@@ -56,12 +56,11 @@ export class DockerEnvBuilder implements EnvBuilderContract {
     const command = new CommandBuilder()
       .init('docker build')
       .param('tag', label)
+      .param('no-cache')
       .with('- <') // ignore context
       .with(dockerfilePath); // read from dockerfile
 
-    if (!isCache) command.param('no-cache');
     await execDockerCommandWithCheck(label, command);
-
     return label;
   }
 

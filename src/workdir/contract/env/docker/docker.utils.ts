@@ -3,7 +3,6 @@ import { Limitations } from '@model/domain/limitations';
 import { MappedLimitation } from '@src/workdir/contract/env/docker/model/mapped-limitation';
 import { BuilderMapper } from '@src/workdir/contract/env/docker/model/builder-mapper';
 import { InspectParam } from '@src/workdir/contract/env/docker/model/inspect-param';
-import { RunEnvOptions } from '@modules/contract/model/env/env-runner.contract';
 import { TaskStep } from '@src/model/domain/task-step';
 
 export class DockerEnvError extends Error {
@@ -21,14 +20,6 @@ export const execDockerCommandWithCheck = async (
     throw new DockerEnvError(entityId, stderr);
   }
   return { stdout, stderr };
-};
-
-export const applyDockerRunOptions = (
-  builder: CommandBuilder,
-  options: RunEnvOptions
-): void => {
-  const { isDelete } = options;
-  if (isDelete) builder.param('rm');
 };
 
 export const buildDockerImage = (
@@ -89,7 +80,7 @@ const LIMITATIONS_MAP: Record<MappedLimitation, BuilderMapper> = {
   rom: (builder, value) => {
     builder.param('storage-opt').with(`size=${value}`);
   },
-  cpus: (builder: CommandBuilder, value) => {
+  cpu: (builder: CommandBuilder, value) => {
     builder.param('cpus', value);
   },
 };

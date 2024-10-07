@@ -16,7 +16,6 @@ export const getAlpineBuildEnvDto = (
         script,
       },
     ],
-    isCache: false,
   };
 };
 
@@ -30,9 +29,6 @@ export const getRunEnvDto = (
     label,
     envKey,
     script,
-    options: {
-      isDelete: false,
-    },
     limitations,
   };
 };

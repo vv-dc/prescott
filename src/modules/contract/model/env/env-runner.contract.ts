@@ -19,10 +19,4 @@ export interface RunEnvDto {
   label: string;
   script: string | null;
   limitations?: Limitations;
-  options: RunEnvOptions;
-  // TODO: extra args per task?
-}
-
-export interface RunEnvOptions {
-  isDelete: boolean;
 }

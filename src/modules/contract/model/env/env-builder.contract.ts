@@ -14,7 +14,6 @@ export interface BuildEnvDto {
   label: string;
   envInfo: EnvInfo;
   steps: TaskStep[];
-  isCache: boolean;
 }
 
 export interface BuildEnvResultDto {

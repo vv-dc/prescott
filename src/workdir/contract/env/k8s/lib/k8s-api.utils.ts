@@ -118,8 +118,8 @@ const buildK8sPodResourceLimits = (
   }
 
   const resourceLimitations: Record<string, string> = {};
-  if (limitations.cpus) {
-    resourceLimitations.cpu = limitations.cpus.toString();
+  if (limitations.cpu) {
+    resourceLimitations.cpu = limitations.cpu;
   }
   if (limitations.ram) {
     resourceLimitations.memory = limitations.ram;

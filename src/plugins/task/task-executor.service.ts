@@ -96,7 +96,6 @@ export class TaskExecutorService {
       label,
       envInfo,
       steps: decodeTaskSteps(steps),
-      isCache: false,
     });
     return envKey;
   }
@@ -112,7 +111,6 @@ export class TaskExecutorService {
       label: label,
       script: null, // TODO: fixme
       limitations: config.appConfig?.limitations,
-      options: { isDelete: false },
     });
     this.logger.info(
       `runExecutable[taskId=${taskId}]: handleId=${envHandle.id()}`

@@ -49,7 +49,6 @@ describe.skip('k8s flow', () => {
           script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
         },
       ],
-      isCache: false,
     };
 
     const { envKey } = await envBuilder.buildEnv(buildDto);

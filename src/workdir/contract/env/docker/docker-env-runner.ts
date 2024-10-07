@@ -10,7 +10,6 @@ import { EnvHandle } from '@modules/contract/model/env/env-handle';
 import { DockerEnvHandle } from '@src/workdir/contract/env/docker/docker-env-handle';
 import {
   applyDockerLimitations,
-  applyDockerRunOptions,
   execDockerCommandWithCheck,
   formatDockerLabel,
   normalizeDockerContainerName,
@@ -31,7 +30,7 @@ const init = async (opts: ContractInitOpts): Promise<void> => {
 
 const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
   // TODO: handle script
-  const { limitations, envKey: image, options, label } = dto;
+  const { limitations, envKey: image, label } = dto;
 
   const safeImage = normalizeDockerContainerName(image);
   const container = generateRandomString(safeImage);
@@ -43,7 +42,6 @@ const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
     .param('detach');
 
   if (limitations) applyDockerLimitations(command, limitations);
-  applyDockerRunOptions(command, options);
 
   await execDockerCommandWithCheck(image, command.with(image));
   const envHandle = new DockerEnvHandle(container);
