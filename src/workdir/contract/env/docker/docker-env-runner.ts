@@ -30,6 +30,7 @@ const init = async (opts: ContractInitOpts): Promise<void> => {
 };
 
 const runEnv = async (dto: RunEnvDto): Promise<EnvHandle> => {
+  // TODO: handle script
   const { limitations, envKey: image, options, label } = dto;
 
   const safeImage = normalizeDockerContainerName(image);

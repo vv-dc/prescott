@@ -6,7 +6,7 @@ import { TaskSchedulerContract } from '@modules/contract/model/scheduler/task-sc
 import { TaskConfigDto } from '@model/dto/task-config.dto';
 import { EnvInfo } from '@model/domain/env-info';
 import { TaskStep } from '@model/domain/task-step';
-import { buildTaskCmd, buildTaskLabel } from '@plugins/task/task.utils';
+import { buildTaskLabel, decodeTaskSteps } from '@plugins/task/task.utils';
 import {
   EnvHandle,
   StopEnvHandleSignalType,
@@ -91,12 +91,14 @@ export class TaskExecutorService {
     envInfo: EnvInfo,
     steps: TaskStep[]
   ): Promise<string> {
-    return await this.envBuilder.buildEnv({
+    // TODO: script too
+    const { envKey } = await this.envBuilder.buildEnv({
       label,
       envInfo,
-      script: buildTaskCmd(label, steps),
+      steps: decodeTaskSteps(steps),
       isCache: false,
     });
+    return envKey;
   }
 
   async runExecutable(
@@ -108,6 +110,7 @@ export class TaskExecutorService {
     const envHandle = await this.envRunner.runEnv({
       envKey,
       label: label,
+      script: null, // TODO: fixme
       limitations: config.appConfig?.limitations,
       options: { isDelete: false },
     });

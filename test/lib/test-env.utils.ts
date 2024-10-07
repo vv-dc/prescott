@@ -10,7 +10,12 @@ export const getAlpineBuildEnvDto = (
   return {
     label,
     envInfo: DOCKER_IMAGES.alpine,
-    script,
+    steps: [
+      {
+        name: 'step #1',
+        script,
+      },
+    ],
     isCache: false,
   };
 };
@@ -18,13 +23,15 @@ export const getAlpineBuildEnvDto = (
 export const getRunEnvDto = (
   label: string,
   envKey: string,
+  script: string | null,
   limitations?: Limitations
 ): RunEnvDto => {
   return {
     label,
     envKey,
+    script,
     options: {
-      isDelete: true,
+      isDelete: false,
     },
     limitations,
   };

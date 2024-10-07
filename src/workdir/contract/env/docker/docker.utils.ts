@@ -4,6 +4,7 @@ import { MappedLimitation } from '@src/workdir/contract/env/docker/model/mapped-
 import { BuilderMapper } from '@src/workdir/contract/env/docker/model/builder-mapper';
 import { InspectParam } from '@src/workdir/contract/env/docker/model/inspect-param';
 import { RunEnvOptions } from '@modules/contract/model/env/env-runner.contract';
+import { TaskStep } from '@src/model/domain/task-step';
 
 export class DockerEnvError extends Error {
   constructor(private resourceId: string, message: string) {
@@ -160,3 +161,18 @@ export const getContainerPid = async (container: string): Promise<number> => {
 
 export const formatDockerLabel = (key: string, value: string): string =>
   `${key}=${value}`;
+
+export const buildDockerCmd = (steps: TaskStep[]): string => {
+  const command = new CommandBuilder();
+
+  for (let idx = 0; idx < steps.length; ++idx) {
+    const { script, ignoreFailure } = steps[idx];
+    const method = ignoreFailure ? 'then' : 'chain';
+    command.add(script);
+    if (idx !== steps.length - 1) {
+      command[method](''); // command -> operator (; | &&)
+    }
+  }
+
+  return command.build();
+};

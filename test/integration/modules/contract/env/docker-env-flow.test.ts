@@ -8,17 +8,11 @@ import {
   inspectDockerContainer,
   isDockerResourceExist,
 } from '@src/workdir/contract/env/docker/docker.utils';
-import { generateRandomString } from '@lib/random.utils';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
-import {
-  BuildEnvDto,
-  EnvBuilderContract,
-} from '@modules/contract/model/env/env-builder.contract';
-import {
-  EnvRunnerContract,
-  RunEnvDto,
-} from '@modules/contract/model/env/env-runner.contract';
+import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
+import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { prepareContract } from '@test/lib/test-contract.utils';
+import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
 
 const buildEnvBuilder = (): Promise<EnvBuilderContract> => {
   return prepareContract(envBuilderFn);
@@ -34,21 +28,16 @@ describe('docker-env-provider integration', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
-      isCache: false,
-    };
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const label = 'docker-test-full-flow';
+    const stepScript = `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`;
+
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
     expect(await isDockerResourceExist(envKey)).toEqual(true);
+    expect(script).toBeNull(); // script should be injected into dockerfile CMD
 
     // run container => check it exists
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: false },
-    };
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
@@ -70,21 +59,14 @@ describe('docker-env-provider integration', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('ram-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: 'cat /dev/zero | head -c 50m | tail',
-      isCache: false,
-    };
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const label = 'docker-test-ram-limit';
+    const stepScript = `cat /dev/zero | head -c 50m | tail`;
+
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
     expect(await isDockerResourceExist(envKey)).toEqual(true);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      limitations: { ram: '10m' },
-      options: { isDelete: false },
-    };
+    const runDto = getRunEnvDto(label, envKey, script, { ram: '10m' });
     const envHandle = await envRunner.runEnv(runDto);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
@@ -105,12 +87,9 @@ describe('docker-env-provider integration', () => {
 
     const { name, version } = DOCKER_IMAGES.nginx;
 
-    const runDto: RunEnvDto = {
-      envKey: buildDockerImage(name, version),
-      label: generateRandomString('prescott-kill-container'),
-      limitations: { ttl: 750 }, // 0.75s
-      options: { isDelete: false },
-    };
+    const label = 'docker-test-timeout';
+    const envKey = buildDockerImage(name, version);
+    const runDto = getRunEnvDto(label, envKey, null, { ttl: 750 }); // 0.75s
     const envHandle = await envRunner.runEnv(runDto);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
@@ -131,20 +110,14 @@ describe('docker-env-provider integration', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('log-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 10); do for j in $(seq 250); do echo -n 'A\n\tA'; done; done; echo 'ERROR!' >&2`,
-      isCache: false,
-    };
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const label = 'docker-test-logs';
+    const stepScript = `for i in $(seq 10); do for j in $(seq 250); do echo -n 'A\n\tA'; done; done; echo 'ERROR!' >&2`;
+
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
     expect(await isDockerResourceExist(envKey)).toEqual(true);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: false },
-    };
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
@@ -182,20 +155,14 @@ describe('docker-env-provider integration', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('metrics-continuous-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 3); do for j in $(seq 10000); do echo -n 'A'; done; sleep 1; done`,
-      isCache: false,
-    };
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const label = 'docker-test-metrics-continuous';
+    const stepScript = `for i in $(seq 3); do for j in $(seq 10000); do echo -n 'A'; done; sleep 1; done`;
+
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
     expect(await isDockerResourceExist(envKey)).toEqual(true);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: false },
-    };
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
@@ -228,20 +195,14 @@ describe('docker-env-provider integration', () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('metrics-interval-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      script: `for i in $(seq 5); do for j in $(seq 10000); do echo -n 'A'; done; sleep 0.2; done`,
-      isCache: false,
-    };
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const label = 'docker-test-metrics-interval';
+    const stepScript = `for i in $(seq 5); do for j in $(seq 10000); do echo -n 'A'; done; sleep 0.2; done`;
+
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
     expect(await isDockerResourceExist(envKey)).toEqual(true);
 
-    const runDto: RunEnvDto = {
-      envKey,
-      label: buildDto.label,
-      options: { isDelete: false },
-    };
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 

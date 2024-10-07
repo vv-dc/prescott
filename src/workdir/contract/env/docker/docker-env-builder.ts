@@ -7,11 +7,13 @@ import {
 } from '@modules/contract/model/contract';
 import {
   BuildEnvDto,
+  BuildEnvResultDto,
   DeleteEnvDto,
   EnvBuilderContract,
 } from '@modules/contract/model/env/env-builder.contract';
 import { generateRandomString } from '@lib/random.utils';
 import {
+  buildDockerCmd,
   buildDockerfile,
   buildDockerImage,
   execDockerCommandWithCheck,
@@ -25,11 +27,15 @@ export class DockerEnvBuilder implements EnvBuilderContract {
     this.workDir = opts.system.workDir;
   }
 
-  async buildEnv(dto: BuildEnvDto): Promise<string> {
+  async buildEnv(dto: BuildEnvDto): Promise<BuildEnvResultDto> {
     const dockerfileName = generateRandomString('dockerfile');
     const dockerfilePath = path.join(this.workDir, dockerfileName);
     try {
-      return await this.buildEnvImpl(dto, dockerfilePath);
+      const envKey = await this.buildEnvImpl(dto, dockerfilePath);
+      return { envKey, script: null }; // script is already injected into image's CMD
+    } catch (err) {
+      console.error(err);
+      throw err;
     } finally {
       await fs.rm(dockerfilePath).catch();
     }
@@ -39,8 +45,9 @@ export class DockerEnvBuilder implements EnvBuilderContract {
     dto: BuildEnvDto,
     dockerfilePath: string
   ): Promise<string> {
-    const { envInfo, script, isCache, label: imageTag } = dto;
+    const { envInfo, steps, isCache, label } = dto;
     const { name, version } = envInfo;
+    const script = buildDockerCmd(steps);
 
     const baseImage = buildDockerImage(name, version);
     const dockerfile = buildDockerfile(baseImage, script, false);
@@ -48,14 +55,14 @@ export class DockerEnvBuilder implements EnvBuilderContract {
 
     const command = new CommandBuilder()
       .init('docker build')
-      .param('tag', imageTag)
+      .param('tag', label)
       .with('- <') // ignore context
       .with(dockerfilePath); // read from dockerfile
 
     if (!isCache) command.param('no-cache');
-    await execDockerCommandWithCheck(imageTag, command);
+    await execDockerCommandWithCheck(label, command);
 
-    return imageTag;
+    return label;
   }
 
   async deleteEnv(dto: DeleteEnvDto): Promise<void> {

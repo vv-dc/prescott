@@ -37,6 +37,11 @@ export class CommandBuilder {
     return this;
   }
 
+  add(param: string): CommandBuilder {
+    this.command += param;
+    return this;
+  }
+
   overwriteFile(filename: string): CommandBuilder {
     this.command += ` > ${filename}`;
     return this;

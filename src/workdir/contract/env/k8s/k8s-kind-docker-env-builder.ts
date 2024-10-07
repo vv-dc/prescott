@@ -1,6 +1,7 @@
 import { DockerEnvBuilder } from '@src/workdir/contract/env/docker/docker-env-builder';
 import {
   BuildEnvDto,
+  BuildEnvResultDto,
   EnvBuilderContract,
 } from '@modules/contract/model/env/env-builder.contract';
 import {
@@ -23,10 +24,11 @@ class K8sKindDockerEnvBuilder
     this.clusterName = opts.contract.clusterName || 'prescott';
   }
 
-  override async buildEnv(dto: BuildEnvDto): Promise<string> {
-    const imageId = await super.buildEnv(dto);
-    await this.loadImageToKind(imageId);
-    return this.addKindPrefixToImage(imageId);
+  override async buildEnv(dto: BuildEnvDto): Promise<BuildEnvResultDto> {
+    const { envKey, script } = await super.buildEnv(dto);
+    await this.loadImageToKind(envKey);
+    const kindEnvKey = this.addKindPrefixToImage(envKey);
+    return { envKey: kindEnvKey, script };
   }
 
   private async loadImageToKind(imageId: string): Promise<void> {

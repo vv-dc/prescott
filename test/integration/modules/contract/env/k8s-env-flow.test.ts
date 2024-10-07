@@ -43,11 +43,16 @@ describe.skip('k8s flow', () => {
     const buildDto: BuildEnvDto = {
       label: generateRandomString('k8s-kind-build-test'),
       envInfo: DOCKER_IMAGES.alpine,
-      script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
+      steps: [
+        {
+          name: 'step #1',
+          script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
+        },
+      ],
       isCache: false,
     };
 
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const { envKey } = await envBuilder.buildEnv(buildDto);
     expect(envKey).toBeTruthy();
 
     await envBuilder.deleteEnv({ envKey, isForce: true });
@@ -91,7 +96,7 @@ describe.skip('k8s flow', () => {
 
     const label = 'k8s-test-failure-during-creation';
     const envKey = 'some_non_existent_image-for_k8s';
-    const runDto = getRunEnvDto(label, envKey);
+    const runDto = getRunEnvDto(label, envKey, null);
 
     await expect(envRunner.runEnv(runDto)).rejects.toEqual(
       new Error(
@@ -105,12 +110,12 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-kind-test-full-flow';
-    const script = 'sleep 1000';
-    const buildDto = getAlpineBuildEnvDto(label, script);
+    const stepScript = 'sleep 1000';
 
-    const envKey = await envBuilder.buildEnv(buildDto);
-    const runDto = getRunEnvDto(label, envKey);
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle1 = await envRunner.runEnv(runDto);
     const envHandle2 = await envRunner.runEnv(runDto);
     const envHandle3 = await envRunner.runEnv(runDto);
@@ -137,14 +142,12 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-ttl';
-    const script = 'sleep 1000';
-    const buildDto = getAlpineBuildEnvDto(label, script);
+    const stepScript = 'sleep 1000';
 
-    const envKey = await envBuilder.buildEnv(buildDto);
-    const runDto = getRunEnvDto(label, envKey, {
-      ttl: 3_000,
-    });
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
+    const runDto = getRunEnvDto(label, envKey, script, { ttl: 3_000 }); // 3s
     const envHandle = await envRunner.runEnv(runDto);
     const waitResult = await envHandle.wait();
 
@@ -163,11 +166,11 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-stop-immediate';
-    const script = 'sleep 1000';
+    const stepScript = 'sleep 1000';
 
-    const buildDto = getAlpineBuildEnvDto(label, script);
-    const envKey = await envBuilder.buildEnv(buildDto);
-    const runDto = getRunEnvDto(label, envKey);
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
+    const runDto = getRunEnvDto(label, envKey, script);
 
     const envHandle = await envRunner.runEnv(runDto);
     await envHandle.stop({ timeout: 0, signal: 'user' }); // stop immediately
@@ -184,12 +187,12 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-stop-timeout';
-    const script = 'sleep 1000';
+    const stepScript = 'sleep 1000';
 
-    const buildDto = getAlpineBuildEnvDto(label, script);
-    const envKey = await envBuilder.buildEnv(buildDto);
-    const runDto = getRunEnvDto(label, envKey);
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     await envHandle.stop({ timeout: 3_000, signal: 'user' }); // 3s
     await envHandle.wait();
@@ -205,13 +208,14 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-wait-success';
-    const script = `for i in $(seq 1 100); do echo "Hello"; done`;
+    const stepScript = `for i in $(seq 1 100); do echo "Hello"; done`;
 
-    const buildDto = getAlpineBuildEnvDto(label, script);
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
-    const runDto = getRunEnvDto(label, envKey);
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
+
     const logsGenerator = envHandle.logs();
     const waitResult = await envHandle.wait();
 
@@ -232,12 +236,12 @@ describe.skip('k8s flow', () => {
 
     const label = 'k8s-test-wait-failure';
     const exitCode = 123;
-    const script = `exit ${exitCode}`;
+    const stepScript = `exit ${exitCode}`;
 
-    const buildDto = getAlpineBuildEnvDto(label, script);
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
-    const runDto = getRunEnvDto(label, envKey);
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     const logsGenerator = envHandle.logs();
 
@@ -259,12 +263,12 @@ describe.skip('k8s flow', () => {
     const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-log';
-    const script = 'for i in $(seq 50); do echo "hi-${i}"; done';
+    const stepScript = 'for i in $(seq 50); do echo "hi-${i}"; done';
 
-    const buildDto = getAlpineBuildEnvDto(label, script);
-    const envKey = await envBuilder.buildEnv(buildDto);
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
-    const runDto = getRunEnvDto(label, envKey);
+    const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
     const logsGenerator = envHandle.logs();
     const logArrayPromise = asyncGeneratorToArray(logsGenerator);
@@ -292,12 +296,13 @@ describe.skip('k8s flow', () => {
       const envRunner = await buildEnvRunner(metricProvider);
 
       const label = 'k8s-test-metrics';
-      const script = 'for i in $(seq 30); do echo "nop-${i}" && sleep 1; done'; // 30 seconds running
+      const stepScript =
+        'for i in $(seq 30); do echo "nop-${i}" && sleep 1; done'; // 30 seconds running
 
-      const buildDto = getAlpineBuildEnvDto(label, script);
-      const envKey = await envBuilder.buildEnv(buildDto);
+      const buildDto = getAlpineBuildEnvDto(label, stepScript);
+      const { envKey, script } = await envBuilder.buildEnv(buildDto);
 
-      const runDto = getRunEnvDto(label, envKey);
+      const runDto = getRunEnvDto(label, envKey, script);
       const envHandle = await envRunner.runEnv(runDto);
       const metricsGenerator = envHandle.metrics(3_000); // every 3s
       const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);

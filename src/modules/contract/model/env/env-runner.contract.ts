@@ -10,13 +10,14 @@ export interface EnvRunnerContract extends Contract {
 
 export interface RunEnvDto {
   /**
-   * identifier of environment's template (image etc.)
+   * Identifier of environment's template (image etc.)
    */
   envKey: string;
   /**
    * DNS-safe identifier of task. Unique per task, but not per run
    */
   label: string;
+  script: string | null;
   limitations?: Limitations;
   options: RunEnvOptions;
   // TODO: extra args per task?

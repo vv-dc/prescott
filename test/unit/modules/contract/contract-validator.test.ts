@@ -33,7 +33,10 @@ describe('contract-validator unit', () => {
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const envBuilderImpl: EnvBuilderContract = {
       init: async (opts) => {},
-      buildEnv: async (dto) => generateRandomString(),
+      buildEnv: async (dto) => ({
+        envKey: generateRandomString(),
+        script: null,
+      }),
       deleteEnv: async (dto) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -48,7 +51,7 @@ describe('contract-validator unit', () => {
 
       async init(opts: ContractInitOpts) {}
       async buildEnv(dto: BuildEnvDto) {
-        return generateRandomString();
+        return { envKey: generateRandomString(), script: null };
       }
       async deleteEnv(dto: DeleteEnvDto) {}
 
