@@ -9,4 +9,5 @@ export interface Task {
   config: string;
   active?: boolean;
   envKey?: string;
+  envScript?: string;
 }

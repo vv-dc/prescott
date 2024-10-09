@@ -12,7 +12,8 @@
       "description": "base64 encoded TaskConfig"
     },
     "active": { "type": "boolean", "default": true },
-    "envKey": { "type": "string" }
+    "envKey": { "type": "string" },
+    "envScript": { "type": "string" }
   },
   "required": ["id", "name", "userId", "groupId", "config"],
   "additionalProperties": false

@@ -19,7 +19,10 @@ import {
   TaskOnRunCallbackFn,
 } from '@plugins/task/model/task-callback-fn';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
-import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
+import {
+  BuildEnvResultDto,
+  EnvBuilderContract,
+} from '@modules/contract/model/env/env-builder.contract';
 
 export class TaskExecutorService {
   private readonly logger = getLogger('task-executor-service');
@@ -69,13 +72,13 @@ export class TaskExecutorService {
 
     // build task, but no need to wait for the end of it as task scheduled to run not immediately
     dispatchTask(async () => {
-      const envKey = await this.buildClearTask(
+      const buildResult = await this.buildClearTask(
         label,
         envInfo,
         config.appConfig.steps
       );
       this.logger.info(`scheduleExecutable[taskId=${taskId}]: built`);
-      await afterBuildCallbackFn(taskId, envKey);
+      await afterBuildCallbackFn(taskId, buildResult);
 
       await this.scheduler.start(taskId);
       this.logger.info(`scheduleExecutable[taskId=${taskId}]: scheduled`);
@@ -90,26 +93,25 @@ export class TaskExecutorService {
     label: string,
     envInfo: EnvInfo,
     steps: TaskStep[]
-  ): Promise<string> {
-    // TODO: script too
-    const { envKey } = await this.envBuilder.buildEnv({
+  ): Promise<BuildEnvResultDto> {
+    return await this.envBuilder.buildEnv({
       label,
       envInfo,
       steps: decodeTaskSteps(steps),
     });
-    return envKey;
   }
 
   async runExecutable(
     taskId: number,
     envKey: string,
+    envScript: string | null,
     config: LocalTaskConfig
   ): Promise<EnvHandle> {
     const label = buildTaskLabel(taskId);
     const envHandle = await this.envRunner.runEnv({
       envKey,
-      label: label,
-      script: null, // TODO: fixme
+      label,
+      script: envScript,
       limitations: config.appConfig?.limitations,
     });
     this.logger.info(

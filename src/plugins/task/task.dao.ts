@@ -3,6 +3,9 @@ import { Knex } from 'knex';
 import { Task } from '@model/domain/task';
 import { EntityNotFound } from '@modules/errors/abstract-errors';
 
+type TaskCreateDto = Omit<Task, 'id'>;
+type TaskUpdateDto = Partial<TaskCreateDto>;
+
 export class TaskDao {
   constructor(private db: Knex) {}
 
@@ -39,7 +42,7 @@ export class TaskDao {
     return tasks.map((task) => this.mapTask(task));
   }
 
-  async create(task: Omit<Task, 'id'>): Promise<number> {
+  async create(task: TaskCreateDto): Promise<number> {
     const { name, userId, groupId, config, active } = task;
     const [{ id }] = await this.db('tasks')
       .insert({
@@ -53,12 +56,8 @@ export class TaskDao {
     return id;
   }
 
-  async update(id: number, config: string): Promise<void> {
-    await this.db('tasks').update({ config }).where({ id });
-  }
-
-  async updateEnvKey(id: number, envKey: string): Promise<void> {
-    await this.db('tasks').update({ envKey }).where({ id });
+  async update(id: number, dto: TaskUpdateDto): Promise<void> {
+    await this.db('tasks').update(dto).where({ id });
   }
 
   async delete(id: number): Promise<void> {

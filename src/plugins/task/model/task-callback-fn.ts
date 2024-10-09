@@ -1,4 +1,5 @@
 import { ExecuteTaskFn } from '@modules/contract/model/queue/task-queue.contract';
+import { BuildEnvResultDto } from '@src/modules/contract/model/env/env-builder.contract';
 
 export type TaskOnRunCallbackFn = (
   taskId: number
@@ -6,5 +7,5 @@ export type TaskOnRunCallbackFn = (
 
 export type TaskAfterBuildCallbackFn = (
   taskId: number,
-  envKey: string
+  buildResult: BuildEnvResultDto
 ) => Promise<void>;

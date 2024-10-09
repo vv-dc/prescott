@@ -13,6 +13,7 @@ import {
   TaskOnRunCallbackFn,
 } from '@plugins/task/model/task-callback-fn';
 import { ExecuteTaskFn } from '@modules/contract/model/queue/task-queue.contract';
+import { BuildEnvResultDto } from '@src/modules/contract/model/env/env-builder.contract';
 
 export class TaskService {
   private readonly logger = getLogger('task-service');
@@ -98,8 +99,15 @@ export class TaskService {
   }
 
   private getTaskAfterBuildCallbackFn(): TaskAfterBuildCallbackFn {
-    return async (taskId: number, envKey: string): Promise<void> => {
-      await this.dao.updateEnvKey(taskId, envKey);
+    return async (
+      taskId: number,
+      buildResult: BuildEnvResultDto
+    ): Promise<void> => {
+      const { envKey, script } = buildResult;
+      await this.dao.update(taskId, {
+        envKey,
+        envScript: script ?? undefined,
+      });
     };
   }
 
@@ -129,13 +137,14 @@ export class TaskService {
       return;
     }
 
-    const { config: taskConfigRaw, envKey } = task as Task;
+    const { config: taskConfigRaw, envKey, envScript } = task as Task;
     const taskConfig: TaskConfigDto = JSON.parse(taskConfigRaw);
     const { config, times } = taskConfig;
 
     const envHandle = await this.executorService.runExecutable(
       taskId,
       envKey as never, // it was checked in isTaskActive
+      envScript ?? null,
       config
     );
     await this.runService.start(runHandle, envHandle);
@@ -240,7 +249,7 @@ export class TaskService {
       onRunCallbackFn,
       afterBuildCallbackFn
     );
-    await this.dao.update(taskId, JSON.stringify(newConfig));
+    await this.dao.update(taskId, { config: JSON.stringify(newConfig) });
     this.logger.info(`updateTask[taskId=${taskId}]: updated`);
   }
 
