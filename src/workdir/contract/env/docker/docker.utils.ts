@@ -56,8 +56,11 @@ const ESCAPE_REPLACE_MAP: Record<string, string> = {
   '\v': '\\v',
 };
 
-export const normalizeDockerCmd = (cmd: string): string =>
+export const normalizeEscapeCharacters = (cmd: string): string =>
   cmd.replace(/[\n\r\t\b\f\v]/g, (match) => ESCAPE_REPLACE_MAP[match]);
+
+export const normalizeSingleQuote = (cmd: string): string =>
+  cmd.replace(/'/g, `'\\''`);
 
 export const buildDockerfile = (
   image: string,
@@ -68,7 +71,7 @@ export const buildDockerfile = (
     `FROM ${image} AS base`,
     `WORKDIR /usr/src/app`,
     ...(copy ? ['COPY . .'] : []),
-    `CMD ${normalizeDockerCmd(cmd)}`,
+    `CMD ${normalizeEscapeCharacters(cmd)}`,
   ];
   return statements.join('\n');
 };
