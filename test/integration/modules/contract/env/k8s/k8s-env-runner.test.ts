@@ -1,13 +1,8 @@
 import * as fsp from 'node:fs/promises';
 
-import {
-  BuildEnvDto,
-  EnvBuilderContract,
-} from '@modules/contract/model/env/env-builder.contract';
+import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
 import { prepareContract } from '@test/lib/test-contract.utils';
-import { DOCKER_IMAGES } from '@test/lib/test.const';
-import { generateRandomString } from '@lib/random.utils';
-import k8sKindDockerEnvBuilder from '@src/workdir/contract/env/k8s/k8s-kind-docker-env-builder';
+import envBuilderPassThroughFn from '@src/workdir/contract/env/docker/docker-pass-through-env-builder';
 import k8sEnvRunner from '@src/workdir/contract/env/k8s/k8s-env-runner';
 import { getK8sApiConfig, getK8sResourcePath } from '@test/lib/test-k8s.utils';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
@@ -17,46 +12,28 @@ import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
 import { K8sPodMetricProvider } from '@src/workdir/contract/env/k8s/model/k8s-pod-config';
+import { ContractOpts } from '@src/modules/contract/model/contract';
 
-const buildEnvBuilder = async (): Promise<EnvBuilderContract> => {
-  return prepareContract(k8sKindDockerEnvBuilder, {
-    clusterName: 'prescott-test',
+const buildEnvBuilder = (): Promise<EnvBuilderContract> => {
+  return prepareContract(envBuilderPassThroughFn, {
+    skipImageCheck: 'true',
   });
 };
 
 const buildEnvRunner = async (
-  metricProvider: K8sPodMetricProvider = 'none'
+  metricProvider: K8sPodMetricProvider = 'none',
+  extraOpts: ContractOpts = {}
 ): Promise<EnvRunnerContract> => {
   const apiConfig = await getK8sApiConfig();
-  const opts = {
+  return await prepareContract(k8sEnvRunner, {
     ...apiConfig,
+    ...extraOpts,
     metricProvider,
-  };
-  return await prepareContract(k8sEnvRunner, opts);
+  });
 };
 
 // do not run until explicitly uncommented
-describe.skip('k8s flow', () => {
-  it('should load image to kind cluster after build', async () => {
-    const envBuilder = await buildEnvBuilder();
-
-    const buildDto: BuildEnvDto = {
-      label: generateRandomString('k8s-kind-build-test'),
-      envInfo: DOCKER_IMAGES.alpine,
-      steps: [
-        {
-          name: 'step #1',
-          script: `while true; do echo "'hello'" && echo '"hello"'; sleep 1000; done`,
-        },
-      ],
-    };
-
-    const { envKey } = await envBuilder.buildEnv(buildDto);
-    expect(envKey).toBeTruthy();
-
-    await envBuilder.deleteEnv({ envKey, isForce: true });
-  });
-
+describe.skip('k8s-env-runner [pass-through]', () => {
   it('should connect to cluster using kubeConfigPath', async () => {
     await prepareContract(k8sEnvRunner, {
       kubeConfigPath: 'data/k8s/kubeconfig.yml',
@@ -79,29 +56,30 @@ describe.skip('k8s flow', () => {
   });
 
   it('should throw an error if service account does not have access to namespace', async () => {
-    const apiConfig = {
-      ...(await getK8sApiConfig()),
-      namespace: 'default',
-    };
-    await expect(prepareContract(k8sEnvRunner, apiConfig)).rejects.toThrow(
-      new Error(
-        'K8s-env-runner: serviceaccounts "prescott-sa" is forbidden: User "system:serviceaccount:prescott:prescott-sa" cannot create resource "serviceaccounts/token" in API group "" in the namespace "default"[403]'
-      )
-    );
+    await expect(
+      buildEnvRunner('metrics-server', { namespace: 'default' })
+    ).rejects.toMatchObject({
+      message:
+        'K8s-env-runner: serviceaccounts "prescott-sa" is forbidden: ' +
+        'User "system:serviceaccount:prescott:prescott-sa" cannot create ' +
+        'resource "serviceaccounts/token" in API group "" in the namespace "default"[403]',
+    });
   });
 
   it('should handle errors during container creation inside the pod', async () => {
-    const envRunner = await buildEnvRunner();
+    const envRunner = await buildEnvRunner('metrics-server', {
+      imagePullPolicy: 'Never',
+    });
 
     const label = 'k8s-test-failure-during-creation';
     const envKey = 'some_non_existent_image-for_k8s';
     const runDto = getRunEnvDto(label, envKey, null);
 
-    await expect(envRunner.runEnv(runDto)).rejects.toEqual(
-      new Error(
-        `[prescott-runner]: ErrImageNeverPull: Container image "${runDto.envKey}" is not present with pull policy of Never`
-      )
-    );
+    await expect(envRunner.runEnv(runDto)).rejects.toMatchObject({
+      message:
+        `[prescott-runner]: ErrImageNeverPull: Container image "${runDto.envKey}" ` +
+        `is not present with pull policy of Never`,
+    });
   });
 
   it('should return all children by label', async () => {
@@ -287,16 +265,18 @@ describe.skip('k8s flow', () => {
     await envBuilder.deleteEnv({ envKey, isForce: true });
   });
 
-  it.each(['metrics-server', 'prometheus'] as const)(
+  // metrics-server takes some time to start collecting metrics, so the test should run for a while
+  it.each([
+    { type: 'metrics-server', iterations: 25 }, // every iteration - 1s
+    { type: 'prometheus', iterations: 30 },
+  ] as const)(
     'should collect metrics during pod execution - %s',
-    async (metricProvider: K8sPodMetricProvider) => {
-      // metrics-server takes some time to start collecting metrics, so the test should run for a while
+    async ({ type, iterations }) => {
       const envBuilder = await buildEnvBuilder();
-      const envRunner = await buildEnvRunner(metricProvider);
+      const envRunner = await buildEnvRunner(type);
 
       const label = 'k8s-test-metrics';
-      const stepScript =
-        'for i in $(seq 30); do echo "nop-${i}" && sleep 1; done'; // 30 seconds running
+      const stepScript = `for i in $(seq ${iterations}); do echo "nop-$i" && sleep 1; done`; // 30 seconds running
 
       const buildDto = getAlpineBuildEnvDto(label, stepScript);
       const { envKey, script } = await envBuilder.buildEnv(buildDto);

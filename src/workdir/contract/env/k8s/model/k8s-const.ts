@@ -1,7 +1,7 @@
 const PRESCOTT_K8S_POD_CONST = {
   RUNNER_CONTAINER: 'prescott-runner',
   LABEL_ORIGIN_KEY: 'prescott.origin',
-  IMAGE_PULL_POLICY: 'Never',
+  IMAGE_PULL_POLICY: 'IfNotPresent',
   NAMESPACE: 'default',
 } as const;
 

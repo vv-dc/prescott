@@ -117,8 +117,10 @@ const buildK8sPodContainerConfig = (
 ): K8sPodContainerConfig => {
   const pullPolicy =
     opts.imagePullPolicy || PRESCOTT_K8S_POD_CONST.IMAGE_PULL_POLICY;
+  const pullSecret = opts.imagePullSecret || null;
   return {
     pullPolicy,
+    pullSecret,
     namespace,
     originLabel: PRESCOTT_K8S_POD_CONST.LABEL_ORIGIN_KEY,
     runnerContainer: PRESCOTT_K8S_POD_CONST.RUNNER_CONTAINER,

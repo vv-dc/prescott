@@ -37,7 +37,7 @@ export class K8sEnvRunner implements EnvRunnerContract {
   }
 
   async runEnv(dto: RunEnvDto): Promise<K8sEnvHandle> {
-    const { envKey, label, limitations } = dto;
+    const { envKey, label, limitations, script } = dto;
 
     const podName = generateK8sPodNameByLabel(label);
     const { identifier, stateWatch, envHandle } = this.buildEnvHandle(
@@ -46,13 +46,13 @@ export class K8sEnvRunner implements EnvRunnerContract {
     );
     await stateWatch.start(); // start watching pod state before its creation to receive ALL events
 
-    // TODO: handle lower bound resources
     // TODO: error handling
     const podDto = buildK8sPodCreateDto(
       identifier,
+      this.podConfig.container,
       envKey,
-      this.podConfig.container.pullPolicy,
-      limitations
+      script,
+      limitations ?? null
     );
     await makeK8sApiRequest(
       () =>

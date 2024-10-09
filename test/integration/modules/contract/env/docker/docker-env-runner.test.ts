@@ -17,9 +17,9 @@ import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
 const buildEnvBuilder = (
   type: 'builder' | 'pass-through'
 ): Promise<EnvBuilderContract> => {
-  const contractFn =
-    type === 'pass-through' ? envBuilderPassThroughFn : envBuilderFn;
-  return prepareContract(contractFn);
+  return type === 'pass-through'
+    ? prepareContract(envBuilderPassThroughFn, { skipImageCheck: 'true' })
+    : prepareContract(envBuilderFn);
 };
 
 const buildEnvRunner = (): Promise<EnvRunnerContract> => {

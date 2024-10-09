@@ -13,9 +13,10 @@ import { CommandBuilder } from '@src/lib/command-builder';
 import { errorToReason } from '@src/modules/errors/get-error-reason';
 
 export class DockerPassThroughEnvBuilder implements EnvBuilderContract {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async init(_opts: ContractInitOpts): Promise<void> {
-    // no-op
+  private skipImageCheck!: boolean;
+
+  async init(opts: ContractInitOpts): Promise<void> {
+    this.skipImageCheck = opts.contract.skipImageCheck === 'true';
   }
 
   async buildEnv(dto: BuildEnvDto): Promise<BuildEnvResultDto> {
@@ -23,7 +24,10 @@ export class DockerPassThroughEnvBuilder implements EnvBuilderContract {
 
     const { name, version } = envInfo;
     const envKey = buildDockerImage(name, version);
-    await this.assertImageExists(envKey);
+
+    if (!this.skipImageCheck) {
+      await this.assertImageExists(envKey);
+    }
 
     const script = buildDockerCmd(steps);
     return { envKey, script };

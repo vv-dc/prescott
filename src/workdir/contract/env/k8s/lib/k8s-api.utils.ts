@@ -7,6 +7,7 @@ import { millisecondsToSeconds } from '@lib/time.utils';
 import { generateRandomString } from '@lib/random.utils';
 import { PRESCOTT_K8S_POD_CONST } from '@src/workdir/contract/env/k8s/model/k8s-const';
 import { parseJwtToken } from '@src/lib/jwt.utils';
+import { K8sPodContainerConfig } from '../model/k8s-pod-config';
 
 export class K8sEnvRunnerError extends Error {
   constructor(message: string, readonly statusCode: number) {
@@ -74,12 +75,16 @@ export const getK8sPodLabelByName = (podName: string): string => {
 
 export const buildK8sPodCreateDto = (
   identifier: K8sPodIdentifier,
+  containerConfig: K8sPodContainerConfig,
   imageKey: string,
-  imagePullPolicy: string,
-  limitations?: Limitations
+  script: string | null,
+  limitations: Limitations | null
 ): k8s.V1Pod => {
   const { namespace, label, name, runnerContainer } = identifier;
+  const { pullPolicy, pullSecret } = containerConfig;
+
   const [resourceLimits, ttlSeconds] = buildK8sPodResourceLimits(limitations);
+  const scriptSpec = script ? buildK8sContainerScriptSpec(script) : undefined;
 
   const podSpec: k8s.V1PodSpec = {
     restartPolicy: 'Never',
@@ -87,12 +92,17 @@ export const buildK8sPodCreateDto = (
       {
         name: runnerContainer,
         image: imageKey,
-        imagePullPolicy,
+        imagePullPolicy: pullPolicy,
         resources: { limits: resourceLimits },
+        ...scriptSpec,
       },
     ],
   };
-  if (ttlSeconds !== undefined) {
+
+  if (pullSecret) {
+    podSpec.imagePullSecrets = [{ name: pullSecret }];
+  }
+  if (ttlSeconds) {
     podSpec.activeDeadlineSeconds = ttlSeconds;
     podSpec.terminationGracePeriodSeconds = 0;
   }
@@ -110,10 +120,19 @@ export const buildK8sPodCreateDto = (
   };
 };
 
+const buildK8sContainerScriptSpec = (
+  script: string
+): Partial<k8s.V1Container> => {
+  return {
+    command: ['/bin/sh'],
+    args: ['-c', script],
+  };
+};
+
 const buildK8sPodResourceLimits = (
-  limitations?: Limitations
+  limitations: Limitations | null
 ): [Record<string, string>, number | undefined] => {
-  if (!limitations) {
+  if (limitations === null) {
     return [{}, undefined];
   }
 

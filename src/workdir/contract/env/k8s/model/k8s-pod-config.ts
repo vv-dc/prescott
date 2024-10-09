@@ -8,6 +8,7 @@ export interface K8sPodContainerConfig {
   runnerContainer: string;
   originLabel: string;
   pullPolicy: string;
+  pullSecret: string | null;
 }
 
 export const K8S_POD_METRIC_PROVIDER_LIST = [
