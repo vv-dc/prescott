@@ -3,11 +3,10 @@ import { Limitations } from '@model/domain/limitations';
 import { MappedLimitation } from '@src/workdir/contract/env/docker/model/mapped-limitation';
 import { BuilderMapper } from '@src/workdir/contract/env/docker/model/builder-mapper';
 import { InspectParam } from '@src/workdir/contract/env/docker/model/inspect-param';
-import { EnvId } from '@modules/contract/model/env/env-id';
-import { RunEnvOptions } from '@modules/contract/model/env/env-runner.contract';
+import { TaskStep } from '@src/model/domain/task-step';
 
 export class DockerEnvError extends Error {
-  constructor(private resourceId: string | EnvId, message: string) {
+  constructor(private resourceId: string, message: string) {
     super(message);
   }
 }
@@ -21,14 +20,6 @@ export const execDockerCommandWithCheck = async (
     throw new DockerEnvError(entityId, stderr);
   }
   return { stdout, stderr };
-};
-
-export const applyDockerRunOptions = (
-  builder: CommandBuilder,
-  options: RunEnvOptions
-): void => {
-  const { isDelete } = options;
-  if (isDelete) builder.param('rm');
 };
 
 export const buildDockerImage = (
@@ -65,8 +56,11 @@ const ESCAPE_REPLACE_MAP: Record<string, string> = {
   '\v': '\\v',
 };
 
-export const normalizeDockerCmd = (cmd: string): string =>
+export const normalizeEscapeCharacters = (cmd: string): string =>
   cmd.replace(/[\n\r\t\b\f\v]/g, (match) => ESCAPE_REPLACE_MAP[match]);
+
+export const normalizeSingleQuote = (cmd: string): string =>
+  cmd.replace(/'/g, `'\\''`);
 
 export const buildDockerfile = (
   image: string,
@@ -77,7 +71,7 @@ export const buildDockerfile = (
     `FROM ${image} AS base`,
     `WORKDIR /usr/src/app`,
     ...(copy ? ['COPY . .'] : []),
-    `CMD ${normalizeDockerCmd(cmd)}`,
+    `CMD ${normalizeEscapeCharacters(cmd)}`,
   ];
   return statements.join('\n');
 };
@@ -89,7 +83,7 @@ const LIMITATIONS_MAP: Record<MappedLimitation, BuilderMapper> = {
   rom: (builder, value) => {
     builder.param('storage-opt').with(`size=${value}`);
   },
-  cpus: (builder: CommandBuilder, value) => {
+  cpu: (builder: CommandBuilder, value) => {
     builder.param('cpus', value);
   },
 };
@@ -157,4 +151,22 @@ export const getContainerPid = async (container: string): Promise<number> => {
   } catch (err) {
     return 0;
   }
+};
+
+export const formatDockerLabel = (key: string, value: string): string =>
+  `${key}=${value}`;
+
+export const buildDockerCmd = (steps: TaskStep[]): string => {
+  const command = new CommandBuilder();
+
+  for (let idx = 0; idx < steps.length; ++idx) {
+    const { script, ignoreFailure } = steps[idx];
+    const method = ignoreFailure ? 'then' : 'chain';
+    command.add(script);
+    if (idx !== steps.length - 1) {
+      command[method](''); // command -> operator (; | &&)
+    }
+  }
+
+  return command.build();
 };

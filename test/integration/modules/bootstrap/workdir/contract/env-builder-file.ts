@@ -12,7 +12,7 @@ const envBuilder: EnvBuilderContract = {
   init: async (opts: ContractInitOpts) => {
     envBuilderOpts = { ...opts.contract, ...opts.system };
   },
-  buildEnv: async (dto) => generateRandomString(),
+  buildEnv: async (dto) => ({ envKey: generateRandomString(), script: null }),
   deleteEnv: async (dto) => {},
 };
 /* eslint-enable @typescript-eslint/no-unused-vars */
