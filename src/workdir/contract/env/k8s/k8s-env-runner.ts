@@ -28,8 +28,8 @@ export class K8sEnvRunner implements EnvRunnerContract {
 
   async init(opts: ContractInitOpts): Promise<void> {
     const kubeConfig = buildKubeConfigByContractOpts(opts);
-    this.api = new K8sApiWrapper(kubeConfig);
-    await this.api.resetTokenIfApplicable(); // maybe token was provided with some delay
+    this.api = new K8sApiWrapper(opts.system.workDir, kubeConfig);
+    await this.api.init();
     await this.api.assertHealthy();
 
     const namespace = this.api.getNamespace();

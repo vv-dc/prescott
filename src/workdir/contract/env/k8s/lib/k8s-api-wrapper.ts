@@ -6,6 +6,7 @@ import {
   inferServiceAccountByKubeConfig,
   makeK8sApiRequest,
 } from './k8s-api.utils';
+import { K8sApiTokenStorage } from './k8s-api-token-storage';
 
 /**
  * All K8s API calls should be made via this class
@@ -17,20 +18,34 @@ export class K8sApiWrapper {
   log!: k8s.Log;
   metric!: k8s.Metrics;
 
-  private isResetToken!: boolean;
+  private tokenStorage: K8sApiTokenStorage | null = null;
   private kubeConfig!: k8s.KubeConfig;
   private namespace!: string;
   private serviceAccount!: string;
 
-  constructor(kubeConfig: k8s.KubeConfig) {
+  constructor(workDir: string, kubeConfig: k8s.KubeConfig) {
+    const initialToken = this.inferTokenByKubeConfig(kubeConfig);
+    if (initialToken !== null) {
+      this.tokenStorage = new K8sApiTokenStorage(workDir, initialToken);
+    }
     this.resetKubeConfig(kubeConfig);
     this.namespace = inferNamespaceByKubeConfig(kubeConfig);
     this.serviceAccount = inferServiceAccountByKubeConfig(kubeConfig);
+  }
 
-    this.isResetToken = this.checkIsShouldResetToken(kubeConfig);
-    if (this.isResetToken) {
-      this.registerResetTokenInterval();
+  async init(): Promise<void> {
+    if (this.tokenStorage === null) {
+      return;
     }
+
+    const savedToken = await this.tokenStorage.tryToLoadToken();
+    if (savedToken !== null) {
+      this.applyNewToken(savedToken);
+    }
+
+    await this.tokenStorage.ensureStorage();
+    await this.resetTokenIfApplicable(); // try to refresh it immediately
+    this.registerResetTokenInterval();
   }
 
   async assertHealthy(): Promise<void> {
@@ -45,9 +60,9 @@ export class K8sApiWrapper {
     return new k8s.Watch(this.kubeConfig);
   }
 
-  private checkIsShouldResetToken(kubeConfig: k8s.KubeConfig): boolean {
+  private inferTokenByKubeConfig(kubeConfig: k8s.KubeConfig): string | null {
     const currentUser = kubeConfig.getCurrentUser();
-    return Boolean(currentUser?.token);
+    return currentUser?.token ?? null;
   }
 
   private resetKubeConfig(kubeConfig: k8s.KubeConfig): void {
@@ -64,14 +79,19 @@ export class K8sApiWrapper {
     );
   }
 
-  async resetTokenIfApplicable(): Promise<void> {
-    if (!this.isResetToken) {
+  private async resetTokenIfApplicable(): Promise<void> {
+    if (!this.tokenStorage) {
       return;
     }
     const newToken = await this.makeRefreshTokenRequest(
       this.namespace,
       this.serviceAccount
     );
+    this.applyNewToken(newToken);
+    await this.tokenStorage.saveToken(newToken);
+  }
+
+  private applyNewToken(newToken: string): void {
     const newKubeConfig = this.enrichKubeConfigByNewToken(
       this.kubeConfig,
       newToken

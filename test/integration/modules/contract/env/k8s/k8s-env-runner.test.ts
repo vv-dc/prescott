@@ -1,7 +1,12 @@
 import * as fsp from 'node:fs/promises';
+import * as crypto from 'node:crypto';
+import * as path from 'node:path';
 
 import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
-import { prepareContract } from '@test/lib/test-contract.utils';
+import {
+  prepareContactSystemOpts,
+  prepareContract,
+} from '@test/lib/test-contract.utils';
 import envBuilderPassThroughFn from '@src/workdir/contract/env/docker/docker-pass-through-env-builder';
 import k8sEnvRunner from '@src/workdir/contract/env/k8s/k8s-env-runner';
 import { getK8sApiConfig, getK8sResourcePath } from '@test/lib/test-k8s.utils';
@@ -66,6 +71,34 @@ describe.skip('k8s-env-runner [pass-through]', () => {
     });
   });
 
+  it('should refresh service account token immediately and then save it to FS', async () => {
+    // prepare
+    const systemOpts = await prepareContactSystemOpts();
+    const token = (await getK8sApiConfig()).token as string;
+    const tokenHash = crypto.createHash('md5').update(token).digest('hex');
+    const tokenPath = path.join(
+      systemOpts.workDir,
+      `data/k8s/token-${tokenHash}.txt`
+    );
+
+    // first refresh
+    await buildEnvRunner();
+    const firstToken = await fsp.readFile(tokenPath, 'utf-8');
+
+    // second refresh
+    await buildEnvRunner();
+    const secondToken = await fsp.readFile(tokenPath, 'utf-8');
+
+    // third refresh
+    await buildEnvRunner();
+    const thirdToken = await fsp.readFile(tokenPath, 'utf-8');
+
+    // tokens are not equal
+    expect(firstToken).not.toEqual(secondToken);
+    expect(firstToken).not.toEqual(thirdToken);
+    expect(secondToken).not.toEqual(thirdToken);
+  });
+
   it('should handle errors during container creation inside the pod', async () => {
     const envRunner = await buildEnvRunner('metrics-server', {
       imagePullPolicy: 'Never',
@@ -84,7 +117,7 @@ describe.skip('k8s-env-runner [pass-through]', () => {
 
   it('should not throw even if script is invalid', async () => {
     const envBuilder = await buildEnvBuilder();
-    const envRunner = await buildEnvRunner('metrics-server');
+    const envRunner = await buildEnvRunner();
 
     const label = 'k8s-test-invalid-script';
     const stepScript = 'some_non_existent_executable "hello, world"';
