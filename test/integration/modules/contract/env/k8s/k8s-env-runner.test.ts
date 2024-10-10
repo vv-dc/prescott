@@ -77,9 +77,34 @@ describe.skip('k8s-env-runner [pass-through]', () => {
 
     await expect(envRunner.runEnv(runDto)).rejects.toMatchObject({
       message:
-        `[prescott-runner]: ErrImageNeverPull: Container image "${runDto.envKey}" ` +
+        `ErrImageNeverPull: Container image "${runDto.envKey}" ` +
         `is not present with pull policy of Never`,
     });
+  });
+
+  it('should not throw even if script is invalid', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner('metrics-server');
+
+    const label = 'k8s-test-invalid-script';
+    const stepScript = 'some_non_existent_executable "hello, world"';
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
+    const runDto = getRunEnvDto(label, envKey, script);
+
+    const envHandle = await envRunner.runEnv(runDto);
+    await envHandle.wait();
+
+    const logsGenerator = envHandle.logs();
+    const logsArray = await asyncGeneratorToArray(logsGenerator);
+    expect(logsArray).toEqual([
+      {
+        time: expect.any(Number),
+        stream: 'stdout',
+        content: '/bin/sh: some_non_existent_executable: not found',
+      },
+    ] satisfies LogEntry[]);
   });
 
   it('should return all children by label', async () => {
@@ -114,11 +139,11 @@ describe.skip('k8s-env-runner [pass-through]', () => {
     await envBuilder.deleteEnv({ envKey, isForce: true });
   });
 
-  it('should stop/delete pod immediately after TTL', async () => {
+  it('should apply limitations - TTL', async () => {
     const envBuilder = await buildEnvBuilder();
     const envRunner = await buildEnvRunner();
 
-    const label = 'k8s-test-ttl';
+    const label = 'k8s-test-limitation-ttl';
     const stepScript = 'sleep 1000';
 
     const buildDto = getAlpineBuildEnvDto(label, stepScript);
@@ -131,7 +156,32 @@ describe.skip('k8s-env-runner [pass-through]', () => {
     expect(waitResult).toMatchObject({
       exitCode: 137,
       exitError:
-        'DeadlineExceeded: Pod was active on the node longer than the specified deadline',
+        'Error: DeadlineExceeded: Pod was active on the node longer than the specified deadline',
+    } as WaitEnvHandleResult);
+
+    await envHandle.delete({ isForce: true });
+    await envBuilder.deleteEnv({ envKey, isForce: true });
+  });
+
+  it('should apply limitations - RAM', async () => {
+    const envBuilder = await buildEnvBuilder();
+    const envRunner = await buildEnvRunner();
+
+    const label = 'k8s-test-limitation-ram';
+    const stepScript = `cat /dev/zero | head -c 150m | tail`;
+
+    const buildDto = getAlpineBuildEnvDto(label, stepScript);
+    const { envKey, script } = await envBuilder.buildEnv(buildDto);
+
+    // k8s needs some memory to initialize the container
+    // if RAM limit is too low, pod will be in "ContainerCreating" indefinitely
+    const runDto = getRunEnvDto(label, envKey, script, { ram: '128Mi' });
+    const envHandle = await envRunner.runEnv(runDto);
+    const waitResult = await envHandle.wait();
+
+    expect(waitResult).toMatchObject({
+      exitCode: 137,
+      exitError: 'OOMKilled: code=137',
     } as WaitEnvHandleResult);
 
     await envHandle.delete({ isForce: true });
@@ -225,7 +275,7 @@ describe.skip('k8s-env-runner [pass-through]', () => {
     const waitResult = await envHandle.wait();
     expect(waitResult).toMatchObject({
       exitCode: exitCode,
-      exitError: 'Error',
+      exitError: 'Error: code=123',
     } as WaitEnvHandleResult);
 
     const logsArray = await asyncGeneratorToArray(logsGenerator);
@@ -288,6 +338,10 @@ describe.skip('k8s-env-runner [pass-through]', () => {
       await envHandle.wait();
 
       const metricsArray = await metricsArrayPromise;
+
+      await envHandle.delete({ isForce: true });
+      await envBuilder.deleteEnv({ envKey, isForce: true });
+
       expect(metricsArray.length).toBeGreaterThan(0);
 
       const expectedMetrics: MetricEntry[] = Array.from(
@@ -304,9 +358,6 @@ describe.skip('k8s-env-runner [pass-through]', () => {
       const allTimetamps = metricsArray.map((m) => m.time);
       const uniqueTimestamps = new Set(allTimetamps);
       expect(allTimetamps.length).toEqual(uniqueTimestamps.size);
-
-      await envHandle.delete({ isForce: true });
-      await envBuilder.deleteEnv({ envKey, isForce: true });
     }
   );
 });

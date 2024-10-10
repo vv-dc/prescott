@@ -2,21 +2,18 @@ import * as events from 'node:events';
 import * as k8s from '@kubernetes/client-node';
 
 import {
-  inferAllWaitingContainersFailureReasonNullable,
-  inferK8sPodExitCodeNullable,
-  inferK8sTerminatedPodReasonNullable,
+  inferK8sTerminatedPodTerminationDetailsNullable,
+  inferK8sWaitingPodTerminationDetailsNullable,
 } from '@src/workdir/contract/env/k8s/lib/k8s-api.utils';
 import { errorToReason } from '@modules/errors/get-error-reason';
 import { K8sPodIdentifier } from '@src/workdir/contract/env/k8s/model/k8s-pod-identifier';
+import { PRESCOTT_K8S_POD_CONST } from '../model/k8s-const';
 
 const enum PodLifeTimeEvent {
   'running' = 'running', // container was created but still running
   'failed' = 'failed', // container failed during execution (exit_code != 0) or creation (ErrImageNeverPull)
   'succeeded' = 'succeeded', // container executed successfully
 }
-
-const DEFAULT_SUCCESS_EXIT_CODE = 0;
-const DEFAULT_FAILURE_EXIT_CODE = 1;
 
 export class K8sPodStateWatch {
   private readonly emitter = new events.EventEmitter();
@@ -60,54 +57,44 @@ export class K8sPodStateWatch {
         ) {
           return; // wait until next update
         }
-        const { phase, containerStatuses = [] } = pod.status;
+        const { phase } = pod.status;
 
         // pod can be deleted in any of active/terminal states
         if (
           updateType === 'DELETED' &&
           !['Succeed', 'Failed'].includes(phase)
         ) {
-          return this.handleTerminalPhase(
-            'Failed',
-            containerStatuses,
-            pod.status
-          );
+          return this.handleTerminalPhase('Failed', pod.status);
         }
 
         switch (phase) {
           case 'Pending':
           case 'Unknown':
-            return this.handlePendingPhase(containerStatuses);
+            return this.handlePendingPhase(pod.status);
           case 'Running':
             return this.handleRunningPhase();
           default: // all other events are terminal
-            return this.handleTerminalPhase(
-              phase,
-              containerStatuses,
-              pod.status
-            );
+            return this.handleTerminalPhase(phase, pod.status);
         }
       },
       (err) => {
         // watch abort is also recognized as error and is passed here, so it should be skipped
         if (err && !this.isStateTerminal()) {
           const reason = errorToReason(err);
-          this.setRunFailed(DEFAULT_FAILURE_EXIT_CODE, reason);
+          this.setRunFailed(PRESCOTT_K8S_POD_CONST.FAILURE_EXIT_CODE, reason);
         }
       }
     );
   }
 
-  private handlePendingPhase(containerStatuses: k8s.V1ContainerStatus[]): void {
-    if (containerStatuses.length === 0) {
-      return;
-    }
-
-    const reasonNullable =
-      inferAllWaitingContainersFailureReasonNullable(containerStatuses);
-    if (reasonNullable !== null) {
+  private handlePendingPhase(podStatus: k8s.V1PodStatus): void {
+    const terminationDetails = inferK8sWaitingPodTerminationDetailsNullable(
+      podStatus,
+      this.identifier.runnerContainer
+    );
+    if (terminationDetails !== null) {
       this.stopIfApplicable(); // no need to wait - container already failed
-      this.setInitFailed(reasonNullable);
+      this.setInitFailed(terminationDetails.reason);
     }
   }
 
@@ -115,28 +102,23 @@ export class K8sPodStateWatch {
     this.setRunning();
   }
 
-  private handleTerminalPhase(
-    phase: string,
-    containerStatuses: k8s.V1ContainerStatus[],
-    podStatus: k8s.V1PodStatus
-  ): void {
+  private handleTerminalPhase(phase: string, podStatus: k8s.V1PodStatus): void {
     this.stopIfApplicable();
-    const exitCodeNullable = inferK8sPodExitCodeNullable(
-      containerStatuses,
-      this.identifier.runnerContainer
-    );
-
-    if (phase === 'Failed') {
-      const reasonNullable = inferK8sTerminatedPodReasonNullable(
+    const { reason, exitCode } =
+      inferK8sTerminatedPodTerminationDetailsNullable(
         podStatus,
         this.identifier.runnerContainer
-      );
+      ) ?? { reason: 'Unknown', exitCode: null };
+
+    if (phase === 'Failed') {
       this.setRunFailed(
-        exitCodeNullable ?? DEFAULT_FAILURE_EXIT_CODE,
-        reasonNullable ?? 'Unknown'
+        exitCode ?? PRESCOTT_K8S_POD_CONST.FAILURE_EXIT_CODE,
+        reason
       );
     } else {
-      this.setRunSucceeded(exitCodeNullable ?? DEFAULT_SUCCESS_EXIT_CODE);
+      this.setRunSucceeded(
+        exitCode ?? PRESCOTT_K8S_POD_CONST.SUCCESS_EXIT_CODE
+      );
     }
   }
 
@@ -167,7 +149,7 @@ export class K8sPodStateWatch {
   }
 
   private setInitFailed(reason: string): void {
-    this.exitCode = DEFAULT_FAILURE_EXIT_CODE; // there is no exit code, because container was not started
+    this.exitCode = PRESCOTT_K8S_POD_CONST.FAILURE_EXIT_CODE; // there is no exit code, because container was not started
     this.initError = reason;
     this.emitter.emit(PodLifeTimeEvent.failed);
   }

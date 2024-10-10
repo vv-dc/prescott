@@ -21,6 +21,11 @@ interface K8sServiceAccountTokenPayload {
   };
 }
 
+interface K8sContainerTerminationDetails {
+  exitCode: number;
+  reason: string;
+}
+
 export const inferNamespaceByKubeConfig = (
   kubeConfig: k8s.KubeConfig
 ): string => {
@@ -150,75 +155,100 @@ const buildK8sPodResourceLimits = (
   return [resourceLimitations, ttlSeconds];
 };
 
-export const inferAllWaitingContainersFailureReasonNullable = (
-  containers: k8s.V1ContainerStatus[]
-): string | null => {
-  let composedFailureReason = '';
-
-  for (const container of containers) {
-    const reason = inferK8sWaitingContainerFailureReasonNullable(container);
-    if (reason) {
-      composedFailureReason += `[${container.name}]: ${reason}`;
-    }
-  }
-
-  return composedFailureReason.length === 0 ? null : composedFailureReason;
-};
-
-const inferK8sWaitingContainerFailureReasonNullable = (
-  container: k8s.V1ContainerStatus
-): string | null => {
-  if (!container.state || !container.state.waiting?.reason) {
-    return null;
-  }
-
-  const IMAGE_RELATED_REASONS = [
-    'ErrImagePull',
-    'ErrImageNeverPull',
-    'InvalidImageName',
-  ];
-  const { reason, message } = container.state.waiting;
-  if (IMAGE_RELATED_REASONS.includes(reason)) {
-    return formatK8sReasonMessage(reason, message);
-  }
-
-  return null;
-};
-
-export const inferK8sTerminatedPodReasonNullable = (
+export const inferK8sWaitingPodTerminationDetailsNullable = (
   status: k8s.V1PodStatus,
-  runnerContainer: string
-): string | null => {
+  targetContainer: string
+): K8sContainerTerminationDetails | null => {
+  const container = getContainerFromStatusesNullable(
+    status.containerStatuses ?? [],
+    targetContainer
+  );
+  return container?.state?.waiting
+    ? inferK8sWaitingContainerTerminationDetailsNullable(
+        container.state.waiting
+      )
+    : null;
+};
+
+export const inferK8sTerminatedPodTerminationDetailsNullable = (
+  status: k8s.V1PodStatus,
+  targetContainer: string
+): K8sContainerTerminationDetails | null => {
   const { reason, message, containerStatuses } = status;
 
-  if (reason) {
-    return formatK8sReasonMessage(reason, message);
-  }
-  if (!containerStatuses || containerStatuses.length === 0) {
+  const container = getContainerFromStatusesNullable(
+    containerStatuses ?? [],
+    targetContainer
+  );
+  if (!container?.state?.terminated) {
     return null;
   }
 
-  const container = containerStatuses.find((c) => c.name === runnerContainer);
-  if (!container?.state?.terminated?.reason) {
-    return null;
-  }
-
-  const { reason: containerReason, message: containerMessage } =
-    container.state.terminated;
-  return formatK8sReasonMessage(containerReason, containerMessage);
+  const podReason = reason
+    ? formatK8sReasonMessage(reason, message)
+    : undefined;
+  return inferK8sTerminatedContainerTerminationDetails(
+    container.state.terminated,
+    podReason
+  );
 };
 
-const formatK8sReasonMessage = (reason: string, message?: string): string => {
-  return message ? `${reason}: ${message}` : reason;
-};
-
-export const inferK8sPodExitCodeNullable = (
-  containerStates: k8s.V1ContainerStatus[],
-  containerName: string
-): number | null => {
-  const targetContainer = containerStates.find((c) => c.name === containerName);
-  if (!targetContainer || !targetContainer.state?.terminated) {
+export const getContainerFromStatusesNullable = (
+  containerStatuses: k8s.V1ContainerStatus[],
+  targetContainer: string
+): k8s.V1ContainerStatus | null => {
+  if (containerStatuses.length === 0) {
     return null;
   }
-  return targetContainer.state.terminated.exitCode;
+  const container = containerStatuses.find((c) => c.name === targetContainer);
+  return container ?? null;
+};
+
+const inferK8sTerminatedContainerTerminationDetails = (
+  state: k8s.V1ContainerStateTerminated,
+  podReason?: string
+): K8sContainerTerminationDetails => {
+  const { reason, message, exitCode } = state;
+  const formattedReason = formatK8sReasonMessage(
+    reason ?? 'Unknown',
+    message ?? podReason,
+    exitCode
+  );
+  return { reason: formattedReason, exitCode };
+};
+
+const inferK8sWaitingContainerTerminationDetailsNullable = (
+  state: k8s.V1ContainerStateWaiting
+): K8sContainerTerminationDetails | null => {
+  if (!state.reason) {
+    return null;
+  }
+
+  const { reason, message } = state;
+  if (
+    !PRESCOTT_K8S_POD_CONST.WAITING_CONTAINER_FAILURE_REASONS.includes(
+      reason as never
+    )
+  ) {
+    return null;
+  }
+
+  return {
+    reason: formatK8sReasonMessage(reason, message),
+    exitCode: PRESCOTT_K8S_POD_CONST.FAILURE_EXIT_CODE,
+  };
+};
+
+const formatK8sReasonMessage = (
+  reason: string,
+  message?: string,
+  exitCode?: number
+): string => {
+  if (message) {
+    return `${reason}: ${message}`;
+  }
+  if (exitCode) {
+    return `${reason}: code=${exitCode}`;
+  }
+  return reason;
 };
