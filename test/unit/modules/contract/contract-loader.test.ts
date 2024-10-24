@@ -146,7 +146,10 @@ describe('contract-loader unit', () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         init: jest.fn(async (opts) => {}),
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        buildEnv: async (dto) => generateRandomString(),
+        buildEnv: async (dto) => ({
+          envKey: generateRandomString(),
+          script: null,
+        }),
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         deleteEnv: async (dto) => {},
       };

@@ -6,7 +6,7 @@
     },
     "envBuilder": {
       "type": "file",
-      "key": "env/docker/docker-env-builder.ts"
+      "key": "env/docker/docker-pass-through-env-builder.ts"
     },
     "envRunner": {
       "type": "file",

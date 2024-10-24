@@ -1,0 +1,13 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: bind-prescott-pod
+  namespace: prescott
+subjects:
+  - kind: ServiceAccount
+    name: prescott-sa
+    namespace: prescott
+roleRef:
+  kind: Role
+  name: prescott-pod
+  apiGroup: rbac.authorization.k8s.io

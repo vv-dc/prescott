@@ -13,7 +13,7 @@ const envRunner: EnvRunnerContract = {
     envRunnerOpts = { ...opts.contract, ...opts.system };
   },
   runEnv: async (dto) => ({} as EnvHandle),
-  getEnvChildrenHandleIds: async (envId) => [],
+  getEnvChildrenHandleIds: async (envKey) => [],
   getEnvHandle: async (handleId) => ({} as EnvHandle),
 };
 /* eslint-enable @typescript-eslint/no-unused-vars */

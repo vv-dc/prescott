@@ -1,5 +1,4 @@
 import pidUsage = require('pidusage');
-import { Readable } from 'node:stream';
 
 import { CommandBuilder } from '@lib/command-builder';
 import { delay, millisecondsToSeconds } from '@lib/time.utils';
@@ -14,12 +13,12 @@ import {
   DeleteEnvHandleDto,
   EnvHandle,
   StopEnvHandleDto,
+  WaitEnvHandleResult,
 } from '@modules/contract/model/env/env-handle';
-import {
-  LogEntry,
-  LogEntryStream,
-} from '@modules/contract/model/log/log-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
+import { errorToReason } from '@modules/errors/get-error-reason';
+import { transformReadableToRFC3339LogGenerator } from '@lib/log.utils';
 
 // .split is faster than JSON.parse
 const METRICS_SEPARATOR = '\t';
@@ -73,19 +72,21 @@ export class DockerEnvHandle implements EnvHandle {
     );
   }
 
-  async wait(): Promise<number> {
+  async wait(): Promise<WaitEnvHandleResult> {
     const command = new CommandBuilder().init('docker wait');
     try {
       const { stdout } = await execDockerCommandWithCheck(
         this.container,
         command.with(this.container)
       );
-      return parseInt(stdout.slice(0, -1), 10); // skip last \n
+      const exitCode = parseInt(stdout.slice(0, -1), 10); // skip last \n
+      return { exitCode, exitError: null };
     } catch (err) {
-      const [exitCode] = await inspectDockerContainer(this.container, [
+      const [exitCodeString] = await inspectDockerContainer(this.container, [
         'exitCode',
       ]);
-      return parseInt(exitCode, 10);
+      const exitCode = parseInt(exitCodeString, 10);
+      return { exitCode, exitError: errorToReason(err) };
     }
   }
 
@@ -95,30 +96,10 @@ export class DockerEnvHandle implements EnvHandle {
       .param('follow')
       .param('timestamps');
     const child = command.with(this.container).spawn();
-    if (child.stdout) yield* this.consumeLogStream(child.stdout, 'stdout');
-    if (child.stderr) yield* this.consumeLogStream(child.stderr, 'stderr');
-  }
-
-  private async *consumeLogStream(
-    readable: Readable,
-    stream: LogEntryStream
-  ): AsyncGenerator<LogEntry> {
-    for await (const chunk of readable) {
-      const rawLogs = chunk.toString().split('\n');
-      for (const rawLog of rawLogs) {
-        if (rawLog === '') continue;
-        yield this.parseRawLogRow(rawLog, stream);
-      }
-    }
-  }
-
-  private parseRawLogRow(rawLog: string, stream: LogEntryStream): LogEntry {
-    const whiteSpaceIdx = rawLog.indexOf(' ');
-    return {
-      stream,
-      time: Date.parse(rawLog.slice(0, whiteSpaceIdx)),
-      content: rawLog.slice(whiteSpaceIdx + 1),
-    };
+    if (child.stdout)
+      yield* transformReadableToRFC3339LogGenerator(child.stdout, 'stdout');
+    if (child.stderr)
+      yield* transformReadableToRFC3339LogGenerator(child.stderr, 'stderr');
   }
 
   metrics(intervalMs?: number): AsyncGenerator<MetricEntry> {

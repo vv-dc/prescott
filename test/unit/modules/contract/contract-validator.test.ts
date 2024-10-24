@@ -19,7 +19,6 @@ import {
 } from '@modules/contract/model/env/env-builder.contract';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { EnvHandle } from '@modules/contract/model/env/env-handle';
-import { EnvId } from '@modules/contract/model/env/env-id';
 
 describe('contract-validator unit', () => {
   it('should validate envBuilder - INVALID', () => {
@@ -34,7 +33,10 @@ describe('contract-validator unit', () => {
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const envBuilderImpl: EnvBuilderContract = {
       init: async (opts) => {},
-      buildEnv: async (dto) => generateRandomString(),
+      buildEnv: async (dto) => ({
+        envKey: generateRandomString(),
+        script: null,
+      }),
       deleteEnv: async (dto) => {},
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
@@ -49,7 +51,7 @@ describe('contract-validator unit', () => {
 
       async init(opts: ContractInitOpts) {}
       async buildEnv(dto: BuildEnvDto) {
-        return generateRandomString();
+        return { envKey: generateRandomString(), script: null };
       }
       async deleteEnv(dto: DeleteEnvDto) {}
 
@@ -78,7 +80,7 @@ describe('contract-validator unit', () => {
       init: async (opts) => {},
       runEnv: async (dto) => ({} as EnvHandle),
       getEnvHandle: async (dto) => ({} as EnvHandle),
-      getEnvChildrenHandleIds: async (envId: EnvId) => [generateRandomString()],
+      getEnvChildrenHandleIds: async (envKey) => [generateRandomString()],
     };
     /* eslint-enable @typescript-eslint/no-unused-vars */
     const error = validateContractImpl('envRunner', envBuilderImpl);
