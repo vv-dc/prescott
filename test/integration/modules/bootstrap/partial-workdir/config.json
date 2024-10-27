@@ -1,0 +1,12 @@
+{
+  "contract": {
+    "config": {
+      "type": "file",
+      "key": "config-provider.ts"
+    },
+    "scheduler": {
+      "type": "file",
+      "key": "scheduler.ts"
+    }
+  }
+}

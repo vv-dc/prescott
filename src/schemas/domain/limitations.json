@@ -13,9 +13,8 @@
       "type": "number",
       "exclusiveMinimum": 0
     },
-    "cpus": {
-      "type": "number",
-      "exclusiveMinimum": 0
+    "cpu": {
+      "type": "string"
     }
   },
   "additionalProperties": false

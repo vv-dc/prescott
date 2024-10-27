@@ -14,11 +14,11 @@ import { delay } from '@lib/time.utils';
 import { LocalTaskConfig } from '@model/domain/local-task-config';
 import { TaskRun } from '@model/domain/task-run';
 import { EntryPage } from '@modules/contract/model/entry-paging';
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import {
   MetricEntry,
   MetricsAggregated,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
 
 describe('task e2e', () => {
   it('should do CRUD on task', async () => {

@@ -1,75 +1,112 @@
 import * as path from 'node:path';
 import {
-  validateContactImpl,
   validateContractConfig,
+  validateContractImpl,
 } from '@modules/contract/contract-validator';
 import {
-  CONTRACT_CONFIG_TYPES,
+  CONTRACT_TYPES,
   ContractConfigFile,
   ContractConfigFileEntry,
   ContractMap,
   ContractSourceType,
+  ContractType,
+  ResolvableContractType,
 } from '@modules/contract/model/contract-config';
-import { Contract, ContractModule } from '@modules/contract/model/contract';
+import {
+  Contract,
+  ContractModule,
+  ContractOpts,
+  ContractSystemOpts,
+} from '@modules/contract/model/contract';
 import { getLogger } from '@logger/logger';
-import { errorToReason } from '@modules/errors/get-error-reason';
+import { ConfigResolverContract } from '@modules/contract/model/config/config.contract';
 
-const logger = getLogger('config-loader');
+const logger = getLogger('contract-loader');
 
 export const buildContractMap = async (
-  config: ContractConfigFile,
-  workDir: string
+  contractConfig: ContractConfigFile,
+  systemOpts: ContractSystemOpts
 ): Promise<ContractMap> => {
-  const configError = validateContractConfig(config);
+  const configError = validateContractConfig(contractConfig);
   if (configError !== null) {
     throw new Error(configError);
   }
 
-  const contractMap = {} as ContractMap;
-  for (const type of CONTRACT_CONFIG_TYPES) {
-    const entry = config[type];
-    const impl = await buildContract(entry, workDir);
+  const configResolver = await buildConfigResolverContract(
+    contractConfig['config'],
+    systemOpts
+  );
+  const contractMap = { config: configResolver } as ContractMap;
 
-    const entryError: string | null = validateContactImpl(type, impl);
-    if (entryError !== null) {
-      throw new Error(entryError);
-    }
-
-    contractMap[type] = impl;
+  for (const type of CONTRACT_TYPES.slice(1)) {
+    const entry = contractConfig[type];
+    const impl = await buildResolvableContract(
+      type as ResolvableContractType,
+      entry,
+      configResolver,
+      systemOpts
+    );
+    contractMap[type] = impl as never; // validation passed in runtime, so type check is redundant
   }
 
-  logger.info(`Loaded root config from workDir=${workDir}`);
+  logger.info(`Loaded root config from workDir=${systemOpts.workDir}`);
   return contractMap;
 };
 
-export const buildContract = async (
+export const loadAndValidateContract = async (
+  contractType: ContractType,
   configEntry: ContractConfigFileEntry,
-  workDir: string
+  systemOpts: ContractSystemOpts
 ): Promise<Contract> => {
-  const { type, key, opts } = configEntry;
-  try {
-    const contractWorkdir = path.join(workDir, 'contract');
-    const contract = await loadContract(type, key, contractWorkdir);
-    await contract.init({ ...opts, workDir });
-    return contract;
-  } catch (err) {
-    const reason = errorToReason(err);
-    throw new Error(
-      `Unable to build contract for ${JSON.stringify(configEntry)}: ${reason}`
-    );
+  const { type, key } = configEntry;
+  const contractImpl = await loadContract(type, key, systemOpts);
+
+  // check signature in runtime
+  const implValidationError = validateContractImpl(contractType, contractImpl);
+  if (implValidationError !== null) {
+    throw new Error(implValidationError);
   }
+
+  return contractImpl;
 };
 
-const loadContract = async (
+export const buildConfigResolverContract = async (
+  entry: ContractConfigFileEntry,
+  systemOpts: ContractSystemOpts
+): Promise<ConfigResolverContract> => {
+  const impl = await loadAndValidateContract('config', entry, systemOpts);
+  await impl.init({ contract: entry.opts ?? {}, system: systemOpts }); // no resolve for config-contract
+  logger.debug(`Built "config" contract`);
+  return impl as ConfigResolverContract;
+};
+
+export const buildResolvableContract = async (
+  type: ResolvableContractType,
+  entry: ContractConfigFileEntry,
+  configResolver: ConfigResolverContract,
+  systemOpts: ContractSystemOpts
+): Promise<Contract> => {
+  const impl = await loadAndValidateContract(type, entry, systemOpts);
+
+  const resolvedOpts = entry.opts
+    ? await resolveContractOpts(configResolver, entry.opts)
+    : {};
+  await impl.init({ contract: resolvedOpts, system: systemOpts });
+
+  logger.debug(`Built "${type}" contract`);
+  return impl;
+};
+
+export const loadContract = async (
   type: ContractSourceType,
   key: string,
-  workDir: string
+  systemOpts: ContractSystemOpts
 ): Promise<Contract> => {
   switch (type) {
     case 'npm':
       return loadNpmContract(key);
     case 'file':
-      return loadFileContract(workDir, key);
+      return loadFileContract(path.join(systemOpts.workDir, 'contract'), key);
   }
   const reason = `unsupported type of contract source: ${type}`;
   throw new Error(`Unable to load contract: ${reason}`);
@@ -104,4 +141,29 @@ const loadFileContract = async (
   }
   const moduleKey = path.join(dir, name);
   return await importContractModule(moduleKey);
+};
+
+export const buildContractSystemOpts = async (
+  workDir: string
+): Promise<ContractSystemOpts> => {
+  return {
+    workDir,
+  };
+};
+
+const resolveContractOpts = async (
+  configResolver: ConfigResolverContract,
+  opts: ContractOpts
+): Promise<ContractOpts> => {
+  const resolvedOpts: ContractOpts = {};
+
+  for (const [key, value] of Object.entries(opts)) {
+    if (value) {
+      // TODO: add contract opts validation schema and then resolveNullable here - schema will handle types
+      // TODO: also try to resolve from env
+      resolvedOpts[key] = await configResolver.resolveValue(value);
+    }
+  }
+
+  return resolvedOpts;
 };

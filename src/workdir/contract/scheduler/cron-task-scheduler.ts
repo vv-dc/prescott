@@ -2,14 +2,17 @@ import { schedule, ScheduledTask } from 'node-cron';
 import {
   ScheduleTaskDto,
   TaskSchedulerContract,
-} from '@modules/contract/model/task-scheduler.contract';
-import { ContractOpts } from '@modules/contract/model/contract';
+} from '@modules/contract/model/scheduler/task-scheduler.contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 
 const config = { workDir: '' };
 const tasks: Record<string, ScheduledTask> = {};
 
-const init = async (opts: ContractOpts) => {
-  config.workDir = opts.workDir;
+const init = async (opts: ContractInitOpts) => {
+  config.workDir = opts.system.workDir;
 };
 
 const scheduleTask = async (
@@ -56,5 +59,5 @@ const taskScheduler: TaskSchedulerContract = {
 };
 
 export default {
-  buildContract: () => taskScheduler,
-};
+  buildContract: async () => taskScheduler,
+} satisfies ContractModule;

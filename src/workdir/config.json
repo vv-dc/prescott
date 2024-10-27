@@ -1,8 +1,16 @@
 {
   "contract": {
-    "env": {
+    "config": {
       "type": "file",
-      "key": "env/docker-env-provider.ts"
+      "key": "config/env-config-resolver.ts"
+    },
+    "envBuilder": {
+      "type": "file",
+      "key": "env/docker/docker-pass-through-env-builder.ts"
+    },
+    "envRunner": {
+      "type": "file",
+      "key": "env/docker/docker-env-runner.ts"
     },
     "log": {
       "type": "file",
@@ -20,7 +28,7 @@
       "type": "file",
       "key": "queue/in-memory-task-queue.ts",
       "opts": {
-        "maxConcurrency": 2
+        "maxConcurrency": "5"
       }
     }
   }

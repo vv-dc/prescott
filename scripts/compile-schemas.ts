@@ -83,7 +83,7 @@ const writeTsContent = async (
   const tsContentDir = path.join(toDirectory, path.dirname(schemaName));
   await fs.mkdir(tsContentDir, { recursive: true });
 
-  const tsContentPath = path.join(toDirectory, `${schemaName}.d.ts`);
+  const tsContentPath = path.join(toDirectory, `${schemaName}.ts`);
   await fs.writeFile(tsContentPath, tsContent, 'utf-8');
 };
 

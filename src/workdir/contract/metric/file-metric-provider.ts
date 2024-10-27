@@ -13,21 +13,24 @@ import {
   EntryPaging,
   EntrySearchDto,
 } from '@modules/contract/model/entry-paging';
-import { ContractOpts } from '@modules/contract/model/contract';
+import {
+  ContractInitOpts,
+  ContractModule,
+} from '@modules/contract/model/contract';
 import {
   MetricAggregateDto,
   MetricProviderContract,
-} from '@modules/contract/model/metric-provider.contract';
+} from '@modules/contract/model/metric/metric-provider.contract';
 import {
   MetricEntry,
   MetricsAggregated,
-} from '@modules/contract/model/metric-entry';
+} from '@modules/contract/model/metric/metric-entry';
 import { buildMetricEntryAccumulator } from '@src/workdir/contract/metric/metric-aggregate.utils';
 
-const config = { workDir: '' };
+const config = {} as { workDir: string };
 
-const init = async (opts: ContractOpts): Promise<void> => {
-  config.workDir = opts.workDir;
+const init = async (opts: ContractInitOpts): Promise<void> => {
+  config.workDir = opts.system.workDir;
 };
 
 const buildMetricFilePath = (runHandle: TaskRunHandle): [string, string] => {
@@ -140,4 +143,4 @@ const fileMetricProvider: MetricProviderContract = {
 
 export default {
   buildContract: async () => fileMetricProvider,
-};
+} satisfies ContractModule;

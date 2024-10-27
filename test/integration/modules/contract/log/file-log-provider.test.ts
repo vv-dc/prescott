@@ -1,13 +1,12 @@
 import { generateRandomString } from '@lib/random.utils';
-import { LogProviderContract } from '@modules/contract/model/log-provider.contract';
-import { LogEntry } from '@modules/contract/model/log-entry';
+import { LogProviderContract } from '@modules/contract/model/log/log-provider.contract';
+import { LogEntry } from '@modules/contract/model/log/log-entry';
 import fileLogProviderBuilder from '@src/workdir/contract/log/file-log-provider';
 import { generateTaskRunHandle } from '@test/lib/test-data.utils';
+import { prepareContract } from '@test/lib/test-contract.utils';
 
-const buildLogProvider = async (): Promise<LogProviderContract> => {
-  const logProvider = await fileLogProviderBuilder.buildContract();
-  await logProvider.init({ workDir: __dirname });
-  return logProvider;
+const buildLogProvider = (): Promise<LogProviderContract> => {
+  return prepareContract(fileLogProviderBuilder);
 };
 
 describe('file-log-provider integration', () => {
