@@ -13,6 +13,7 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
     authHooks,
     authorizationService: authService,
     jwtValidationHook,
+    groupService,
   } = fastify;
 
   fastify.addHook('preValidation', jwtValidationHook);
@@ -32,6 +33,23 @@ export const authorizationRoutes: FastifyPluginAsync = async (fastify) => {
       const { userId } = request.payload;
       const groupId = await authService.createGroup(groupName, userId);
       reply.code(200).send({ groupId });
+    },
+  });
+
+  fastify.route<{ Params: GroupId; Headers: AccessToken }>({
+    url: '/:groupId',
+    method: 'GET',
+    schema: {
+      headers: fastify.getPrescottSchema('api/authentication/access-token'),
+      params: fastify.getPrescottSchema('api/authorization/group-id'),
+      response: {
+        200: fastify.getPrescottSchema('domain/group'),
+      },
+    },
+    handler: async (request, reply) => {
+      const { groupId } = request.params;
+      const group = await groupService.findById(groupId);
+      reply.code(200).send(group);
     },
   });
 

@@ -31,6 +31,7 @@ const authorization: FastifyPluginAsync = async (fastify) => {
     groupService,
     roleService
   );
+  fastify.decorate('groupService', groupService);
   fastify.decorate('authorizationService', authorizationService);
   fastify.register(authorizationRoutes, { prefix: '/groups' });
 };

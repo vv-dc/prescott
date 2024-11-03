@@ -1,0 +1,24 @@
+{
+  "$id": "schema://prescott.dev/domain/user.json",
+  "title": "User",
+  "type": "object",
+  "properties": {
+    "id": { "type": "number" },
+    "login": { "type": "string" },
+    "fullName": { "type": "string" },
+    "email": { "type": "string" },
+    "password": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time", "tsType": "Date" },
+    "updatedAt": { "type": "string", "format": "date-time", "tsType": "Date" }
+  },
+  "required": [
+    "id",
+    "login",
+    "fullName",
+    "email",
+    "password",
+    "createdAt",
+    "updatedAt"
+  ],
+  "additionalProperties": false
+}

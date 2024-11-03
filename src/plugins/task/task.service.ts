@@ -13,6 +13,7 @@ import {
   TaskOnRunCallbackFn,
 } from '@plugins/task/model/task-callback-fn';
 import { ExecuteTaskFn } from '@modules/contract/model/queue/task-queue.contract';
+import { TaskBriefDto } from '@model/dto/task-brief.dto';
 import { BuildEnvResultDto } from '@src/modules/contract/model/env/env-builder.contract';
 
 export class TaskService {
@@ -81,6 +82,7 @@ export class TaskService {
       }
       if (!isActive) {
         this.logger.warn(`callbackFn[taskId=${taskId}]: skip - is not active`);
+        await this.executorService.unscheduleExecutable(taskId);
         return null;
       }
       const config: TaskConfigDto = JSON.parse((task as Task).config);
@@ -257,5 +259,9 @@ export class TaskService {
     const task = await this.dao.findByIdThrowable(taskId);
     const configDto: TaskConfigDto = JSON.parse(task.config);
     return { ...task, name: configDto.name, config: configDto };
+  }
+
+  getAllByGroupIdBrief(groupId: number): Promise<TaskBriefDto[]> {
+    return this.dao.findAllByGroupBrief(groupId);
   }
 }

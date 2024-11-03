@@ -1,0 +1,12 @@
+{
+  "$id": "schema://prescott.dev/domain/group.json",
+  "title": "Group",
+  "type": "object",
+  "properties": {
+    "id": { "type": "number" },
+    "name": { "type": "string" },
+    "ownerId": { "type": "number" }
+  },
+  "required": ["id", "name", "ownerId"],
+  "additionalProperties": false
+}
