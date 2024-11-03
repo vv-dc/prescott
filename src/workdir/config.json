@@ -4,14 +4,21 @@
       "type": "file",
       "key": "config/env-config-resolver.ts"
     },
-    "envBuilder": {
-      "type": "file",
-      "key": "env/docker/docker-pass-through-env-builder.ts"
-    },
-    "envRunner": {
-      "type": "file",
-      "key": "env/docker/docker-env-runner.ts"
-    },
+    "envBuilder": [
+      {
+        "type": "file",
+        "key": "env/docker/docker-pass-through-env-builder.ts",
+        "name": "docker-pass-through-builder"
+      }
+    ],
+    "envRunner": [
+      {
+        "type": "file",
+        "key": "env/docker/docker-env-runner.ts",
+        "name": "docker-runner",
+        "builder": "docker-pass-through-builder"
+      }
+    ],
     "log": {
       "type": "file",
       "key": "log/file-log-provider.ts"

@@ -7,8 +7,6 @@ import { TaskSchedulerContract } from '@modules/contract/model/scheduler/task-sc
 import { TaskQueueContract } from '@modules/contract/model/queue/task-queue.contract';
 import { ContractOpts } from '@modules/contract/model/contract';
 
-export type ContractConfigFile = Record<ContractType, ContractConfigFileEntry>;
-
 export const CONTRACT_TYPES = [
   'config', // always loads first
   'envBuilder',
@@ -18,6 +16,16 @@ export const CONTRACT_TYPES = [
   'scheduler',
   'queue',
 ] as const;
+
+export interface ContractConfigFile {
+  config: ContractConfigFileEntry;
+  envBuilder: EnvBuilderContractConfigFileEntry[];
+  envRunner: EnvRunnerContractConfigFileEntry[];
+  log: ContractConfigFileEntry;
+  metric: ContractConfigFileEntry;
+  scheduler: ContractConfigFileEntry;
+  queue: ContractConfigFileEntry;
+}
 
 export type ContractType = (typeof CONTRACT_TYPES)[number];
 
@@ -29,13 +37,28 @@ export interface ContractConfigFileEntry {
   opts?: ContractOpts;
 }
 
+export interface EnvRunnerContractConfigFileEntry
+  extends ContractConfigFileEntry {
+  name: string;
+  builder: string;
+}
+
+export interface EnvBuilderContractConfigFileEntry
+  extends ContractConfigFileEntry {
+  name: string;
+}
+
 export const CONTRACT_CONFIG_SOURCE_TYPES = ['file', 'npm'] as const;
 export type ContractSourceType = (typeof CONTRACT_CONFIG_SOURCE_TYPES)[number];
 
+export interface EnvContractResolver {
+  getRunner(runnerName: string | null): EnvRunnerContract;
+  getBuilder(runnerName: string | null): EnvBuilderContract;
+}
+
 export interface ContractMap {
   config: ConfigResolverContract;
-  envBuilder: EnvBuilderContract;
-  envRunner: EnvRunnerContract;
+  env: EnvContractResolver;
   log: LogProviderContract;
   metric: MetricProviderContract;
   scheduler: TaskSchedulerContract;

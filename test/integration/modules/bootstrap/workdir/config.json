@@ -8,21 +8,28 @@
         "configRaw": "foo-bar-42"
       }
     },
-    "envBuilder": {
-      "type": "file",
-      "key": "env-builder-file.ts",
-      "opts": {
-        "raw": "-3",
-        "resolved": "{{ENV_BUILDER_VAR}}"
+    "envBuilder": [
+      {
+        "type": "file",
+        "key": "env-builder-file.ts",
+        "name": "test-env-builder-1",
+        "opts": {
+          "raw": "-3",
+          "resolved": "{{ENV_BUILDER_VAR}}"
+        }
       }
-    },
-    "envRunner": {
-      "type": "file",
-      "key": "env-runner-file.ts",
-      "opts": {
-        "envParam": "-42"
+    ],
+    "envRunner": [
+      {
+        "type": "file",
+        "key": "env-runner-file.ts",
+        "name": "test-env-runner-1",
+        "builder": "test-env-builder-1",
+        "opts": {
+          "envParam": "-42"
+        }
       }
-    },
+    ],
     "log": {
       "type": "file",
       "key": "log-provider-file.ts",

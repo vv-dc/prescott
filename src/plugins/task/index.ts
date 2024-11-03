@@ -10,14 +10,9 @@ import { TaskExecutorService } from '@plugins/task/task-executor.service';
 
 const task: FastifyPluginAsync = async (fastify) => {
   const { db, contractMap } = fastify;
-  const { envBuilder, envRunner, log, metric, scheduler, queue } = contractMap;
+  const { env, log, metric, scheduler, queue } = contractMap;
 
-  const taskExecutorService = new TaskExecutorService(
-    envBuilder,
-    envRunner,
-    scheduler,
-    queue
-  );
+  const taskExecutorService = new TaskExecutorService(env, scheduler, queue);
 
   const taskRunDao = new TaskRunDao(db);
   const taskRunService = new TaskRunService(taskRunDao, log, metric);
