@@ -140,7 +140,7 @@ const buildEnvContractPairsMap = async (
     const envBuilder = buildersMap[runnerEntry.builder];
     if (!envBuilder) {
       throw new Error(
-        `Unable to resolve EnvBuilder[name=${builderName} for EnvRunner[name=${runnerName}]`
+        `Unable to resolve EnvBuilder[name=${builderName}] for EnvRunner[name=${runnerName}]`
       );
     }
 
