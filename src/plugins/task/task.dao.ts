@@ -48,9 +48,10 @@ export class TaskDao {
       .select(['id', 'groupId', 'userId', 'name', 'active'])
       .where({ groupId })
       .orderBy('id');
-    return tasks
-      .map((task) => ({ ...task, name: task.name.split('_')[1] }))
-      .map((task) => this.mapTask(task) as TaskBriefDto);
+    return tasks.map((task) => ({
+      ...this.mapTask(task),
+      name: task.name.split('-')[1],
+    })) as TaskBriefDto[];
   }
 
   async create(task: TaskCreateDto): Promise<number> {

@@ -17,9 +17,8 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
     },
     handler: async (request, reply) => {
       const { userId } = request.payload;
-      const user = await userService.findByIdThrowable(userId);
-      const { id, password, ...rest } = user;
-      reply.code(200).send(rest);
+      const userDto = await userService.findDtoByIdThrowable(userId);
+      reply.code(200).send(userDto);
     },
   });
 
