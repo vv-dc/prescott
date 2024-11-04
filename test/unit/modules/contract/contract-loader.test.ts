@@ -3,6 +3,7 @@ import { randomInt } from 'node:crypto';
 import {
   buildConfigResolverContract,
   buildContractSystemOpts,
+  buildEnvContractResolver,
   buildResolvableContract,
   loadContract,
 } from '@modules/contract/contract-loader';
@@ -10,12 +11,17 @@ import { generateRandomString } from '@lib/random.utils';
 import {
   Contract,
   ContractInitOpts,
-  ContractModule,
   ContractOpts,
 } from '@modules/contract/model/contract';
 import { ContractConfigFileEntry } from '@modules/contract/model/contract-config';
 import { ConfigResolverContract } from '@modules/contract/model/config/config.contract';
-import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.contract';
+import {
+  prepareMockResolverContract,
+  prepareMockEnvBuilderContract,
+  prepareMockEnvRunnerContract,
+  mockContractImport,
+  prepareContactSystemOpts,
+} from '@test/lib/test-contract.utils';
 
 describe('contract-loader unit', () => {
   describe('loadContract', () => {
@@ -23,13 +29,7 @@ describe('contract-loader unit', () => {
       const mockContract: Contract = {
         init: jest.fn(),
       };
-      const contractModule: ContractModule = {
-        buildContract: async (): Promise<Contract> => mockContract,
-      };
-
-      jest.mock('some-random-contract-42', () => contractModule, {
-        virtual: true,
-      });
+      mockContractImport('some-random-contract-42', mockContract);
 
       const systemOpts = await buildContractSystemOpts(generateRandomString());
       const contract = await loadContract(
@@ -63,18 +63,7 @@ describe('contract-loader unit', () => {
       const mockContract: Contract = {
         init: jest.fn(),
       };
-      const contractModule: ContractModule = {
-        buildContract: async (): Promise<Contract> => mockContract,
-      };
-      jest.mock(
-        'src/contract/some-random-contract',
-        () => ({
-          default: contractModule,
-        }),
-        {
-          virtual: true,
-        }
-      );
+      mockContractImport('src/contract/some-random-contract', mockContract);
 
       const systemOpts = await buildContractSystemOpts('src');
       const contract = await loadContract(
@@ -94,14 +83,7 @@ describe('contract-loader unit', () => {
         resolveValue: jest.fn((value) => value),
         resolveValueNullable: jest.fn((value) => value),
       };
-      const mockContractModule: ContractModule = {
-        buildContract: async () => mockConfigResolverContract,
-      };
-      jest.mock(
-        'some-contract-resolver',
-        () => ({ default: mockContractModule }),
-        { virtual: true }
-      );
+      mockContractImport('some-contract-resolver', mockConfigResolverContract);
 
       const contractOpts: ContractOpts = {
         foo: generateRandomString(),
@@ -132,33 +114,12 @@ describe('contract-loader unit', () => {
         '{{FIRST_VARIABLE}}': generateRandomString(),
         '{{ANOTHER_42}}': generateRandomString(),
       } as Record<string, string | undefined>;
-      const resolveValueMock = jest.fn((value: string) => {
-        return RESOLVABLE_VARIABLES[value] ?? value;
-      });
-      const configResolver: ConfigResolverContract = {
-        init: async () => {},
-        resolveValue: resolveValueMock,
-        resolveValueNullable: resolveValueMock,
-      };
+      const configResolver = prepareMockResolverContract(RESOLVABLE_VARIABLES);
 
       // mock contract that will be built
-      const mockContract: EnvBuilderContract = {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        init: jest.fn(async (opts) => {}),
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        buildEnv: async (dto) => ({
-          envKey: generateRandomString(),
-          script: null,
-        }),
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        deleteEnv: async (dto) => {},
-      };
-      const mockContractModule: ContractModule = {
-        buildContract: async () => mockContract,
-      };
-      jest.mock('some-env-builder', () => ({ default: mockContractModule }), {
-        virtual: true,
-      });
+      const mockContract = prepareMockEnvBuilderContract();
+      mockContractImport('some-env-builder', mockContract);
+
       const contractOpts: ContractOpts = {
         first: '{{FIRST_VARIABLE}}',
         directVar: randomInt(1, 1_000_000).toString(),
@@ -194,6 +155,161 @@ describe('contract-loader unit', () => {
         system: systemOpts,
       } satisfies ContractInitOpts);
       expect(configResolver.resolveValue).toHaveBeenCalledTimes(5); // for every opt
+    });
+  });
+
+  describe('buildEnvContractResolver', () => {
+    it('should throw if there are no builders', async () => {
+      const configResolver = prepareMockResolverContract();
+      const systemOpts = await prepareContactSystemOpts();
+      await expect(
+        buildEnvContractResolver(
+          [],
+          [
+            {
+              type: 'npm',
+              key: 'some-runner-from-npm',
+              name: 'runner-name-1',
+              builder: 'builder-name-42',
+            },
+          ],
+          configResolver,
+          systemOpts
+        )
+      ).rejects.toThrow(
+        new Error('At least one EnvBuilder should be provided')
+      );
+    });
+
+    it('should throw if there are no runners', async () => {
+      const mockEnvBuilder = prepareMockEnvBuilderContract();
+      mockContractImport('some-env-builder-42', mockEnvBuilder);
+
+      const configResolver = prepareMockResolverContract();
+      const systemOpts = await prepareContactSystemOpts();
+      await expect(
+        buildEnvContractResolver(
+          [
+            {
+              type: 'npm',
+              key: 'some-env-builder-42',
+              name: 'builder-name-123',
+            },
+          ],
+          [],
+          configResolver,
+          systemOpts
+        )
+      ).rejects.toThrow(new Error('At least one EnvRunner should be provided'));
+    });
+
+    it('should throw if corresponding builder does not exist', async () => {
+      const mockEnvBuilder = prepareMockEnvBuilderContract();
+      mockContractImport('some-env-builder-42', mockEnvBuilder);
+
+      const mockEnvRunner = prepareMockEnvRunnerContract();
+      mockContractImport('some-env-runner', mockEnvRunner);
+
+      const configResolver = prepareMockResolverContract();
+      const systemOpts = await prepareContactSystemOpts();
+      await expect(
+        buildEnvContractResolver(
+          [
+            {
+              type: 'npm',
+              key: 'some-env-builder-42',
+              name: 'builder-name-123',
+            },
+          ],
+          [
+            {
+              type: 'npm',
+              key: 'some-env-runner-42',
+              name: 'some-env-runner',
+              builder: 'some-non-existent-builder',
+            },
+          ],
+          configResolver,
+          systemOpts
+        )
+      ).rejects.toThrow(
+        new Error(
+          'Unable to resolve EnvBuilder[name=some-non-existent-builder] for EnvRunner[name=some-env-runner]'
+        )
+      );
+    });
+
+    it('should map builders and runners correctly', async () => {
+      // 3 builders, but only 2 runners - 1 builder is not used
+
+      // builders
+      const mockEnvBuilder1 = prepareMockEnvBuilderContract();
+      mockContractImport('env-builder-1', mockEnvBuilder1);
+
+      const mockEnvBuilder2 = prepareMockEnvBuilderContract();
+      mockContractImport('env-builder-2', mockEnvBuilder2);
+
+      const mockEnvBuilder3 = prepareMockEnvBuilderContract();
+      mockContractImport('env-builder-3', mockEnvBuilder3);
+
+      // runners
+      const mockEnvRunner1 = prepareMockEnvRunnerContract();
+      mockContractImport('env-runner-1', mockEnvRunner1);
+
+      const mockEnvRunner2 = prepareMockEnvRunnerContract();
+      mockContractImport('env-runner-2', mockEnvRunner2);
+
+      // run
+      const configResolver = prepareMockResolverContract();
+      const systemOpts = await prepareContactSystemOpts();
+      const envResolver = await buildEnvContractResolver(
+        [
+          {
+            type: 'npm',
+            key: 'env-builder-1',
+            name: 'env-builder-1',
+          },
+          {
+            type: 'npm',
+            key: 'env-builder-2',
+            name: 'env-builder-2',
+          },
+          {
+            type: 'npm',
+            key: 'env-builder-3',
+            name: 'env-builder-3',
+          },
+        ],
+        [
+          {
+            type: 'npm',
+            key: 'env-runner-1',
+            name: 'env-runner-1',
+            builder: 'env-builder-3',
+          },
+          {
+            type: 'npm',
+            key: 'env-runner-2',
+            name: 'env-runner-2',
+            builder: 'env-builder-1',
+          },
+        ],
+        configResolver,
+        systemOpts
+      );
+
+      // check
+      const pair1 = [
+        envResolver.getBuilder('env-runner-1'),
+        envResolver.getRunner('env-runner-1'),
+      ];
+      expect(pair1).toEqual([mockEnvBuilder3, mockEnvRunner1]);
+
+      const pair2 = [
+        envResolver.getBuilder('env-runner-2'),
+        envResolver.getRunner('env-runner-2'),
+      ];
+      expect(pair2).toEqual([mockEnvBuilder1, mockEnvRunner2]);
     });
   });
 });

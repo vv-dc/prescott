@@ -24,6 +24,7 @@ import configDefaultContract, {
   PREDEFINED_VARIABLES_MAP,
 } from '@test/integration/modules/bootstrap/workdir/contract/config-resolver-file';
 import taskQueueNpm from '@test/integration/modules/bootstrap/workdir/contract/task-queue-npm';
+import { EnvContractResolverDefault } from '@src/modules/contract/env-contract-resolver-default';
 
 describe('config-loader integration', () => {
   it('should throw if config is not complete', async () => {
@@ -45,10 +46,15 @@ describe('config-loader integration', () => {
     const rootConfig = await getRootConfig(workDir);
 
     expect(rootConfig).toHaveProperty('contractMap');
+
     expect(rootConfig.contractMap).toStrictEqual({
       config: await configDefaultContract.buildContract(), // custom 'npm'
-      envBuilder: await envBuilderFileContract.buildContract(), // custom 'file'
-      envRunner: await envRunnerFileContract.buildContract(), // custom 'file
+      env: new EnvContractResolverDefault('test-env-runner-1', {
+        'test-env-runner-1': [
+          await envBuilderFileContract.buildContract(), // custom 'file'
+          await envRunnerFileContract.buildContract(), // custom 'file
+        ],
+      }),
       log: await logDefaultContract.buildContract(), // default
       metric: await metricNpmContract.buildContract(), // custom 'npm'
       scheduler: await schedulerDefaultContract.buildContract(), // default

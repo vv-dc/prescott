@@ -139,16 +139,23 @@ describe('contract-validator unit', () => {
         type: 'file',
         key: 'some-config-provider-contract-impl',
       },
-      envBuilder: {
-        type: 'npm',
-        key: 'some-env-builder-contract-impl',
-        opts: { envParam: generateRandomString('env') },
-      },
-      envRunner: {
-        type: 'npm',
-        key: 'some-env-runner-contract-impl',
-        opts: { envParam: generateRandomString('env') },
-      },
+      envBuilder: [
+        {
+          type: 'npm',
+          key: 'some-env-builder-contract-impl',
+          name: 'some-builder-name-42',
+          opts: { envParam: generateRandomString('env') },
+        },
+      ],
+      envRunner: [
+        {
+          type: 'npm',
+          key: 'some-env-runner-contract-impl',
+          name: 'some-runner-name-41',
+          builder: 'some-builder-name-42',
+          opts: { envParam: generateRandomString('env') },
+        },
+      ],
       log: {
         type: 'file',
         key: '/home/someone/some-log-contract-impl.js',

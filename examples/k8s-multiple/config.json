@@ -14,9 +14,29 @@
     "envRunner": [
       {
         "type": "file",
-        "key": "env/docker/docker-env-runner.ts",
-        "name": "docker-runner",
-        "builder": "docker-pass-through-builder"
+        "key": "env/k8s/k8s-env-runner.ts",
+        "name": "k8s-1",
+        "builder": "docker-pass-through-builder",
+        "opts": {
+          "metricProvider": "metrics-server",
+          "metricIntervalMs": "5000",
+          "namespace": "prescott",
+          "host": "{{K8S_CLUSTER_HOST_1}}",
+          "token": "{{K8S_CLUSTER_TOKEN_1}}"
+        }
+      },
+      {
+        "type": "file",
+        "key": "env/k8s/k8s-env-runner.ts",
+        "name": "k8s-2",
+        "builder": "docker-pass-through-builder",
+        "opts": {
+          "metricProvider": "metrics-server",
+          "metricIntervalMs": "5000",
+          "namespace": "prescott",
+          "host": "{{K8S_CLUSTER_HOST_2}}",
+          "token": "{{K8S_CLUSTER_TOKEN_2}}"
+        }
       }
     ],
     "log": {

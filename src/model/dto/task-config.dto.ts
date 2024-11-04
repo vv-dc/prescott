@@ -3,6 +3,7 @@ export type MemoryLimit = string;
 
 export interface TaskConfigDto {
   name: string;
+  runner?: string;
   envInfo: EnvInfo;
   times?: number;
   config: TaskConfig;

@@ -45,7 +45,10 @@ kubectl apply -f binding.yml &&\
 BEARER=$(kubectl create token $PRESCOTT_ACCOUNT -n $PRESCOTT_NAMESPACE --duration=120h) # 5 days
 HOST=$(kubectl config view --minify -o jsonpath='{.clusters[0].cluster.server}')
 PROMETHEUS_PORT='40123'
+
+# save connection details to workdir
 echo "{\"host\":\"$HOST\",\"namespace\":\"$PRESCOTT_NAMESPACE\",\"token\":\"$BEARER\", \"prometheusHost\": \"http://localhost:$PROMETHEUS_PORT\"}" > "$PRESCOTT_DIR/api.json"
+echo -e "K8S_CLUSTER_HOST='$HOST'\nK8S_CLUSTER_TOKEN='$BEARER'\n" > "$PRESCOTT_DIR/api.env"
 
 # port forward prometheus
 kubectl port-forward -n prescott svc/prometheus-server $PROMETHEUS_PORT:80

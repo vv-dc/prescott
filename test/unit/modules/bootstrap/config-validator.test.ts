@@ -10,20 +10,27 @@ const baseRootConfig: RootConfigFile = {
         a: '1',
       },
     },
-    envRunner: {
-      type: 'file',
-      key: 'env-runner.ts',
-      opts: {
-        envRunnerParam: '2',
+    envBuilder: [
+      {
+        type: 'file',
+        key: 'env-builder.ts',
+        name: 'some-builder-name-41',
+        opts: {
+          envBuilderParam: '3',
+        },
       },
-    },
-    envBuilder: {
-      type: 'file',
-      key: 'env-builder.ts',
-      opts: {
-        envBuilderParam: '3',
+    ],
+    envRunner: [
+      {
+        type: 'file',
+        key: 'env-runner.ts',
+        name: 'some-runner-name-42',
+        builder: 'some-builder-name-41',
+        opts: {
+          envRunnerParam: '2',
+        },
       },
-    },
+    ],
     log: {
       type: 'file',
       key: 'log.ts',
@@ -67,18 +74,20 @@ describe('config-validator', () => {
         ...baseRootConfig,
         contract: {
           ...baseRootConfig.contract,
-          envBuilder: {
-            ...baseRootConfig.contract.envBuilder,
-            opts: {
-              numericOpt: 42,
+          envBuilder: [
+            {
+              ...baseRootConfig.contract.envBuilder[0],
+              opts: {
+                numericOpt: 42,
+              },
             },
-          },
+          ],
         },
       } as unknown as RootConfigFile;
 
       const error = validateRootConfigFile(config);
       expect(error).toEqual(
-        `Invalid root config: "contract.envBuilder.opts.numericOpt" must be a string`
+        `Invalid root config: "contract.envBuilder[0].opts.numericOpt" must be a string`
       );
     });
 

@@ -15,6 +15,7 @@ import {
 import { ExecuteTaskFn } from '@modules/contract/model/queue/task-queue.contract';
 import { TaskBriefDto } from '@model/dto/task-brief.dto';
 import { BuildEnvResultDto } from '@src/modules/contract/model/env/env-builder.contract';
+import { TaskExecutableHandle } from './model/task-executable-handle';
 
 export class TaskService {
   private readonly logger = getLogger('task-service');
@@ -28,11 +29,11 @@ export class TaskService {
   async registerFromDatabase(): Promise<void> {
     const tasks = await this.dao.findAllByActive(true);
     for (const task of tasks) {
-      const { id: taskId, config } = task;
       await this.enqueuePendingRuns(task);
 
-      const taskConfig: TaskConfigDto = JSON.parse(config);
-      await this.register(taskId, taskConfig, false);
+      const executableHandle = this.buildTaskExecutableHandle(task);
+      const taskConfig: TaskConfigDto = JSON.parse(task.config);
+      await this.register(executableHandle, taskConfig, false);
     }
     this.logger.info(`registerFromDatabase: registered ${tasks.length} tasks`);
   }
@@ -54,7 +55,7 @@ export class TaskService {
   }
 
   async register(
-    taskId: number,
+    executableHandle: TaskExecutableHandle,
     taskConfig: TaskConfigDto,
     withBuild: boolean
   ): Promise<void> {
@@ -63,12 +64,14 @@ export class TaskService {
       ? this.getTaskAfterBuildCallbackFn()
       : undefined;
     await this.executorService.scheduleExecutable(
-      taskId,
+      executableHandle,
       taskConfig,
       onRunCallbackFn,
       afterBuildCallbackFn
     );
-    this.logger.info(`register[taskId=${taskId}]: name=${taskConfig.name}`);
+    this.logger.info(
+      `register[taskId=${executableHandle.taskId}]: name=${taskConfig.name}`
+    );
   }
 
   private getTaskOnRunCallbackFn(): TaskOnRunCallbackFn {
@@ -134,17 +137,18 @@ export class TaskService {
   private async runTaskImpl(runHandle: TaskRunHandle): Promise<void> {
     const { taskId } = runHandle;
     const [isRunAllowed, task] = await this.isTaskActive(taskId);
-    if (!isRunAllowed) {
+    if (!isRunAllowed || !task) {
       this.logger.warn(`runTask[taskId=${taskId}]: skip - is not allowed`);
       return;
     }
 
-    const { config: taskConfigRaw, envKey, envScript } = task as Task;
+    const { config: taskConfigRaw, envKey, envScript } = task;
     const taskConfig: TaskConfigDto = JSON.parse(taskConfigRaw);
     const { config, times } = taskConfig;
 
+    const executableHandle = this.buildTaskExecutableHandle(task);
     const envHandle = await this.executorService.runExecutable(
-      taskId,
+      executableHandle,
       envKey as never, // it was checked in isTaskActive
       envScript ?? null,
       config
@@ -159,8 +163,8 @@ export class TaskService {
     );
 
     if (times !== undefined && runHandle.runRank >= times) {
-      await this.executorService.stopExecutable(taskId, 'system');
-      await this.executorService.deleteExecutableEnv(taskId);
+      await this.executorService.stopExecutable(executableHandle, 'system');
+      await this.executorService.deleteExecutableEnv(executableHandle);
       await this.dao.setActive(taskId, false);
       this.logger.info(`runTask[taskId=${taskId}]: stop - no runs left`);
     }
@@ -189,6 +193,15 @@ export class TaskService {
       throw new EntityConflict(`Task with name=${uniqueName} already exists`);
     }
 
+    if (taskConfig.runner) {
+      const validationError = this.executorService.checkEnvRunnerIsValid(
+        taskConfig.runner
+      );
+      if (validationError) {
+        throw new BadRequest(validationError);
+      }
+    }
+
     const taskId = await this.dao.create({
       userId,
       groupId,
@@ -196,7 +209,10 @@ export class TaskService {
       active: true,
       config: JSON.stringify(taskConfig),
     });
-    await this.register(taskId, taskConfig, true);
+
+    const task = await this.dao.findByIdThrowable(taskId);
+    const executableHandle = this.buildTaskExecutableHandle(task);
+    await this.register(executableHandle, taskConfig, true);
 
     this.logger.info(`createTask[taskId=${taskId}]: created`);
     return taskId;
@@ -208,7 +224,9 @@ export class TaskService {
       this.logger.warn(`deleteTask[taskId=${taskId}]: task is active`);
       throw new BadRequest(`Cannot delete active task: taskId=${taskId}`);
     }
-    await this.executorService.deleteExecutable(taskId);
+
+    const executableHandle = this.buildTaskExecutableHandle(task);
+    await this.executorService.deleteExecutable(executableHandle);
     await this.runService.flushAll(taskId);
     await this.dao.delete(taskId);
     this.logger.info(`deleteTask[taskId=${taskId}]: deleted`);
@@ -221,7 +239,8 @@ export class TaskService {
       throw new BadRequest(`Cannot stop NOT active task: taskId=${taskId}`);
     }
     await this.dao.setActive(taskId, false);
-    await this.executorService.stopExecutable(taskId, 'user');
+    const executableHandle = this.buildTaskExecutableHandle(task);
+    await this.executorService.stopExecutable(executableHandle, 'user');
     await this.runService.stopAll(taskId);
     this.logger.info(`stopTask[taskId=${taskId}]: set active=false`);
   }
@@ -232,8 +251,10 @@ export class TaskService {
       this.logger.warn(`startTask[taskId=${taskId}]: task is active`);
       throw new BadRequest(`Cannot start active task: taskId=${taskId}`);
     }
+
     const taskConfig = JSON.parse(task.config);
-    await this.register(taskId, taskConfig, false);
+    const executableHandle = this.buildTaskExecutableHandle(task);
+    await this.register(executableHandle, taskConfig, false);
     await this.dao.setActive(taskId, true);
     this.logger.info(`startTask[${taskId}]: set active=true`);
   }
@@ -245,8 +266,10 @@ export class TaskService {
 
     const onRunCallbackFn = this.getTaskOnRunCallbackFn();
     const afterBuildCallbackFn = this.getTaskAfterBuildCallbackFn();
+
+    const executableHandle = this.buildTaskExecutableHandle(task);
     await this.executorService.updateExecutable(
-      taskId,
+      executableHandle,
       newConfig,
       onRunCallbackFn,
       afterBuildCallbackFn
@@ -263,5 +286,13 @@ export class TaskService {
 
   getAllByGroupIdBrief(groupId: number): Promise<TaskBriefDto[]> {
     return this.dao.findAllByGroupBrief(groupId);
+  }
+
+  buildTaskExecutableHandle(task: Task): TaskExecutableHandle {
+    const config: TaskConfigDto = JSON.parse(task.config);
+    return {
+      taskId: task.id,
+      runnerName: config.runner || null,
+    };
   }
 }

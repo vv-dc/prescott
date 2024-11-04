@@ -21,6 +21,50 @@ import {
 } from '@modules/contract/model/metric/metric-entry';
 
 describe('task e2e', () => {
+  it('should return an error if selected runner does not exist', async () => {
+    // PREPARE data
+    const fastify = await buildServer();
+    const { authenticationService, authorizationService, jwtService } = fastify;
+
+    const { userId, tokenPair } = await createAndLoginTestUser(
+      authenticationService,
+      jwtService
+    );
+    const { groupId } = await createTestGroup(authorizationService, userId);
+
+    // CREATE task
+    const taskConfig: TaskConfigDto = {
+      name: generateRandomString('task'),
+      envInfo: DOCKER_IMAGES.alpine,
+      runner: 'some-non-existent-runner',
+      config: {
+        local: { scheduleConfig: cronEveryNSeconds(10) },
+        appConfig: {
+          steps: [
+            {
+              name: 'Say hello',
+              script: encodeBase64(
+                'for i in {1..5}; do echo "hello-${i}"; done'
+              ),
+            },
+          ],
+        },
+      },
+    };
+    const createRes = await fastify.inject({
+      method: 'POST',
+      url: `/groups/${groupId}/tasks`,
+      headers: { Authorization: `Bearer ${tokenPair.accessToken}` },
+      payload: taskConfig,
+    });
+    expect(createRes.statusCode).toEqual(400);
+    expect(createRes.json()).toMatchObject({
+      error: 'Bad Request',
+      message: 'EnvRunner[name=some-non-existent-runner] does not exist',
+      statusCode: 400,
+    });
+  });
+
   it('should do CRUD on task', async () => {
     // PREPARE data
     const fastify = await buildServer();
@@ -35,6 +79,7 @@ describe('task e2e', () => {
     // CREATE task
     const taskConfig: TaskConfigDto = {
       name: generateRandomString('task'),
+      runner: 'docker-runner',
       envInfo: DOCKER_IMAGES.alpine,
       config: {
         local: { scheduleConfig: cronEveryNSeconds(10) },

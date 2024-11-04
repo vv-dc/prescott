@@ -4,6 +4,7 @@
   "type": "object",
   "properties": {
     "name": { "type": "string" },
+    "runner": { "type": "string" },
     "envInfo": {
       "$ref": "schema://prescott.dev/domain/env-info.json"
     },
