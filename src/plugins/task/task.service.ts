@@ -193,6 +193,15 @@ export class TaskService {
       throw new EntityConflict(`Task with name=${uniqueName} already exists`);
     }
 
+    if (taskConfig.runner) {
+      const validationError = this.executorService.checkEnvRunnerIsValid(
+        taskConfig.runner
+      );
+      if (validationError) {
+        throw new BadRequest(validationError);
+      }
+    }
+
     const taskId = await this.dao.create({
       userId,
       groupId,
@@ -280,9 +289,10 @@ export class TaskService {
   }
 
   buildTaskExecutableHandle(task: Task): TaskExecutableHandle {
+    const config: TaskConfigDto = JSON.parse(task.config);
     return {
       taskId: task.id,
-      runnerName: null, // TODO: fixme - get from task config
+      runnerName: config.runner || null,
     };
   }
 }

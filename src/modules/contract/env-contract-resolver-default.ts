@@ -12,6 +12,10 @@ export class EnvContractResolverDefault implements EnvContractResolver {
     private readonly pairsMap: EnvContractPairMap
   ) {}
 
+  checkRunnerExists(runnerName: string): boolean {
+    return this.pairsMap[runnerName] !== undefined;
+  }
+
   getBuilder(runnerName: string | null): EnvBuilderContract {
     const pair = this.getPairThrowable(runnerName);
     return pair[0];
@@ -25,11 +29,15 @@ export class EnvContractResolverDefault implements EnvContractResolver {
   private getPairThrowable(
     runnerName: string | null
   ): [EnvBuilderContract, EnvRunnerContract] {
-    const inferredName = runnerName || this.defaultRunnerName;
+    const inferredName = this.inferRunnerName(runnerName);
     const pair = this.pairsMap[inferredName];
     if (!pair) {
       throw new Error(`Unable to resolve EnvRunner[name=${inferredName}`);
     }
     return pair;
+  }
+
+  private inferRunnerName(runnerName: string | null): string {
+    return runnerName || this.defaultRunnerName;
   }
 }

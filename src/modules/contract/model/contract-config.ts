@@ -52,6 +52,7 @@ export const CONTRACT_CONFIG_SOURCE_TYPES = ['file', 'npm'] as const;
 export type ContractSourceType = (typeof CONTRACT_CONFIG_SOURCE_TYPES)[number];
 
 export interface EnvContractResolver {
+  checkRunnerExists(runnerName: string): boolean;
   getRunner(runnerName: string | null): EnvRunnerContract;
   getBuilder(runnerName: string | null): EnvBuilderContract;
 }

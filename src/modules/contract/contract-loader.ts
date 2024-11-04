@@ -25,7 +25,7 @@ import { ConfigResolverContract } from '@modules/contract/model/config/config.co
 import {
   EnvContractPairMap,
   EnvContractResolverDefault,
-} from './env-contract-resolver';
+} from './env-contract-resolver-default';
 import { EnvRunnerContract } from './model/env/env-runner.contract';
 import { EnvBuilderContract } from './model/env/env-builder.contract';
 
@@ -169,7 +169,7 @@ export const buildResolvableContract = async (
     : {};
   await impl.init({ contract: resolvedOpts, system: systemOpts });
 
-  logger.debug(`Built "${type}" contract`);
+  logger.debug(`Built "${type}" contract %s`, resolvedOpts);
   return impl;
 };
 

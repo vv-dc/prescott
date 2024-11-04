@@ -24,7 +24,7 @@ import configDefaultContract, {
   PREDEFINED_VARIABLES_MAP,
 } from '@test/integration/modules/bootstrap/workdir/contract/config-resolver-file';
 import taskQueueNpm from '@test/integration/modules/bootstrap/workdir/contract/task-queue-npm';
-import { EnvContractResolverDefault } from '@src/modules/contract/env-contract-resolver';
+import { EnvContractResolverDefault } from '@src/modules/contract/env-contract-resolver-default';
 
 describe('config-loader integration', () => {
   it('should throw if config is not complete', async () => {

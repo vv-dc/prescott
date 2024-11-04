@@ -219,4 +219,11 @@ export class TaskExecutorService {
       afterBuildCallbackFn
     );
   }
+
+  checkEnvRunnerIsValid(runnerName: string): string | null {
+    if (!this.env.checkRunnerExists(runnerName)) {
+      return `EnvRunner[name=${runnerName}] does not exist`;
+    }
+    return null;
+  }
 }
