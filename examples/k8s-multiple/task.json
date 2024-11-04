@@ -1,0 +1,18 @@
+{
+  "name": "Multiple Clusters - 1",
+  "runner": "k8s-1",
+  "times": 5,
+  "envInfo": { "name": "alpine", "version": "3.18.0" },
+  "config": {
+    "local": { "scheduleConfig": "*/5 * * * * *" },
+    "appConfig": {
+      "steps": [
+        {
+          "name": "Hello",
+          "script": "Zm9yIGkgaW4gJChzZXEgMTAwKTsgZG8gZWNobyAnaGVsbG8tJHtpfSc7IHNsZWVwIDE7IGRvbmU="
+        }
+      ],
+      "limitations": { "ttl": 300000 }
+    }
+  }
+}
