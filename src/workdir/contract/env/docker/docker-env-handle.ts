@@ -1,4 +1,4 @@
-import { PassThrough, Readable, Writable } from 'node:stream';
+import { Readable } from 'node:stream';
 import pidUsage = require('pidusage');
 
 import { CommandBuilder } from '@lib/command-builder';

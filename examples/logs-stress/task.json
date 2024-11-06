@@ -1,0 +1,17 @@
+{
+  "name": "Logs stress test",
+  "runner": "k8s",
+  "times": 50,
+  "envInfo": { "name": "alpine", "version": "3.18.0" },
+  "config": {
+    "local": { "scheduleConfig": "*/1 * * * * *" },
+    "appConfig": {
+      "steps": [
+        {
+          "name": "Hello",
+          "script": "Zm9yIGkgaW4gJChzZXEgMzAwMDApOyBkbyBlY2hvICJoZWxsby0ke2l9Ijsgc2xlZXAgMC4wMTsgZG9uZQ=="
+        }
+      ]
+    }
+  }
+}
