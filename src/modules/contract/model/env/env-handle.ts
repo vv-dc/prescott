@@ -1,5 +1,4 @@
-import { LogEntry } from '@modules/contract/model/log/log-entry';
-import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
+import { Readable } from 'node:stream';
 
 export interface EnvHandle {
   id(): string;
@@ -9,8 +8,8 @@ export interface EnvHandle {
    * Should never throw an error and return the exit code with the reason instead
    */
   wait(): Promise<WaitEnvHandleResult>;
-  logs(): AsyncGenerator<LogEntry>;
-  metrics(intervalMs?: number): AsyncGenerator<MetricEntry>;
+  logs(): Promise<Readable>; // Readable<LogEntry>
+  metrics(intervalMs?: number): Promise<Readable>; // Readable<MetricEntry>;
 }
 
 export interface StopEnvHandleDto {

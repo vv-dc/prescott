@@ -11,13 +11,13 @@ import envBuilderPassThroughFn from '@src/workdir/contract/env/docker/docker-pas
 import k8sEnvRunner from '@src/workdir/contract/env/k8s/k8s-env-runner';
 import { getK8sApiConfig, getK8sResourcePath } from '@test/lib/test-k8s.utils';
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
-import { asyncGeneratorToArray } from '@lib/async.utils';
 import { WaitEnvHandleResult } from '@modules/contract/model/env/env-handle';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
 import { K8sPodMetricProvider } from '@src/workdir/contract/env/k8s/model/k8s-pod-config';
 import { ContractOpts } from '@src/modules/contract/model/contract';
+import { streamToArray } from '@src/lib/stream.utils';
 
 const buildEnvBuilder = (): Promise<EnvBuilderContract> => {
   return prepareContract(envBuilderPassThroughFn, {
@@ -129,8 +129,8 @@ describe.skip('k8s-env-runner [pass-through]', () => {
     const envHandle = await envRunner.runEnv(runDto);
     await envHandle.wait();
 
-    const logsGenerator = envHandle.logs();
-    const logsArray = await asyncGeneratorToArray(logsGenerator);
+    const logsStream = await envHandle.logs();
+    const logsArray = await streamToArray(logsStream);
     expect(logsArray).toEqual([
       {
         time: expect.any(Number),
@@ -276,14 +276,14 @@ describe.skip('k8s-env-runner [pass-through]', () => {
     const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
 
-    const logsGenerator = envHandle.logs();
+    const logsStream = await envHandle.logs();
     const waitResult = await envHandle.wait();
 
     expect(waitResult).toMatchObject({
       exitCode: 0,
       exitError: null,
     } as WaitEnvHandleResult);
-    const logsArray = await asyncGeneratorToArray(logsGenerator);
+    const logsArray = await streamToArray(logsStream);
     expect(logsArray.length).toEqual(100);
 
     await envHandle.delete({ isForce: true });
@@ -303,7 +303,7 @@ describe.skip('k8s-env-runner [pass-through]', () => {
 
     const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
-    const logsGenerator = envHandle.logs();
+    const logsStream = await envHandle.logs();
 
     const waitResult = await envHandle.wait();
     expect(waitResult).toMatchObject({
@@ -311,7 +311,7 @@ describe.skip('k8s-env-runner [pass-through]', () => {
       exitError: 'Error: code=123',
     } as WaitEnvHandleResult);
 
-    const logsArray = await asyncGeneratorToArray(logsGenerator);
+    const logsArray = await streamToArray(logsStream);
     expect(logsArray).toHaveLength(0);
 
     await envHandle.delete({ isForce: true });
@@ -330,8 +330,8 @@ describe.skip('k8s-env-runner [pass-through]', () => {
 
     const runDto = getRunEnvDto(label, envKey, script);
     const envHandle = await envRunner.runEnv(runDto);
-    const logsGenerator = envHandle.logs();
-    const logArrayPromise = asyncGeneratorToArray(logsGenerator);
+    const logsStream = await envHandle.logs();
+    const logArrayPromise = streamToArray(logsStream);
     await envHandle.wait();
 
     const logsArray = await logArrayPromise;
@@ -366,8 +366,8 @@ describe.skip('k8s-env-runner [pass-through]', () => {
 
       const runDto = getRunEnvDto(label, envKey, script);
       const envHandle = await envRunner.runEnv(runDto);
-      const metricsGenerator = envHandle.metrics(3_000); // every 3s
-      const metricsArrayPromise = asyncGeneratorToArray(metricsGenerator);
+      const metricsStream = await envHandle.metrics(3_000); // every 3s
+      const metricsArrayPromise = streamToArray<MetricEntry>(metricsStream);
       await envHandle.wait();
 
       const metricsArray = await metricsArrayPromise;

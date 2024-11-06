@@ -1,4 +1,5 @@
 import * as path from 'node:path';
+import { Readable } from 'node:stream';
 import { createReadStream, createWriteStream } from 'node:fs';
 import * as readline from 'node:readline';
 import {
@@ -26,6 +27,7 @@ import {
   MetricsAggregated,
 } from '@modules/contract/model/metric/metric-entry';
 import { buildMetricEntryAccumulator } from '@src/workdir/contract/metric/metric-aggregate.utils';
+import { TransformObjectToNDJSONStream } from '@src/lib/stream.utils';
 
 const config = {} as { workDir: string };
 
@@ -40,18 +42,17 @@ const buildMetricFilePath = (runHandle: TaskRunHandle): [string, string] => {
   return [dir, metricPath];
 };
 
-const consumeMetricGenerator = async (
+const consumeMetricStream = async (
   runHandle: TaskRunHandle,
-  metricGenerator: AsyncGenerator<MetricEntry>
+  metricStream: Readable
 ): Promise<void> => {
   const [metricDir, metricPath] = buildMetricFilePath(runHandle);
   await ensureDirectory(metricDir);
 
+  const transformNDJsonStream = new TransformObjectToNDJSONStream();
   const writeStream = createWriteStream(metricPath);
-  for await (const metricEntry of metricGenerator) {
-    writeStream.write(JSON.stringify(metricEntry) + '\n');
-  }
-  writeStream.end();
+
+  metricStream.pipe(transformNDJsonStream).pipe(writeStream);
   await waitStreamFinished(writeStream);
 };
 
@@ -135,7 +136,7 @@ const flushMetric = async (taskId: number): Promise<void> => {
 
 const fileMetricProvider: MetricProviderContract = {
   init,
-  consumeMetricGenerator,
+  consumeMetricStream: consumeMetricStream,
   searchMetric,
   aggregateMetric,
   flushMetric,
