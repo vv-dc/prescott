@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import {
   MetricEntry,
@@ -11,9 +13,9 @@ import {
 import { Contract } from '@modules/contract/model/contract';
 
 export interface MetricProviderContract extends Contract {
-  consumeMetricGenerator(
+  consumeMetricStream(
     runHandle: TaskRunHandle,
-    generator: AsyncGenerator<MetricEntry>
+    stream: Readable // Readable<MetricEntry>
   ): Promise<void>;
   searchMetric(
     runHandle: TaskRunHandle,

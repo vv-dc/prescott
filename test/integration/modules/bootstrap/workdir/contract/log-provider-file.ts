@@ -8,7 +8,7 @@ const logProviderFile: LogProviderContract = {
   init: async (opts) => {
     logProviderOpts = { ...opts.contract, ...opts.system };
   },
-  consumeLogGenerator: async (id, generator) => {},
+  consumeLogStream: async (id, stream) => {},
   searchLog: async (id, paging, dto) => ({
     next: 42,
     entries: [],

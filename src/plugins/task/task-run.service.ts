@@ -102,7 +102,7 @@ export class TaskRunService {
       handleId: envHandle.id(),
       startedAt: new Date(),
     });
-    this.registerRunListeners(runHandle, envHandle);
+    await this.registerRunListeners(runHandle, envHandle);
     this.logger.info(`start[runId=${runId}]: handleId=${envHandle.id()}`);
   }
 
@@ -123,14 +123,16 @@ export class TaskRunService {
     this.logger.info(`stopAll[taskId=${taskId}]: done for ${count} runs`);
   }
 
-  registerRunListeners(runHandle: TaskRunHandle, envHandle: EnvHandle): void {
-    const logGenerator = envHandle.logs();
-    // TODO: if not metrics - stop
-    const metricGenerator = envHandle.metrics();
+  async registerRunListeners(
+    runHandle: TaskRunHandle,
+    envHandle: EnvHandle
+  ): Promise<void> {
+    const logStream = await envHandle.logs();
+    const metricStream = await envHandle.metrics();
     dispatchTask(() =>
       Promise.all([
-        this.log.consumeLogGenerator(runHandle, logGenerator),
-        this.metric.consumeMetricGenerator(runHandle, metricGenerator),
+        this.log.consumeLogStream(runHandle, logStream),
+        this.metric.consumeMetricStream(runHandle, metricStream),
       ])
     );
   }

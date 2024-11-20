@@ -99,7 +99,7 @@ describe('contract-validator unit', () => {
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const logImpl: LogProviderContract = {
       init: async (opts) => {},
-      consumeLogGenerator: async (id, generator) => {},
+      consumeLogStream: async (id, stream) => {},
       searchLog: async (id, paging, dto) => ({
         next: 42,
         entries: [],
@@ -123,7 +123,7 @@ describe('contract-validator unit', () => {
     /* eslint-disable @typescript-eslint/no-unused-vars */
     const metricImpl: MetricProviderContract = {
       init: async (opts) => {},
-      consumeMetricGenerator: async (id, generator) => {},
+      consumeMetricStream: async (id, stream) => {},
       aggregateMetric: async (id, dto) => ({} as MetricsAggregated),
       searchMetric: async (id, paging, dto) => ({} as EntryPage<MetricEntry>),
       flushMetric: async (id) => {},

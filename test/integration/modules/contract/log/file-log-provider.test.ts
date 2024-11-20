@@ -4,6 +4,7 @@ import { LogEntry } from '@modules/contract/model/log/log-entry';
 import fileLogProviderBuilder from '@src/workdir/contract/log/file-log-provider';
 import { generateTaskRunHandle } from '@test/lib/test-data.utils';
 import { prepareContract } from '@test/lib/test-contract.utils';
+import { Readable } from 'node:stream';
 
 const buildLogProvider = (): Promise<LogProviderContract> => {
   return prepareContract(fileLogProviderBuilder);
@@ -15,20 +16,20 @@ describe('file-log-provider integration', () => {
     const LOG_ENTRIES_NUMBER = 100;
     const generatedLogs: LogEntry[] = [];
 
-    const logsGenerator = async function* (): AsyncGenerator<LogEntry> {
-      for (let idx = 0; idx < LOG_ENTRIES_NUMBER; ++idx) {
-        const logEntry: LogEntry = {
-          stream: 'stdout',
-          content: generateRandomString('log'),
-          time: new Date().getTime(),
-        };
-        generatedLogs.push(logEntry);
-        yield logEntry;
-      }
-    };
+    const logStream = new Readable({ objectMode: true });
+    for (let idx = 0; idx < LOG_ENTRIES_NUMBER; ++idx) {
+      const logEntry: LogEntry = {
+        stream: 'stdout',
+        content: generateRandomString('log'),
+        time: new Date().getTime(),
+      };
+      generatedLogs.push(logEntry);
+      logStream.push(logEntry);
+    }
+    logStream.push(null);
 
     const runHandle = generateTaskRunHandle();
-    await logProvider.consumeLogGenerator(runHandle, logsGenerator());
+    await logProvider.consumeLogStream(runHandle, logStream);
 
     const { next, entries } = await logProvider.searchLog(
       runHandle,
@@ -46,22 +47,22 @@ describe('file-log-provider integration', () => {
     const logProvider = await buildLogProvider();
     const generatedLogs: LogEntry[] = [];
 
-    const generator = async function* (): AsyncGenerator<LogEntry> {
-      for (let idx = 0; idx < 30; ++idx) {
-        const logEntry: LogEntry = {
-          stream: 'stdout',
-          content: `log-${idx}`,
-          time: new Date(
-            `2023-01-${(idx + 1).toString().padStart(2, '0')}`
-          ).getTime(),
-        };
-        generatedLogs.push(logEntry);
-        yield logEntry;
-      }
-    };
+    const logStream = new Readable({ objectMode: true });
+    for (let idx = 0; idx < 30; ++idx) {
+      const logEntry: LogEntry = {
+        stream: 'stdout',
+        content: `log-${idx}`,
+        time: new Date(
+          `2023-01-${(idx + 1).toString().padStart(2, '0')}`
+        ).getTime(),
+      };
+      generatedLogs.push(logEntry);
+      logStream.push(logEntry);
+    }
+    logStream.push(null);
 
     const runHandle = generateTaskRunHandle();
-    await logProvider.consumeLogGenerator(runHandle, generator());
+    await logProvider.consumeLogStream(runHandle, logStream);
 
     const { entries, next } = await logProvider.searchLog(
       runHandle,
@@ -82,21 +83,21 @@ describe('file-log-provider integration', () => {
     const logProvider = await buildLogProvider();
     const generatedLogs: LogEntry[] = [];
 
-    const generator = async function* (): AsyncGenerator<LogEntry> {
-      for (let idx = 0; idx < 30; ++idx) {
-        const prefix = idx % 2 === 0 ? 'even' : 'odd';
-        const logEntry: LogEntry = {
-          stream: 'stdout',
-          content: `${prefix}-${idx}`,
-          time: new Date().getTime(),
-        };
-        generatedLogs.push(logEntry);
-        yield logEntry;
-      }
-    };
+    const logStream = new Readable({ objectMode: true });
+    for (let idx = 0; idx < 30; ++idx) {
+      const prefix = idx % 2 === 0 ? 'even' : 'odd';
+      const logEntry: LogEntry = {
+        stream: 'stdout',
+        content: `${prefix}-${idx}`,
+        time: new Date().getTime(),
+      };
+      generatedLogs.push(logEntry);
+      logStream.push(logEntry);
+    }
+    logStream.push(null);
 
     const runHandle = generateTaskRunHandle();
-    await logProvider.consumeLogGenerator(runHandle, generator());
+    await logProvider.consumeLogStream(runHandle, logStream);
 
     const { entries, next } = await logProvider.searchLog(
       runHandle,

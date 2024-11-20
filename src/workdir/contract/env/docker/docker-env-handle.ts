@@ -1,12 +1,11 @@
+import { Readable } from 'node:stream';
 import pidUsage = require('pidusage');
 
 import { CommandBuilder } from '@lib/command-builder';
 import { delay, millisecondsToSeconds } from '@lib/time.utils';
 import {
   execDockerCommandWithCheck,
-  dockerSizeToBytes,
   getContainerPid,
-  removeEscapeCharacters,
   inspectDockerContainer,
 } from '@src/workdir/contract/env/docker/docker.utils';
 import {
@@ -15,16 +14,14 @@ import {
   StopEnvHandleDto,
   WaitEnvHandleResult,
 } from '@modules/contract/model/env/env-handle';
-import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { MetricEntry } from '@modules/contract/model/metric/metric-entry';
 import { errorToReason } from '@modules/errors/get-error-reason';
-import { transformReadableToRFC3339LogGenerator } from '@lib/log.utils';
-
-// .split is faster than JSON.parse
-const METRICS_SEPARATOR = '\t';
-const METRICS_FORMAT = `"{{.PIDs}}${METRICS_SEPARATOR}{{.MemUsage}}}${METRICS_SEPARATOR}{{.CPUPerc}}"`;
-
-type RawDockerMetric = [string, string, string];
+import { TranformRFC3339LogStream } from '@src/lib/log.utils';
+import {
+  METRICS_FORMAT,
+  TransformDockerStatsToMetricEntryStream,
+} from './docker-metric.utils';
+import { mergeParallelStreams } from '@src/lib/stream.utils';
 
 export class DockerEnvHandle implements EnvHandle {
   constructor(private container: string) {}
@@ -90,22 +87,33 @@ export class DockerEnvHandle implements EnvHandle {
     }
   }
 
-  async *logs(): AsyncGenerator<LogEntry> {
+  async logs(): Promise<Readable> {
     const command = new CommandBuilder()
       .init('docker logs')
       .param('follow')
       .param('timestamps');
     const child = command.with(this.container).spawn();
-    if (child.stdout)
-      yield* transformReadableToRFC3339LogGenerator(child.stdout, 'stdout');
-    if (child.stderr)
-      yield* transformReadableToRFC3339LogGenerator(child.stderr, 'stderr');
+    const streams: Readable[] = [];
+
+    if (child.stdout) {
+      const stdoutTransform = new TranformRFC3339LogStream('stdout');
+      streams.push(child.stdout.pipe(stdoutTransform));
+    }
+    if (child.stderr) {
+      const stderrTransform = new TranformRFC3339LogStream('stderr');
+      streams.push(child.stderr.pipe(stderrTransform));
+    }
+
+    return mergeParallelStreams(streams, { objectMode: true });
   }
 
-  metrics(intervalMs?: number): AsyncGenerator<MetricEntry> {
-    return intervalMs
-      ? this.metricsInterval(intervalMs)
-      : this.metricsContinuous();
+  async metrics(intervalMs?: number): Promise<Readable> {
+    if (intervalMs) {
+      return Readable.from(this.metricsInterval(intervalMs), {
+        objectMode: true,
+      });
+    }
+    return this.metricsContinuous();
   }
 
   private async *metricsInterval(
@@ -131,42 +139,15 @@ export class DockerEnvHandle implements EnvHandle {
     }
   }
 
-  private async *metricsContinuous(): AsyncGenerator<MetricEntry> {
+  private async metricsContinuous(): Promise<Readable> {
     const command = new CommandBuilder().init('docker stats');
     command.param('format', METRICS_FORMAT);
     command.param('no-trunc');
 
     const child = command.with(this.container).spawn();
-    if (!child.stdout) return;
+    if (!child.stdout) return Readable.from([], { objectMode: true });
 
-    for await (const stdout of child.stdout) {
-      const cleanStdout = removeEscapeCharacters(stdout.toString()).trim();
-      if (cleanStdout === '') continue;
-
-      for (const cleanPart of cleanStdout.split('\n')) {
-        if (cleanPart === '') continue;
-        const timestamp = Date.now();
-
-        const rawMetric = cleanPart.split(METRICS_SEPARATOR) as RawDockerMetric;
-        if (this.isEndOfMetrics(rawMetric)) return;
-        yield this.formatRawMetric(rawMetric, timestamp);
-      }
-    }
-  }
-
-  private isEndOfMetrics(rawMetric: RawDockerMetric): boolean {
-    return rawMetric[0] === '--' || rawMetric[0] === '0';
-  }
-
-  private formatRawMetric(
-    rawMetric: RawDockerMetric,
-    timestamp: number
-  ): MetricEntry {
-    const [, memUsage, cpuPercentage] = rawMetric;
-    return {
-      ram: dockerSizeToBytes(memUsage.split('/')[0].slice(0, -1)).toFixed(2), // exclude whitespace
-      cpu: cpuPercentage.slice(0, -1), // exclude %
-      time: timestamp,
-    };
+    const transformStream = new TransformDockerStatsToMetricEntryStream();
+    return child.stdout.pipe(transformStream);
   }
 }

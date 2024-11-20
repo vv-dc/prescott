@@ -11,7 +11,7 @@ const metricProvider: MetricProviderContract = {
   init: async (opts: ContractInitOpts) => {
     metricProviderOpts = { ...opts.contract, ...opts.system };
   },
-  consumeMetricGenerator: async (id, generator) => {},
+  consumeMetricStream: async (id, stream) => {},
   searchMetric: async (id, paging, dto) => ({
     next: 42,
     entries: [],

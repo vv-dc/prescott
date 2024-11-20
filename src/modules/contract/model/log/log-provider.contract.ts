@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream';
 import { LogEntry } from '@modules/contract/model/log/log-entry';
 import { TaskRunHandle } from '@modules/contract/model/task-run-handle';
 import {
@@ -8,9 +9,9 @@ import {
 import { Contract } from '@modules/contract/model/contract';
 
 export interface LogProviderContract extends Contract {
-  consumeLogGenerator(
+  consumeLogStream(
     runHandle: TaskRunHandle,
-    generator: AsyncGenerator<LogEntry>
+    stream: Readable // Readable<LogEntry>
   ): Promise<void>;
   flushLog(taskId: number): Promise<void>;
   searchLog(

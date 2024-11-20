@@ -1,4 +1,3 @@
-import { asyncGeneratorToArray } from '@lib/async.utils';
 import { OUT_OF_MEMORY_CODE } from '@test/lib/test.const';
 import envBuilderFn from '@src/workdir/contract/env/docker/docker-env-builder';
 import envBuilderPassThroughFn from '@src/workdir/contract/env/docker/docker-pass-through-env-builder';
@@ -13,6 +12,7 @@ import { EnvBuilderContract } from '@modules/contract/model/env/env-builder.cont
 import { EnvRunnerContract } from '@modules/contract/model/env/env-runner.contract';
 import { prepareContract } from '@test/lib/test-contract.utils';
 import { getAlpineBuildEnvDto, getRunEnvDto } from '@test/lib/test-env.utils';
+import { streamToArray } from '@src/lib/stream.utils';
 
 const buildEnvBuilder = (
   type: 'builder' | 'pass-through'
@@ -127,7 +127,7 @@ describe('docker-env-runner integration', () => {
         expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
         // start consuming logs
-        const logsPromise = asyncGeneratorToArray(envHandle.logs());
+        const logsPromise = streamToArray(await envHandle.logs());
 
         // check logs collected
         const logs = await logsPromise;
@@ -170,7 +170,7 @@ describe('docker-env-runner integration', () => {
         expect(await isDockerResourceExist(envHandle.id())).toEqual(true);
 
         // start consuming metrics
-        const metricsPromise = asyncGeneratorToArray(envHandle.metrics());
+        const metricsPromise = streamToArray(await envHandle.metrics());
 
         // check metrics collected
         await envHandle.wait();
@@ -209,8 +209,8 @@ describe('docker-env-runner integration', () => {
 
         // start consuming metrics
         const intervalMs = 50;
-        const metricsPromise = asyncGeneratorToArray(
-          envHandle.metrics(intervalMs)
+        const metricsPromise = streamToArray(
+          await envHandle.metrics(intervalMs)
         );
 
         // check metrics collected

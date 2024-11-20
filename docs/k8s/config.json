@@ -1,0 +1,17 @@
+{
+  "envRunner": [
+    {
+      "type": "file",
+      "key": "env/k8s/k8s-env-runner.ts",
+      "name": "k8s",
+      "builder": "docker-pass-through-builder",
+      "opts": {
+        "metricProvider": "metrics-server",
+        "metricIntervalMs": "5000",
+        "namespace": "prescott",
+        "host": "{{K8S_CLUSTER_HOST}}",
+        "token": "{{K8S_CLUSTER_TOKEN}}"
+      }
+    }
+  ]
+}

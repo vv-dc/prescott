@@ -7,6 +7,7 @@ import {
   MetricsAggregated,
 } from '@modules/contract/model/metric/metric-entry';
 import { prepareContract } from '@test/lib/test-contract.utils';
+import { Readable } from 'node:stream';
 
 const buildMetricProvider = (): Promise<MetricProviderContract> => {
   return prepareContract(fileMetricProviderBuilder);
@@ -17,20 +18,20 @@ describe('file-metric-provider integration', () => {
     const metricProvider = await buildMetricProvider();
     const generatedMetrics: MetricEntry[] = [];
 
-    const metricGenerator = async function* (): AsyncGenerator<MetricEntry> {
-      for (let idx = 0; idx < 100; ++idx) {
-        const metricEntry: MetricEntry = {
-          time: new Date().getTime(),
-          cpu: (randomInt(1, 1000) / 1000).toFixed(2),
-          ram: randomInt(1_000, 1_000_000).toFixed(2),
-        };
-        generatedMetrics.push(metricEntry);
-        yield metricEntry;
-      }
-    };
+    const metricStream = new Readable({ objectMode: true });
+    for (let idx = 0; idx < 100; ++idx) {
+      const metricEntry: MetricEntry = {
+        time: new Date().getTime(),
+        cpu: (randomInt(1, 1000) / 1000).toFixed(2),
+        ram: randomInt(1_000, 1_000_000).toFixed(2),
+      };
+      generatedMetrics.push(metricEntry);
+      metricStream.push(metricEntry);
+    }
+    metricStream.push(null);
 
     const runHandle = generateTaskRunHandle();
-    await metricProvider.consumeMetricGenerator(runHandle, metricGenerator());
+    await metricProvider.consumeMetricStream(runHandle, metricStream);
 
     const { next, entries } = await metricProvider.searchMetric(
       runHandle,
@@ -48,22 +49,22 @@ describe('file-metric-provider integration', () => {
     const metricProvider = await buildMetricProvider();
     const generatedMetrics: MetricEntry[] = [];
 
-    const generator = async function* (): AsyncGenerator<MetricEntry> {
-      for (let idx = 0; idx < 30; ++idx) {
-        const metricEntry: MetricEntry = {
-          cpu: (randomInt(1, 1000) / 1000).toFixed(2),
-          ram: randomInt(1_000, 1_000_000).toFixed(2),
-          time: new Date(
-            `2023-01-${(idx + 1).toString().padStart(2, '0')}`
-          ).getTime(),
-        };
-        generatedMetrics.push(metricEntry);
-        yield metricEntry;
-      }
-    };
+    const metricStream = new Readable({ objectMode: true });
+    for (let idx = 0; idx < 30; ++idx) {
+      const metricEntry: MetricEntry = {
+        cpu: (randomInt(1, 1000) / 1000).toFixed(2),
+        ram: randomInt(1_000, 1_000_000).toFixed(2),
+        time: new Date(
+          `2023-01-${(idx + 1).toString().padStart(2, '0')}`
+        ).getTime(),
+      };
+      generatedMetrics.push(metricEntry);
+      metricStream.push(metricEntry);
+    }
+    metricStream.push(null);
 
     const runHandle = generateTaskRunHandle();
-    await metricProvider.consumeMetricGenerator(runHandle, generator());
+    await metricProvider.consumeMetricStream(runHandle, metricStream);
 
     const { entries, next } = await metricProvider.searchMetric(
       runHandle,
@@ -83,23 +84,23 @@ describe('file-metric-provider integration', () => {
   it('should aggregate metrics', async () => {
     const metricProvider = await buildMetricProvider();
 
-    const metricGenerator = async function* (): AsyncGenerator<MetricEntry> {
-      for (let idx = 0; idx < 100; ++idx) {
-        const metricEntry: MetricEntry = {
-          time: new Date().getTime(),
-          cpu: idx.toFixed(2),
-          ram: (idx + 1).toFixed(2),
-          foo: randomInt(1, 1_000_000), // should not be included
-        };
-        if (idx % 2 === 1) {
-          metricEntry.smth = (idx + 2).toFixed(2);
-        }
-        yield metricEntry;
+    const metricStream = new Readable({ objectMode: true });
+    for (let idx = 0; idx < 100; ++idx) {
+      const metricEntry: MetricEntry = {
+        time: new Date().getTime(),
+        cpu: idx.toFixed(2),
+        ram: (idx + 1).toFixed(2),
+        foo: randomInt(1, 1_000_000), // should not be included
+      };
+      if (idx % 2 === 1) {
+        metricEntry.smth = (idx + 2).toFixed(2);
       }
-    };
+      metricStream.push(metricEntry);
+    }
+    metricStream.push(null);
 
     const runHandle = generateTaskRunHandle();
-    await metricProvider.consumeMetricGenerator(runHandle, metricGenerator());
+    await metricProvider.consumeMetricStream(runHandle, metricStream);
 
     const aggregated = await metricProvider.aggregateMetric(runHandle, {
       search: {},

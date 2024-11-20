@@ -1,20 +1,26 @@
-import { Readable } from 'node:stream';
+import { Transform, TransformCallback } from 'node:stream';
 
 import {
   LogEntry,
   LogEntryStream,
 } from '@modules/contract/model/log/log-entry';
 
-export async function* transformReadableToRFC3339LogGenerator(
-  readable: Readable,
-  stream: LogEntryStream
-): AsyncGenerator<LogEntry> {
-  for await (const chunk of readable) {
+export class TranformRFC3339LogStream extends Transform {
+  constructor(private readonly stream: LogEntryStream) {
+    super({ objectMode: true });
+  }
+
+  _transform(
+    chunk: Buffer,
+    _encoding: BufferEncoding,
+    callback: TransformCallback
+  ): void {
     const rawLogs = chunk.toString().split('\n');
     for (const rawLog of rawLogs) {
       if (rawLog === '') continue;
-      yield parseRFC3339Log(rawLog, stream);
+      this.push(parseRFC3339Log(rawLog, this.stream));
     }
+    callback();
   }
 }
 

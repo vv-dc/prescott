@@ -169,7 +169,7 @@ export const buildResolvableContract = async (
     : {};
   await impl.init({ contract: resolvedOpts, system: systemOpts });
 
-  logger.debug(`Built "${type}" contract %s`, resolvedOpts);
+  logger.debug(`Built "${type}" contract`);
   return impl;
 };
 

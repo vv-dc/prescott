@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 import * as readline from 'node:readline';
+import { Readable } from 'node:stream';
 import { createWriteStream, createReadStream } from 'node:fs';
 import {
   ensureDirectory,
@@ -19,6 +20,7 @@ import {
   ContractInitOpts,
   ContractModule,
 } from '@modules/contract/model/contract';
+import { TransformObjectToNDJSONStream } from '@src/lib/stream.utils';
 
 const config = {} as { workDir: string };
 
@@ -33,18 +35,17 @@ const buildLogFilePath = (runHandle: TaskRunHandle): [string, string] => {
   return [logDir, logPath];
 };
 
-const consumeLogGenerator = async (
+const consumeLogStream = async (
   runHandle: TaskRunHandle,
-  logGenerator: AsyncGenerator<LogEntry>
+  logStream: Readable
 ): Promise<void> => {
   const [logDir, logPath] = buildLogFilePath(runHandle);
   await ensureDirectory(logDir);
 
+  const transformNDJsonStream = new TransformObjectToNDJSONStream();
   const writeStream = createWriteStream(logPath);
-  for await (const logEntry of logGenerator) {
-    writeStream.write(JSON.stringify(logEntry) + '\n');
-  }
-  writeStream.end();
+
+  logStream.pipe(transformNDJsonStream).pipe(writeStream);
   await waitStreamFinished(writeStream);
 };
 
@@ -108,7 +109,7 @@ const flushLog = async (taskId: number): Promise<void> => {
 
 const fileLogProvider: LogProviderContract = {
   init,
-  consumeLogGenerator,
+  consumeLogStream,
   searchLog,
   flushLog,
 };
