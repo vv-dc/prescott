@@ -1,0 +1,36 @@
+{
+  "name": "Demo CI",
+  "runner": "k8s",
+  "times": 3,
+  "envInfo": {
+    "name": "golang",
+    "version": "1.23.1"
+  },
+  "config": {
+    "local": { "scheduleConfig": "*/10 * * * * *" },
+    "appConfig": {
+      "steps": [
+        {
+          "name": "Pull project",
+          "script": "git clone http://github.com/vvkin/prescott-demo.git && cd prescott-demo"
+        },
+        {
+          "name": "Install dependencies",
+          "script": "go mod tidy"
+        },
+        {
+          "name": "Run linter",
+          "script": "gofmt ."
+        },
+        {
+          "name": "Run build",
+          "script": "go build -o main"
+        },
+        {
+          "name": "Run tests",
+          "script": "go test -v"
+        }
+      ]
+    }
+  }
+}
